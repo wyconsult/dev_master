@@ -12,9 +12,9 @@ import { type Bidding } from "@shared/schema";
 
 export default function Biddings() {
   const [filters, setFilters] = useState({
-    conLicitationNumber: "",
-    organization: "all",
-    shift: "all",
+    conlicitacao_id: "",
+    orgao: "all",
+    turno: "all",
   });
 
   const { data: biddings = [], isLoading, error } = useQuery<Bidding[]>({
@@ -63,32 +63,32 @@ export default function Biddings() {
             <h3 className="text-lg font-medium text-gray-900 mb-4">Filtros de Pesquisa</h3>
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div>
-                <Label htmlFor="conLicitationNumber">Filtrar Número ConLicitação</Label>
+                <Label htmlFor="conlicitacao_id">Filtrar Número ConLicitação</Label>
                 <Input
-                  id="conLicitationNumber"
-                  placeholder="Ex: 001/2024"
-                  value={filters.conLicitationNumber}
-                  onChange={(e) => handleFilterChange("conLicitationNumber", e.target.value)}
+                  id="conlicitacao_id"
+                  placeholder="Ex: 13157470"
+                  value={filters.conlicitacao_id}
+                  onChange={(e) => handleFilterChange("conlicitacao_id", e.target.value)}
                 />
               </div>
               <div>
                 <Label htmlFor="orgao">Filtrar Órgão</Label>
-                <Select value={filters.organization} onValueChange={(value) => handleFilterChange("organization", value)}>
+                <Select value={filters.orgao} onValueChange={(value) => handleFilterChange("orgao", value)}>
                   <SelectTrigger>
                     <SelectValue placeholder="Todos os órgãos" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">Todos os órgãos</SelectItem>
                     <SelectItem value="prefeitura">Prefeitura Municipal</SelectItem>
-                    <SelectItem value="governo-estado">Governo do Estado</SelectItem>
-                    <SelectItem value="ministerio">Ministério</SelectItem>
-                    <SelectItem value="autarquia">Autarquia</SelectItem>
+                    <SelectItem value="governo">Governo do Estado</SelectItem>
+                    <SelectItem value="superintendência">Superintendência</SelectItem>
+                    <SelectItem value="ministério">Ministério</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <div>
                 <Label htmlFor="turno">Turno</Label>
-                <Select value={filters.shift} onValueChange={(value) => handleFilterChange("shift", value)}>
+                <Select value={filters.turno} onValueChange={(value) => handleFilterChange("turno", value)}>
                   <SelectTrigger>
                     <SelectValue placeholder="Todos os turnos" />
                   </SelectTrigger>

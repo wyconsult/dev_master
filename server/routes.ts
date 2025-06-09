@@ -24,11 +24,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Biddings routes
   app.get("/api/biddings", async (req, res) => {
     try {
-      const { conLicitationNumber, organization, shift } = req.query;
+      const { conlicitacao_id, orgao, turno } = req.query;
       const filters = {
-        conLicitationNumber: conLicitationNumber as string,
-        organization: organization as string,
-        shift: shift as string,
+        conlicitacao_id: conlicitacao_id as string,
+        orgao: orgao as string,
+        turno: turno as string,
       };
       
       const biddings = await storage.getBiddings(filters);

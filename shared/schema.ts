@@ -10,16 +10,28 @@ export const users = pgTable("users", {
 
 export const biddings = pgTable("biddings", {
   id: serial("id").primaryKey(),
-  object: text("object").notNull(),
-  dates: text("dates").notNull(),
-  situation: text("situation").notNull(),
+  orgao: text("orgao").notNull(),
+  codigo: text("codigo").notNull(),
+  cidade: text("cidade").notNull(),
+  uf: text("uf").notNull(),
+  endereco: text("endereco").notNull(),
+  telefone: text("telefone").notNull(),
+  site: text("site").notNull(),
+  objeto: text("objeto").notNull(),
+  situacao: text("situacao").notNull(),
+  datahora_abertura: text("datahora_abertura").notNull(),
+  datahora_documento: text("datahora_documento"),
+  datahora_retirada: text("datahora_retirada"),
+  datahora_visita: text("datahora_visita"),
+  datahora_prazo: text("datahora_prazo"),
   edital: text("edital").notNull(),
-  conLicitationNumber: text("con_licitation_number").notNull(),
-  organization: text("organization").notNull(),
-  sessionStatus: text("session_status").notNull(),
-  city: text("city").notNull(),
-  link: text("link").notNull(),
-  shift: text("shift").notNull(), // Manhã, Tarde, Noite
+  link_edital: text("link_edital").notNull(),
+  processo: text("processo").notNull(),
+  observacao: text("observacao"),
+  item: text("item"),
+  preco_edital: text("preco_edital"),
+  valor_estimado: text("valor_estimado"),
+  conlicitacao_id: integer("conlicitacao_id").notNull(),
 });
 
 export const favorites = pgTable("favorites", {

@@ -17,7 +17,7 @@ export interface IStorage {
   createUser(user: InsertUser): Promise<User>;
   
   // Biddings
-  getBiddings(filters?: { conLicitationNumber?: string; organization?: string; shift?: string }): Promise<Bidding[]>;
+  getBiddings(filters?: { conlicitacao_id?: string; orgao?: string; turno?: string }): Promise<Bidding[]>;
   getBidding(id: number): Promise<Bidding | undefined>;
   
   // Favorites
@@ -57,59 +57,107 @@ export class MemStorage implements IStorage {
     this.users.set(1, testUser);
     this.currentUserId = 2;
 
-    // Create mock biddings based on new API structure
+    // Create mock biddings based on ConLicitação API documentation
     const mockBiddings: Bidding[] = [
       {
         id: 1,
-        object: "Aquisição de material de escritório para departamentos administrativos",
-        dates: "Abertura: 15/03/2024 14:00h | Encerramento: 20/03/2024 17:00h",
-        situation: "Em andamento",
-        edital: "PE001/2024",
-        conLicitationNumber: "001/2024",
-        organization: "Prefeitura Municipal de São Paulo",
-        sessionStatus: "Sessão pública agendada",
-        city: "São Paulo - SP",
-        link: "https://compras.sp.gov.br/licitacao/001-2024",
-        shift: "Tarde"
+        orgao: "Prefeitura Municipal de Marechal Cândido Rondon",
+        codigo: "987683",
+        cidade: "Marechal Cândido Rondon",
+        uf: "PR",
+        endereco: "Rua Espírito Santo, 777",
+        telefone: "",
+        site: "",
+        objeto: "Aquisição de pneus, câmaras de ar e acessórios relacionados para manutenção dos veículos pertencentes à Frota Municipal",
+        situacao: "NOVA",
+        datahora_abertura: "2020-11-26 08:30:00",
+        datahora_documento: "",
+        datahora_retirada: "",
+        datahora_visita: "",
+        datahora_prazo: "",
+        edital: "PE/118/2020",
+        link_edital: "/boletim_web/public/api/download?auth=token",
+        processo: "",
+        observacao: "Edital a partir de: 11/11/2020 das 08:00 às 11:45 Hs e das 13:15 às 17:00 Hs",
+        item: "PNEU PARA VEÍCULO AUTOMOTIVO, PNEU PARA CARRINHO DE MÃO",
+        preco_edital: "0.00",
+        valor_estimado: "0.00",
+        conlicitacao_id: 13157470
       },
       {
         id: 2,
-        object: "Construção de ponte rodoviária na rodovia SP-125",
-        dates: "Abertura: 22/03/2024 09:00h | Encerramento: 10/04/2024 16:00h",
-        situation: "Agendada",
-        edital: "CP005/2024",
-        conLicitationNumber: "005/2024",
-        organization: "Governo do Estado de São Paulo",
-        sessionStatus: "Aguardando abertura",
-        city: "Campinas - SP",
-        link: "https://compras.sp.gov.br/licitacao/005-2024",
-        shift: "Manhã"
+        orgao: "Superintendência Estadual de Licitações - SUPEL",
+        codigo: "925373",
+        cidade: "Porto Velho",
+        uf: "RO",
+        endereco: "Av. Rio Madeira N° 3056 - Flodoaldo Pontes Pinto",
+        telefone: "",
+        site: "",
+        objeto: "Registro de Preços para futuras aquisição de material permanente Conjuntos de Máquinas Vibratórias e Carro para Transporte de Tubos de Concretos",
+        situacao: "NOVA",
+        datahora_abertura: "2020-11-27 09:00:00",
+        datahora_documento: "",
+        datahora_retirada: "",
+        datahora_visita: "",
+        datahora_prazo: "",
+        edital: "PE/475/2020",
+        link_edital: "/boletim_web/public/api/download?auth=token2",
+        processo: "",
+        observacao: "Edital a partir de: 11/11/2020 das 08:00 às 12:00 Hs e das 14:00 às 17:59 Hs",
+        item: "Conjunto de máquina vibratória para fabricação de tubos de concreto completa",
+        preco_edital: "0.00",
+        valor_estimado: "0.00",
+        conlicitacao_id: 13157519
       },
       {
         id: 3,
-        object: "Fornecimento de equipamentos de informática e periféricos",
-        dates: "Abertura: 28/03/2024 10:00h | Encerramento: 05/04/2024 15:00h",
-        situation: "Publicada",
-        edital: "PP012/2024",
-        conLicitationNumber: "012/2024",
-        organization: "Ministério da Educação",
-        sessionStatus: "Edital publicado",
-        city: "Brasília - DF",
-        link: "https://compras.gov.br/licitacao/012-2024",
-        shift: "Manhã"
+        orgao: "Prefeitura Municipal de Santos",
+        codigo: "354810",
+        cidade: "Santos",
+        uf: "SP",
+        endereco: "Praça Mauá, 10",
+        telefone: "(13) 3201-5000",
+        site: "www.santos.sp.gov.br",
+        objeto: "Fornecimento de equipamentos de informática e periféricos para atendimento das necessidades da administração municipal",
+        situacao: "ABERTA",
+        datahora_abertura: "2024-03-28 10:00:00",
+        datahora_documento: "2024-03-25 17:00:00",
+        datahora_retirada: "2024-03-20 08:00:00",
+        datahora_visita: "",
+        datahora_prazo: "2024-03-28 10:00:00",
+        edital: "PP/012/2024",
+        link_edital: "https://santos.sp.gov.br/editais/pp012-2024",
+        processo: "2024/001234",
+        observacao: "Edital disponível no site oficial da prefeitura",
+        item: "Computadores, impressoras, monitores e acessórios diversos",
+        preco_edital: "250000.00",
+        valor_estimado: "230000.00",
+        conlicitacao_id: 13157600
       },
       {
         id: 4,
-        object: "Prestação de serviços de limpeza urbana e coleta seletiva",
-        dates: "Abertura: 05/04/2024 15:00h | Encerramento: 15/04/2024 12:00h",
-        situation: "Em análise",
-        edital: "TP003/2024",
-        conLicitationNumber: "003/2024",
-        organization: "Prefeitura Municipal de Santos",
-        sessionStatus: "Documentação em análise",
-        city: "Santos - SP",
-        link: "https://compras.santos.sp.gov.br/licitacao/003-2024",
-        shift: "Noite"
+        orgao: "Governo do Estado de São Paulo",
+        codigo: "550001",
+        cidade: "São Paulo",
+        uf: "SP",
+        endereco: "Palácio dos Bandeirantes",
+        telefone: "(11) 2193-8000",
+        site: "www.sp.gov.br",
+        objeto: "Prestação de serviços de limpeza urbana e coleta seletiva para órgãos estaduais",
+        situacao: "EM_ANALISE",
+        datahora_abertura: "2024-04-05 15:00:00",
+        datahora_documento: "2024-04-02 17:00:00",
+        datahora_retirada: "2024-03-28 08:00:00",
+        datahora_visita: "2024-04-01 14:00:00",
+        datahora_prazo: "2024-04-05 15:00:00",
+        edital: "TP/003/2024",
+        link_edital: "https://compras.sp.gov.br/edital/tp003-2024",
+        processo: "2024/SP/005678",
+        observacao: "Documentação em análise pela comissão julgadora",
+        item: "Serviços de limpeza, coleta de resíduos e manutenção de áreas verdes",
+        preco_edital: "1500000.00",
+        valor_estimado: "1400000.00",
+        conlicitacao_id: 13157701
       }
     ];
 
@@ -134,25 +182,35 @@ export class MemStorage implements IStorage {
     return user;
   }
 
-  async getBiddings(filters?: { conLicitationNumber?: string; organization?: string; shift?: string }): Promise<Bidding[]> {
+  async getBiddings(filters?: { conlicitacao_id?: string; orgao?: string; turno?: string }): Promise<Bidding[]> {
     let biddings = Array.from(this.biddings.values());
     
-    if (filters?.conLicitationNumber) {
+    if (filters?.conlicitacao_id) {
       biddings = biddings.filter(b => 
-        b.conLicitationNumber.toLowerCase().includes(filters.conLicitationNumber!.toLowerCase())
+        b.conlicitacao_id.toString().includes(filters.conlicitacao_id!)
       );
     }
     
-    if (filters?.organization) {
+    if (filters?.orgao) {
       biddings = biddings.filter(b => 
-        b.organization.toLowerCase().includes(filters.organization!.toLowerCase())
+        b.orgao.toLowerCase().includes(filters.orgao!.toLowerCase())
       );
     }
 
-    if (filters?.shift && filters.shift !== "all") {
-      biddings = biddings.filter(b => 
-        b.shift.toLowerCase() === filters.shift!.toLowerCase()
-      );
+    if (filters?.turno && filters.turno !== "all") {
+      // Filter by time of day based on datahora_abertura
+      const turnoMap: { [key: string]: string[] } = {
+        'manhã': ['06', '07', '08', '09', '10', '11'],
+        'tarde': ['12', '13', '14', '15', '16', '17'],
+        'noite': ['18', '19', '20', '21', '22', '23']
+      };
+      
+      const horasValidas = turnoMap[filters.turno.toLowerCase()] || [];
+      
+      biddings = biddings.filter(b => {
+        const hora = b.datahora_abertura.split(' ')[1]?.split(':')[0];
+        return horasValidas.includes(hora);
+      });
     }
     
     return biddings;
