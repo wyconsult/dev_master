@@ -1,0 +1,169 @@
+from flask import Flask, jsonify, request, abort
+
+app = Flask(__name__)
+
+# -------------------------------------------------------------------
+# Carregando dados de exemplo (em JSON) para simular respostas reais
+# -------------------------------------------------------------------
+import os, json
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+EXEMPLOS_DIR = os.path.join(BASE_DIR, "exemplos")
+
+def carrega_arquivo(nome_arquivo):
+    caminho = os.path.join(EXEMPLOS_DIR, nome_arquivo)
+    with open(caminho, "r", encoding="utf-8") as f:
+        return json.load(f)
+
+# Dados de exemplo:
+EX_FILTROS = carrega_arquivo("filtros.json")
+EX_BOLETINS_POR_FILTRO = {
+    115425: carrega_arquivo("boletins_por_filtro_115425.json")
+}
+EX_BOLETIM = {
+    44657477: carrega_arquivo("boletim_44657477.json")
+}
+
+
+# -------------------------------
+# Middleware simples de autenticação
+# -------------------------------
+@app.before_request
+def autenticar():
+    token = request.headers.get("x-auth-token")
+    # Na documentação: "A autenticação é feita por 'x-auth-token' + IP cadastrado" :contentReference[oaicite:1]{index=1}
+    if not token or token != "SEU_TOKEN_DE_EXEMPLO":
+        abort(401, description="Token inválido ou não fornecido")
+
+
+# -----------------------------------------------
+# Endpoint 1: Listagem dos filtros do cliente
+# GET /api/filtros
+# -----------------------------------------------
+@app.route("/api/filtros", methods=["GET"])
+def listar_filtros():
+    """
+    Exemplo de resposta (filtros.json):
+    {
+      "cliente": {
+        "id": 2982,
+        "razao_social": "Consórcio Nacional de Licitação HQZ Ltda."
+      },
+      "filtros": [
+        {
+          "id": 115425,
+          "descricao": "Filtro inicial de Licitação e Acompanhamentos",
+          "periodos": { "manha": true, "tarde": true, "noite": true },
+          "ultimo_boletim": {
+            "id": 44657477,
+            "datahora_fechamento": "2020-11-12 13:01:19 -03:00",
+            "numero_edicao": 21
+          }
+        }
+      ]
+    }
+    Campos baseado em: "Listagem dos filtros do cliente" :contentReference[oaicite:2]{index=2}
+    """
+    return jsonify(EX_FILTROS)
+
+
+# ---------------------------------------------------------
+# Endpoint 2: Listagem dos boletins de um determinado filtro
+# GET /api/filtro/<ID_DO_FILTRO>/boletins?per_page=&page=&order=
+# ---------------------------------------------------------
+@app.route("/api/filtro/<int:id_filtro>/boletins", methods=["GET"])
+def boletins_por_filtro(id_filtro):
+    """
+    Parâmetros opcionais:
+      - page: inteiro (padrão 1)
+      - per_page: inteiro (padrão 100)
+      - order: 'asc' ou 'desc' (padrão 'desc')
+    Exemplo de resposta (boletins_por_filtro_115425.json):
+    {
+      "parameters": {
+        "current_page": 1,
+        "per_page": 5,
+        "order": "desc",
+        "total_boletins_current_page": 5
+      },
+      "filtro": {
+        "id": 115425,
+        "descricao": "Filtro inicial de Licitação e Acompanhamentos",
+        "cliente": {
+          "id": 2982,
+          "razao_social": "Consórcio Nacional de Licitação HQZ Ltda."
+        },
+        "total_boletins": 120
+      },
+      "boletins": [
+        {
+          "id": 44657477,
+          "filtro_id": 115425,
+          "numero_edicao": 21,
+          "datahora_fechamento": "2020-11-12 13:01:19 -03:00"
+        },
+        {
+          "id": 44632454,
+          "filtro_id": 115425,
+          "numero_edicao": 20,
+          "datahora_fechamento": "2020-11-12 09:43:43 -03:00"
+        },
+        {
+          "id": 44612748,
+          "filtro_id": 115425,
+          "numero_edicao": 19,
+          "datahora_fechamento": "2020-11-11 19:14:45 -03:00"
+        },
+        {
+          "id": 44590328,
+          "filtro_id": 115425,
+          "numero_edicao": 18,
+          "datahora_fechamento": "2020-11-11 13:14:21 -03:00"
+        },
+        {
+          "id": 44567343,
+          "filtro_id": 115425,
+          "numero_edicao": 17,
+          "datahora_fechamento": "2020-11-11 09:40:40 -03:00"
+        }
+      ]
+    }
+    Campos baseado em: "Listagem dos boletins de um determinado filtro" :contentReference[oaicite:3]{index=3}
+    """
+    # Captura parâmetros de querystring
+    page = int(request.args.get("page", 1))
+    per_page = int(request.args.get("per_page", 5))
+    order = request.args.get("order", "desc").lower()
+    # Carrega o JSON de exemplo para o filtro solicitado
+    exemplo = EX_BOLETINS_POR_FILTRO.get(id_filtro)
+    if not exemplo:
+        abort(404, description="Filtro não encontrado")
+    # Ajustar apenas o que for solicitado (neste mock, retornamos exatamente o JSON de exemplo)
+    return jsonify(exemplo)
+
+
+# -----------------------------------------------------------------
+# Endpoint 3: Listagem de Licitações e Acompanhamentos de um boletim
+# GET /api/boletim/<ID_DO_BOLETIM>
+# -----------------------------------------------------------------
+@app.route("/api/boletim/<int:id_boletim>", methods=["GET"])
+def consultar_boletim(id_boletim):
+    """
+    A resposta inclui:
+    - "boletim": { id, datahora_fechamento, numero_edicao, cliente, quantidade_licitacoes, quantidade_acompanhamentos }
+    - "licitacoes": [ ... campos como orgao.nome, orgao.codigo, objeto, situacao, datahora_abertura, edital, id, etc. ]
+    - "acompanhamentos": [ ... campos como orgao.nome, objeto, sintese, data_fonte, id, licitacao_id, etc. ]
+    Baseado em: "Listagem de Licitações e Acompanhamentos de um determinado boletim" :contentReference[oaicite:4]{index=4}
+    """
+    exemplo = EX_BOLETIM.get(id_boletim)
+    if not exemplo:
+        abort(404, description="Boletim não encontrado")
+    return jsonify(exemplo)
+
+
+# ----------------------------
+# Iniciar a aplicação Flask
+# ----------------------------
+if __name__ == "__main__":
+    # Executa em localhost:5000 por padrão
+    app.run(debug=True)

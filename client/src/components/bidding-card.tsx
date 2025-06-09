@@ -26,15 +26,21 @@ export function BiddingCard({ bidding, showFavoriteIcon = true }: BiddingCardPro
   const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {
       case "nova":
-        return "bg-blue-100 text-blue-800";
+        return "bg-green-500";
       case "aberta":
-        return "bg-green-100 text-green-800";
+        return "bg-blue-500";
       case "em_analise":
-        return "bg-yellow-100 text-yellow-800";
+        return "bg-yellow-500";
+      case "urgente":
+        return "bg-red-500";
+      case "prorrogada":
+        return "bg-orange-500";
+      case "alterada":
+        return "bg-purple-500";
       case "finalizada":
-        return "bg-gray-100 text-gray-800";
+        return "bg-gray-500";
       default:
-        return "bg-gray-100 text-gray-800";
+        return "bg-gray-500";
     }
   };
 
@@ -60,25 +66,15 @@ export function BiddingCard({ bidding, showFavoriteIcon = true }: BiddingCardPro
 
   return (
     <Card className={cn(
-      "hover:shadow-md transition-shadow",
+      "hover:shadow-md transition-shadow border border-gray-200",
       showFavoriteIcon && isFavorite && "border-l-4 border-l-accent"
     )}>
-      <CardContent className="p-6">
-        <div className="flex justify-between items-start mb-4">
+      <CardContent className="p-4">
+        {/* Header with favorite */}
+        <div className="flex justify-between items-start mb-3">
           <div className="flex-1">
-            <div className="flex items-center gap-2 mb-2">
-              <h3 className="text-lg font-semibold text-gray-900">
-                {bidding.edital}
-              </h3>
-              <span className="text-sm text-gray-500">
-                (Nº ConLicitação: {bidding.conlicitacao_id})
-              </span>
-            </div>
-            <p className="text-sm text-gray-600 mb-1">
-              {bidding.orgao}
-            </p>
-            <p className="text-xs text-gray-500">
-              {bidding.cidade} - {bidding.uf}
+            <p className="text-sm text-gray-900 mb-1">
+              <span className="font-semibold">Objeto:</span> {bidding.objeto}
             </p>
           </div>
           {showFavoriteIcon && (
@@ -88,7 +84,7 @@ export function BiddingCard({ bidding, showFavoriteIcon = true }: BiddingCardPro
               onClick={handleFavoriteClick}
               disabled={isLoading}
               className={cn(
-                "transition-colors",
+                "transition-colors ml-2 flex-shrink-0",
                 isFavorite 
                   ? "text-accent hover:text-accent/80" 
                   : "text-gray-400 hover:text-accent"
@@ -96,61 +92,47 @@ export function BiddingCard({ bidding, showFavoriteIcon = true }: BiddingCardPro
             >
               <Heart 
                 className={cn(
-                  "h-5 w-5",
+                  "h-4 w-4",
                   isFavorite && "fill-current"
                 )} 
               />
             </Button>
           )}
         </div>
-        
-        <div className="space-y-3 mb-4">
-          <div>
-            <span className="text-sm text-gray-600">Objeto:</span>
-            <p className="text-sm font-medium text-gray-900 mt-1 line-clamp-3">
-              {bidding.objeto}
-            </p>
+
+        {/* Main info grid */}
+        <div className="space-y-2 text-sm">
+          <div className="flex justify-between">
+            <span className="text-gray-700"><strong>Datas:</strong> {formatDateTime(bidding.datahora_abertura)}</span>
+            <span className={cn(
+              "px-2 py-1 rounded text-xs font-medium text-white",
+              getStatusColor(bidding.situacao)
+            )}>
+              {bidding.situacao}
+            </span>
           </div>
-          <div className="grid grid-cols-2 gap-4 text-sm">
-            <div>
-              <span className="text-gray-600">Data Abertura:</span>
-              <p className="font-medium text-gray-900">
-                {formatDateTime(bidding.datahora_abertura)}
-              </p>
-            </div>
-            <div>
-              <span className="text-gray-600">Código UASG:</span>
-              <p className="font-medium text-gray-900">
-                {bidding.codigo}
-              </p>
-            </div>
+          
+          <div className="flex justify-between">
+            <span className="text-gray-700"><strong>Edital:</strong> {bidding.edital}</span>
+            <span className="text-gray-700"><strong>Nº ConLicitação:</strong> {bidding.conlicitacao_id}</span>
           </div>
-          {bidding.valor_estimado && parseFloat(bidding.valor_estimado) > 0 && (
-            <div className="flex justify-between">
-              <span className="text-sm text-gray-600">Valor Estimado:</span>
-              <span className="text-sm font-medium text-success">
-                R$ {parseFloat(bidding.valor_estimado).toLocaleString('pt-BR')}
-              </span>
-            </div>
-          )}
-        </div>
-        
-        <div className="flex items-center justify-between pt-4 border-t border-gray-100">
-          <span className={cn(
-            "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium",
-            getStatusColor(bidding.situacao)
-          )}>
-            <div className="w-1.5 h-1.5 rounded-full bg-current mr-1.5" />
-            {bidding.situacao}
-          </span>
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            className="text-primary hover:text-blue-700"
-            onClick={handleLinkClick}
-          >
-            Ver edital <ArrowRight className="ml-1 h-4 w-4" />
-          </Button>
+          
+          <div className="flex justify-between">
+            <span className="text-gray-700"><strong>Órgão:</strong> {bidding.orgao}</span>
+            <span className="text-gray-700"><strong>Status da Sessão:</strong> {bidding.situacao}</span>
+          </div>
+          
+          <div className="flex justify-between">
+            <span className="text-gray-700"><strong>Cidade:</strong> {bidding.cidade} - {bidding.uf}</span>
+            <Button 
+              variant="link" 
+              size="sm" 
+              className="text-blue-600 hover:text-blue-800 p-0 h-auto"
+              onClick={handleLinkClick}
+            >
+              <strong>Link:</strong> Acessar documento
+            </Button>
+          </div>
         </div>
       </CardContent>
     </Card>
