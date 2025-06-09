@@ -13,11 +13,11 @@ import { type Bidding } from "@shared/schema";
 export default function Biddings() {
   const [filters, setFilters] = useState({
     number: "",
-    organization: "",
+    organization: "all",
   });
 
   const { data: biddings = [], isLoading, error } = useQuery<Bidding[]>({
-    queryKey: ["/api/biddings", filters],
+    queryKey: ["/api/biddings", filters.organization === "all" ? { number: filters.number } : filters],
   });
 
   const handleSearch = () => {
@@ -77,7 +77,7 @@ export default function Biddings() {
                     <SelectValue placeholder="Todos os órgãos" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Todos os órgãos</SelectItem>
+                    <SelectItem value="all">Todos os órgãos</SelectItem>
                     <SelectItem value="prefeitura">Prefeitura Municipal</SelectItem>
                     <SelectItem value="governo-estado">Governo do Estado</SelectItem>
                     <SelectItem value="ministerio">Ministério</SelectItem>
