@@ -134,18 +134,24 @@ export class MemStorage implements IStorage {
     return user;
   }
 
-  async getBiddings(filters?: { number?: string; organization?: string }): Promise<Bidding[]> {
+  async getBiddings(filters?: { conLicitationNumber?: string; organization?: string; shift?: string }): Promise<Bidding[]> {
     let biddings = Array.from(this.biddings.values());
     
-    if (filters?.number) {
+    if (filters?.conLicitationNumber) {
       biddings = biddings.filter(b => 
-        b.number.toLowerCase().includes(filters.number!.toLowerCase())
+        b.conLicitationNumber.toLowerCase().includes(filters.conLicitationNumber!.toLowerCase())
       );
     }
     
     if (filters?.organization) {
       biddings = biddings.filter(b => 
         b.organization.toLowerCase().includes(filters.organization!.toLowerCase())
+      );
+    }
+
+    if (filters?.shift && filters.shift !== "all") {
+      biddings = biddings.filter(b => 
+        b.shift.toLowerCase() === filters.shift!.toLowerCase()
       );
     }
     

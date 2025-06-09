@@ -31,6 +31,8 @@ export function BiddingCard({ bidding, showFavoriteIcon = true }: BiddingCardPro
         return "bg-blue-100 text-blue-800";
       case "publicada":
         return "bg-yellow-100 text-yellow-800";
+      case "em análise":
+        return "bg-orange-100 text-orange-800";
       default:
         return "bg-gray-100 text-gray-800";
     }
@@ -42,6 +44,10 @@ export function BiddingCard({ bidding, showFavoriteIcon = true }: BiddingCardPro
     }
   };
 
+  const handleLinkClick = () => {
+    window.open(bidding.link, '_blank');
+  };
+
   return (
     <Card className={cn(
       "hover:shadow-md transition-shadow",
@@ -49,12 +55,20 @@ export function BiddingCard({ bidding, showFavoriteIcon = true }: BiddingCardPro
     )}>
       <CardContent className="p-6">
         <div className="flex justify-between items-start mb-4">
-          <div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-1">
-              {bidding.title}
-            </h3>
-            <p className="text-sm text-gray-600">
+          <div className="flex-1">
+            <div className="flex items-center gap-2 mb-2">
+              <h3 className="text-lg font-semibold text-gray-900">
+                {bidding.edital}
+              </h3>
+              <span className="text-sm text-gray-500">
+                (Nº {bidding.conLicitationNumber})
+              </span>
+            </div>
+            <p className="text-sm text-gray-600 mb-1">
               {bidding.organization}
+            </p>
+            <p className="text-xs text-gray-500">
+              {bidding.city}
             </p>
           </div>
           {showFavoriteIcon && (
@@ -81,28 +95,22 @@ export function BiddingCard({ bidding, showFavoriteIcon = true }: BiddingCardPro
         </div>
         
         <div className="space-y-3 mb-4">
-          <div className="flex justify-between">
+          <div>
             <span className="text-sm text-gray-600">Objeto:</span>
-            <span className="text-sm font-medium text-gray-900">
+            <p className="text-sm font-medium text-gray-900 mt-1">
               {bidding.object}
+            </p>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-sm text-gray-600">Datas:</span>
+            <span className="text-sm font-medium text-gray-900 text-right">
+              {bidding.dates}
             </span>
           </div>
           <div className="flex justify-between">
-            <span className="text-sm text-gray-600">Modalidade:</span>
+            <span className="text-sm text-gray-600">Status da Sessão:</span>
             <span className="text-sm font-medium text-gray-900">
-              {bidding.modality}
-            </span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-sm text-gray-600">Valor Estimado:</span>
-            <span className="text-sm font-medium text-success">
-              {bidding.estimatedValue}
-            </span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-sm text-gray-600">Data de Abertura:</span>
-            <span className="text-sm font-medium text-gray-900">
-              {bidding.openingDate}
+              {bidding.sessionStatus}
             </span>
           </div>
         </div>
@@ -110,13 +118,18 @@ export function BiddingCard({ bidding, showFavoriteIcon = true }: BiddingCardPro
         <div className="flex items-center justify-between pt-4 border-t border-gray-100">
           <span className={cn(
             "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium",
-            getStatusColor(bidding.status)
+            getStatusColor(bidding.situation)
           )}>
             <div className="w-1.5 h-1.5 rounded-full bg-current mr-1.5" />
-            {bidding.status}
+            {bidding.situation}
           </span>
-          <Button variant="ghost" size="sm" className="text-primary hover:text-blue-700">
-            Ver detalhes <ArrowRight className="ml-1 h-4 w-4" />
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="text-primary hover:text-blue-700"
+            onClick={handleLinkClick}
+          >
+            Ver edital <ArrowRight className="ml-1 h-4 w-4" />
           </Button>
         </div>
       </CardContent>

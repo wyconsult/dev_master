@@ -12,12 +12,13 @@ import { type Bidding } from "@shared/schema";
 
 export default function Biddings() {
   const [filters, setFilters] = useState({
-    number: "",
+    conLicitationNumber: "",
     organization: "all",
+    shift: "all",
   });
 
   const { data: biddings = [], isLoading, error } = useQuery<Bidding[]>({
-    queryKey: ["/api/biddings", filters.organization === "all" ? { number: filters.number } : filters],
+    queryKey: ["/api/biddings", filters],
   });
 
   const handleSearch = () => {
@@ -52,7 +53,7 @@ export default function Biddings() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Page Header */}
         <div className="mb-8">
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Licitações Disponíveis</h2>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Licitações</h2>
           <p className="text-gray-600">Encontre e acompanhe processos licitatórios</p>
         </div>
 
@@ -60,18 +61,18 @@ export default function Biddings() {
         <Card className="mb-8">
           <CardContent className="p-6">
             <h3 className="text-lg font-medium text-gray-900 mb-4">Filtros de Pesquisa</h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div>
-                <Label htmlFor="numero">Número da Licitação</Label>
+                <Label htmlFor="conLicitationNumber">Filtrar Número ConLicitação</Label>
                 <Input
-                  id="numero"
+                  id="conLicitationNumber"
                   placeholder="Ex: 001/2024"
-                  value={filters.number}
-                  onChange={(e) => handleFilterChange("number", e.target.value)}
+                  value={filters.conLicitationNumber}
+                  onChange={(e) => handleFilterChange("conLicitationNumber", e.target.value)}
                 />
               </div>
               <div>
-                <Label htmlFor="orgao">Órgão</Label>
+                <Label htmlFor="orgao">Filtrar Órgão</Label>
                 <Select value={filters.organization} onValueChange={(value) => handleFilterChange("organization", value)}>
                   <SelectTrigger>
                     <SelectValue placeholder="Todos os órgãos" />
@@ -82,6 +83,20 @@ export default function Biddings() {
                     <SelectItem value="governo-estado">Governo do Estado</SelectItem>
                     <SelectItem value="ministerio">Ministério</SelectItem>
                     <SelectItem value="autarquia">Autarquia</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label htmlFor="turno">Turno</Label>
+                <Select value={filters.shift} onValueChange={(value) => handleFilterChange("shift", value)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Todos os turnos" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos os turnos</SelectItem>
+                    <SelectItem value="manhã">Manhã</SelectItem>
+                    <SelectItem value="tarde">Tarde</SelectItem>
+                    <SelectItem value="noite">Noite</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
