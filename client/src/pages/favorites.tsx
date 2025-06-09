@@ -12,7 +12,7 @@ export default function Favorites() {
   const { user } = useAuth();
 
   const { data: favorites = [], isLoading, error } = useQuery<Bidding[]>({
-    queryKey: ["/api/favorites", user?.id],
+    queryKey: [`/api/favorites/${user?.id}`],
     enabled: !!user,
   });
 

@@ -17,7 +17,7 @@ export function BiddingCard({ bidding, showFavoriteIcon = true }: BiddingCardPro
   const { toggleFavorite, isLoading } = useFavorites();
 
   const { data: favoriteStatus } = useQuery({
-    queryKey: ["/api/favorites", user?.id, bidding.id],
+    queryKey: [`/api/favorites/${user?.id}/${bidding.id}`],
     enabled: !!user && showFavoriteIcon,
   });
 

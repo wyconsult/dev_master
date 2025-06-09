@@ -18,8 +18,11 @@ export function useFavorites() {
       });
       return response.json();
     },
-    onSuccess: () => {
-      client.invalidateQueries({ queryKey: ["/api/favorites"] });
+    onSuccess: (data, biddingId) => {
+      if (user) {
+        client.invalidateQueries({ queryKey: [`/api/favorites/${user.id}`] });
+        client.invalidateQueries({ queryKey: [`/api/favorites/${user.id}/${biddingId}`] });
+      }
       toast({
         title: "Sucesso",
         description: "Licitação adicionada aos favoritos",
@@ -39,8 +42,11 @@ export function useFavorites() {
       if (!user) throw new Error("User not authenticated");
       await apiRequest("DELETE", `/api/favorites/${user.id}/${biddingId}`);
     },
-    onSuccess: () => {
-      client.invalidateQueries({ queryKey: ["/api/favorites"] });
+    onSuccess: (data, biddingId) => {
+      if (user) {
+        client.invalidateQueries({ queryKey: [`/api/favorites/${user.id}`] });
+        client.invalidateQueries({ queryKey: [`/api/favorites/${user.id}/${biddingId}`] });
+      }
       toast({
         title: "Sucesso",
         description: "Licitação removida dos favoritos",
