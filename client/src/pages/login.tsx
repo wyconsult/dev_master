@@ -53,17 +53,11 @@ export default function Login() {
   };
 
   const handleSignup = () => {
-    toast({
-      title: "Funcionalidade não implementada",
-      description: "A funcionalidade de cadastro será implementada em breve.",
-    });
+    setLocation("/register");
   };
 
   const handleForgotPassword = () => {
-    toast({
-      title: "Funcionalidade não implementada",
-      description: "A funcionalidade de recuperação de senha será implementada em breve.",
-    });
+    setLocation("/forgot-password");
   };
 
   return (
@@ -73,7 +67,7 @@ export default function Login() {
           <div className="mx-auto h-16 w-16 bg-primary rounded-full flex items-center justify-center mb-6">
             <Gavel className="text-white h-8 w-8" />
           </div>
-          <h2 className="text-3xl font-bold text-gray-900 mb-2">Sistema de Licitações</h2>
+          <h2 className="text-3xl font-bold text-gray-900 mb-2">JLG Licita</h2>
           <p className="text-gray-600">Acesse sua conta para continuar</p>
         </div>
         

@@ -10,14 +10,16 @@ export const users = pgTable("users", {
 
 export const biddings = pgTable("biddings", {
   id: serial("id").primaryKey(),
-  number: text("number").notNull(),
-  title: text("title").notNull(),
-  organization: text("organization").notNull(),
   object: text("object").notNull(),
-  modality: text("modality").notNull(),
-  estimatedValue: text("estimated_value").notNull(),
-  openingDate: text("opening_date").notNull(),
-  status: text("status").notNull(),
+  dates: text("dates").notNull(),
+  situation: text("situation").notNull(),
+  edital: text("edital").notNull(),
+  conLicitationNumber: text("con_licitation_number").notNull(),
+  organization: text("organization").notNull(),
+  sessionStatus: text("session_status").notNull(),
+  city: text("city").notNull(),
+  link: text("link").notNull(),
+  shift: text("shift").notNull(), // Manhã, Tarde, Noite
 });
 
 export const favorites = pgTable("favorites", {

@@ -17,7 +17,7 @@ export interface IStorage {
   createUser(user: InsertUser): Promise<User>;
   
   // Biddings
-  getBiddings(filters?: { number?: string; organization?: string }): Promise<Bidding[]>;
+  getBiddings(filters?: { conLicitationNumber?: string; organization?: string; shift?: string }): Promise<Bidding[]>;
   getBidding(id: number): Promise<Bidding | undefined>;
   
   // Favorites
@@ -57,51 +57,59 @@ export class MemStorage implements IStorage {
     this.users.set(1, testUser);
     this.currentUserId = 2;
 
-    // Create mock biddings
+    // Create mock biddings based on new API structure
     const mockBiddings: Bidding[] = [
       {
         id: 1,
-        number: "001/2024",
-        title: "Pregão Eletrônico nº 001/2024",
+        object: "Aquisição de material de escritório para departamentos administrativos",
+        dates: "Abertura: 15/03/2024 14:00h | Encerramento: 20/03/2024 17:00h",
+        situation: "Em andamento",
+        edital: "PE001/2024",
+        conLicitationNumber: "001/2024",
         organization: "Prefeitura Municipal de São Paulo",
-        object: "Aquisição de material de escritório",
-        modality: "Pregão Eletrônico",
-        estimatedValue: "R$ 150.000,00",
-        openingDate: "15/03/2024 - 14:00h",
-        status: "Em andamento"
+        sessionStatus: "Sessão pública agendada",
+        city: "São Paulo - SP",
+        link: "https://compras.sp.gov.br/licitacao/001-2024",
+        shift: "Tarde"
       },
       {
         id: 2,
-        number: "005/2024",
-        title: "Concorrência Pública nº 005/2024",
+        object: "Construção de ponte rodoviária na rodovia SP-125",
+        dates: "Abertura: 22/03/2024 09:00h | Encerramento: 10/04/2024 16:00h",
+        situation: "Agendada",
+        edital: "CP005/2024",
+        conLicitationNumber: "005/2024",
         organization: "Governo do Estado de São Paulo",
-        object: "Construção de ponte rodoviária",
-        modality: "Concorrência Pública",
-        estimatedValue: "R$ 2.500.000,00",
-        openingDate: "22/03/2024 - 09:00h",
-        status: "Agendada"
+        sessionStatus: "Aguardando abertura",
+        city: "Campinas - SP",
+        link: "https://compras.sp.gov.br/licitacao/005-2024",
+        shift: "Manhã"
       },
       {
         id: 3,
-        number: "012/2024",
-        title: "Pregão Presencial nº 012/2024",
+        object: "Fornecimento de equipamentos de informática e periféricos",
+        dates: "Abertura: 28/03/2024 10:00h | Encerramento: 05/04/2024 15:00h",
+        situation: "Publicada",
+        edital: "PP012/2024",
+        conLicitationNumber: "012/2024",
         organization: "Ministério da Educação",
-        object: "Fornecimento de equipamentos de informática",
-        modality: "Pregão Presencial",
-        estimatedValue: "R$ 800.000,00",
-        openingDate: "28/03/2024 - 10:00h",
-        status: "Publicada"
+        sessionStatus: "Edital publicado",
+        city: "Brasília - DF",
+        link: "https://compras.gov.br/licitacao/012-2024",
+        shift: "Manhã"
       },
       {
         id: 4,
-        number: "003/2024",
-        title: "Tomada de Preços nº 003/2024",
-        organization: "Autarquia Municipal",
-        object: "Serviços de limpeza urbana",
-        modality: "Tomada de Preços",
-        estimatedValue: "R$ 450.000,00",
-        openingDate: "05/04/2024 - 15:00h",
-        status: "Em andamento"
+        object: "Prestação de serviços de limpeza urbana e coleta seletiva",
+        dates: "Abertura: 05/04/2024 15:00h | Encerramento: 15/04/2024 12:00h",
+        situation: "Em análise",
+        edital: "TP003/2024",
+        conLicitationNumber: "003/2024",
+        organization: "Prefeitura Municipal de Santos",
+        sessionStatus: "Documentação em análise",
+        city: "Santos - SP",
+        link: "https://compras.santos.sp.gov.br/licitacao/003-2024",
+        shift: "Noite"
       }
     ];
 
