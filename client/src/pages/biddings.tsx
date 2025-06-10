@@ -1,4 +1,7 @@
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { Search } from "lucide-react";
+import { type Bidding } from "@shared/schema";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -6,9 +9,6 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Navbar } from "@/components/navbar";
 import { BiddingCard } from "@/components/bidding-card";
-import { useQuery } from "@tanstack/react-query";
-import { Search } from "lucide-react";
-import { type Bidding } from "@shared/schema";
 
 export default function Biddings() {
   const [filters, setFilters] = useState({
@@ -26,7 +26,7 @@ export default function Biddings() {
   };
 
   const handleFilterChange = (key: string, value: string) => {
-    setFilters(prev => ({ ...prev, [key]: value }));
+    setFilters((prev) => ({ ...prev, [key]: value }));
   };
 
   if (error) {
@@ -49,7 +49,7 @@ export default function Biddings() {
   return (
     <div className="min-h-screen bg-gray-50">
       <Navbar />
-      
+
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Page Header */}
         <div className="mb-8">
@@ -112,9 +112,9 @@ export default function Biddings() {
 
         {/* Biddings Grid */}
         {isLoading ? (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
             {[...Array(4)].map((_, i) => (
-              <Card key={i} className="animate-pulse">
+              <Card key={i} className="animate-pulse w-full">
                 <CardContent className="p-6">
                   <div className="h-4 bg-gray-200 rounded mb-2"></div>
                   <div className="h-3 bg-gray-200 rounded mb-4"></div>
@@ -128,8 +128,8 @@ export default function Biddings() {
             ))}
           </div>
         ) : biddings.length > 0 ? (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {biddings.map((bidding) => (
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+            {biddings.map((bidding: Bidding) => (
               <BiddingCard key={bidding.id} bidding={bidding} />
             ))}
           </div>

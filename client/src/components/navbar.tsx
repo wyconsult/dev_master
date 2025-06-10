@@ -1,7 +1,7 @@
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { Link, useLocation } from "wouter";
-import { Gavel, List, Heart, LogOut } from "lucide-react";
+import { Gavel, List, Star, LogOut } from "lucide-react";
 
 export function Navbar() {
   const { logout } = useAuth();
@@ -45,7 +45,7 @@ export function Navbar() {
                     : "text-gray-700 hover:text-primary"
                 }`}
               >
-                <Heart className="mr-2 h-4 w-4" />
+                <Star className="mr-2 h-4 w-4" />
                 Favoritos
               </Button>
             </Link>
