@@ -103,6 +103,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ✅ NOVA ROTA /api/boletins – simulação
+  app.get("/api/boletins", async (req, res) => {
+    const boletinsFakes = [
+      { id: 1, data: "2025-06-17", periodo: "manha", titulo: "Boletim 1" },
+      { id: 2, data: "2025-06-17", periodo: "tarde", titulo: "Boletim 2" },
+      { id: 3, data: "2025-06-17", periodo: "noite", titulo: "Boletim 3" },
+      { id: 4, data: "2025-06-18", periodo: "manha", titulo: "Boletim 4" },
+      { id: 5, data: "2025-06-18", periodo: "noite", titulo: "Boletim 5" },
+      { id: 6, data: "2025-06-20", periodo: "tarde", titulo: "Boletim 6" },
+    ];
+
+    res.json(boletinsFakes);
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

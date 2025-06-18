@@ -21,8 +21,24 @@ export function Navbar() {
             </div>
             <h1 className="text-xl font-semibold text-gray-900">JLG Licitações</h1>
           </div>
-          
+
           <div className="flex items-center space-x-6">
+            {/* Link para BOLETINS */}
+            <Link href="/boletins">
+              <Button 
+                variant="ghost" 
+                className={`px-4 py-2 text-sm font-medium transition-colors ${
+                  location === "/boletins" 
+                    ? "text-primary" 
+                    : "text-gray-700 hover:text-primary"
+                }`}
+              >
+                <List className="mr-2 h-4 w-4" />
+                Boletins
+              </Button>
+            </Link>
+
+            {/* Link para LICITAÇÕES */}
             <Link href="/biddings">
               <Button 
                 variant="ghost" 
@@ -36,6 +52,8 @@ export function Navbar() {
                 Licitações
               </Button>
             </Link>
+
+            {/* Link para FAVORITOS */}
             <Link href="/favorites">
               <Button 
                 variant="ghost" 
@@ -49,6 +67,8 @@ export function Navbar() {
                 Favoritos
               </Button>
             </Link>
+
+            {/* BOTÃO SAIR */}
             <Button 
               variant="ghost" 
               onClick={handleLogout}

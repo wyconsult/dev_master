@@ -10,6 +10,7 @@ import ForgotPassword from "@/pages/forgot-password";
 import Biddings from "@/pages/biddings";
 import Favorites from "@/pages/favorites";
 import NotFound from "@/pages/not-found";
+import Boletins from "@/pages/boletins"; // 👈 NOVO IMPORT
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated } = useAuth();
@@ -48,6 +49,11 @@ function Router() {
         <PublicRoute>
           <ForgotPassword />
         </PublicRoute>
+      </Route>
+      <Route path="/boletins">
+        <ProtectedRoute>
+          <Boletins />
+        </ProtectedRoute>
       </Route>
       <Route path="/biddings">
         <ProtectedRoute>
