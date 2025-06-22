@@ -1,7 +1,7 @@
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { Link, useLocation } from "wouter";
-import { Gavel, List, Heart, LogOut } from "lucide-react";
+import { Gavel, List, Heart, LogOut, LayoutDashboard, FileText } from "lucide-react";
 
 export function Navbar() {
   const { logout } = useAuth();
@@ -23,6 +23,32 @@ export function Navbar() {
           </div>
           
           <div className="flex items-center space-x-6">
+            <Link href="/dashboard">
+              <Button 
+                variant="ghost" 
+                className={`px-4 py-2 text-sm font-medium transition-colors ${
+                  location === "/dashboard" 
+                    ? "text-primary" 
+                    : "text-gray-700 hover:text-primary"
+                }`}
+              >
+                <LayoutDashboard className="mr-2 h-4 w-4" />
+                Dashboard
+              </Button>
+            </Link>
+            <Link href="/boletins">
+              <Button 
+                variant="ghost" 
+                className={`px-4 py-2 text-sm font-medium transition-colors ${
+                  location === "/boletins" 
+                    ? "text-primary" 
+                    : "text-gray-700 hover:text-primary"
+                }`}
+              >
+                <FileText className="mr-2 h-4 w-4" />
+                Boletins
+              </Button>
+            </Link>
             <Link href="/biddings">
               <Button 
                 variant="ghost" 

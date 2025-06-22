@@ -7,6 +7,8 @@ import { AuthProvider, useAuth } from "@/lib/auth";
 import Login from "@/pages/login";
 import Register from "@/pages/register";
 import ForgotPassword from "@/pages/forgot-password";
+import Dashboard from "@/pages/dashboard";
+import Boletins from "@/pages/boletins";
 import Biddings from "@/pages/biddings";
 import Favorites from "@/pages/favorites";
 import NotFound from "@/pages/not-found";
@@ -25,7 +27,7 @@ function PublicRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated } = useAuth();
   
   if (isAuthenticated) {
-    return <Redirect to="/biddings" />;
+    return <Redirect to="/dashboard" />;
   }
   
   return <>{children}</>;
@@ -48,6 +50,16 @@ function Router() {
         <PublicRoute>
           <ForgotPassword />
         </PublicRoute>
+      </Route>
+      <Route path="/dashboard">
+        <ProtectedRoute>
+          <Dashboard />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/boletins">
+        <ProtectedRoute>
+          <Boletins />
+        </ProtectedRoute>
       </Route>
       <Route path="/biddings">
         <ProtectedRoute>
