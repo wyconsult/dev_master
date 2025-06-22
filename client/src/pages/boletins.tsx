@@ -33,9 +33,7 @@ export default function Boletins() {
 
   const markAsViewedMutation = useMutation({
     mutationFn: async (boletimId: number) => {
-      return apiRequest(`/api/boletins/${boletimId}/mark-viewed`, {
-        method: "POST",
-      });
+      return apiRequest("POST", `/api/boletins/${boletimId}/mark-viewed`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/boletins"] });
