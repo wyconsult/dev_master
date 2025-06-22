@@ -2,12 +2,15 @@ import {
   users, 
   biddings, 
   favorites,
+  boletins,
   type User, 
   type InsertUser,
   type Bidding,
   type InsertBidding,
   type Favorite,
-  type InsertFavorite
+  type InsertFavorite,
+  type Boletim,
+  type InsertBoletim
 } from "@shared/schema";
 
 export interface IStorage {
@@ -17,31 +20,46 @@ export interface IStorage {
   createUser(user: InsertUser): Promise<User>;
   
   // Biddings
-  getBiddings(filters?: { conlicitacao_id?: string; orgao?: string; turno?: string }): Promise<Bidding[]>;
+  getBiddings(filters?: { 
+    conlicitacao_id?: string; 
+    orgao?: string[]; 
+    uf?: string[];
+    numero_controle?: string;
+  }): Promise<Bidding[]>;
   getBidding(id: number): Promise<Bidding | undefined>;
   
   // Favorites
-  getFavorites(userId: number): Promise<Bidding[]>;
+  getFavorites(userId: number, date?: string): Promise<Bidding[]>;
   addFavorite(favorite: InsertFavorite): Promise<Favorite>;
   removeFavorite(userId: number, biddingId: number): Promise<void>;
   isFavorite(userId: number, biddingId: number): Promise<boolean>;
+  
+  // Boletins
+  getBoletins(): Promise<Boletim[]>;
+  getBoletinsByDate(date: string): Promise<Boletim[]>;
+  getBoletim(id: number): Promise<Boletim | undefined>;
+  markBoletimAsViewed(id: number): Promise<void>;
 }
 
 export class MemStorage implements IStorage {
   private users: Map<number, User>;
   private biddings: Map<number, Bidding>;
   private favorites: Map<number, Favorite>;
+  private boletins: Map<number, Boletim>;
   private currentUserId: number;
   private currentBiddingId: number;
   private currentFavoriteId: number;
+  private currentBoletimId: number;
 
   constructor() {
     this.users = new Map();
     this.biddings = new Map();
     this.favorites = new Map();
+    this.boletins = new Map();
     this.currentUserId = 1;
     this.currentBiddingId = 1;
     this.currentFavoriteId = 1;
+    this.currentBoletimId = 1;
     
     // Initialize with mock data
     this.initializeMockData();
@@ -214,7 +232,82 @@ export class MemStorage implements IStorage {
     mockBiddings.forEach(bidding => {
       this.biddings.set(bidding.id, bidding);
     });
-    this.currentBiddingId = 5;
+    this.currentBiddingId = 7;
+
+    // Create mock boletins
+    const mockBoletins: Boletim[] = [
+      {
+        id: 1,
+        numero_edicao: 1,
+        data: "2025-06-16",
+        datahora_fechamento: "2025-06-16 23:59:59",
+        filtro_id: 1,
+        quantidade_licitacoes: 5,
+        quantidade_acompanhamentos: 2,
+        status: "Publicado",
+        visualizado: false
+      },
+      {
+        id: 2,
+        numero_edicao: 2,
+        data: "2025-06-17",
+        datahora_fechamento: "2025-06-17 23:59:59",
+        filtro_id: 1,
+        quantidade_licitacoes: 3,
+        quantidade_acompanhamentos: 1,
+        status: "Publicado",
+        visualizado: true
+      },
+      {
+        id: 3,
+        numero_edicao: 3,
+        data: "2025-06-18",
+        datahora_fechamento: "2025-06-18 23:59:59",
+        filtro_id: 1,
+        quantidade_licitacoes: 8,
+        quantidade_acompanhamentos: 4,
+        status: "Publicado",
+        visualizado: false
+      },
+      {
+        id: 4,
+        numero_edicao: 4,
+        data: "2025-06-19",
+        datahora_fechamento: "2025-06-19 23:59:59",
+        filtro_id: 1,
+        quantidade_licitacoes: 2,
+        quantidade_acompanhamentos: 0,
+        status: "Em Processamento",
+        visualizado: false
+      },
+      {
+        id: 5,
+        numero_edicao: 5,
+        data: "2025-06-20",
+        datahora_fechamento: "2025-06-20 23:59:59",
+        filtro_id: 1,
+        quantidade_licitacoes: 6,
+        quantidade_acompanhamentos: 3,
+        status: "Publicado",
+        visualizado: false
+      },
+      {
+        id: 6,
+        numero_edicao: 6,
+        data: "2025-06-21",
+        datahora_fechamento: "2025-06-21 23:59:59",
+        filtro_id: 1,
+        quantidade_licitacoes: 0,
+        quantidade_acompanhamentos: 0,
+        status: "Arquivado",
+        visualizado: false
+      }
+    ];
+
+    mockBoletins.forEach(boletim => {
+      this.boletins.set(boletim.id, boletim);
+    });
+    this.currentBoletimId = 7;
   }
 
   async getUser(id: number): Promise<User | undefined> {
@@ -232,7 +325,12 @@ export class MemStorage implements IStorage {
     return user;
   }
 
-  async getBiddings(filters?: { conlicitacao_id?: string; orgao?: string; turno?: string }): Promise<Bidding[]> {
+  async getBiddings(filters?: { 
+    conlicitacao_id?: string; 
+    orgao?: string[]; 
+    uf?: string[];
+    numero_controle?: string;
+  }): Promise<Bidding[]> {
     let biddings = Array.from(this.biddings.values());
     
     if (filters?.conlicitacao_id) {
@@ -241,26 +339,25 @@ export class MemStorage implements IStorage {
       );
     }
     
-    if (filters?.orgao) {
+    if (filters?.numero_controle) {
       biddings = biddings.filter(b => 
-        b.orgao.toLowerCase().includes(filters.orgao!.toLowerCase())
+        b.codigo?.toLowerCase().includes(filters.numero_controle!.toLowerCase()) ||
+        b.processo?.toLowerCase().includes(filters.numero_controle!.toLowerCase())
+      );
+    }
+    
+    if (filters?.orgao && filters.orgao.length > 0) {
+      biddings = biddings.filter(b => 
+        filters.orgao!.some(orgao => 
+          b.orgao.toLowerCase().includes(orgao.toLowerCase())
+        )
       );
     }
 
-    if (filters?.turno && filters.turno !== "all") {
-      // Filter by time of day based on datahora_abertura
-      const turnoMap: { [key: string]: string[] } = {
-        'manhã': ['06', '07', '08', '09', '10', '11'],
-        'tarde': ['12', '13', '14', '15', '16', '17'],
-        'noite': ['18', '19', '20', '21', '22', '23']
-      };
-      
-      const horasValidas = turnoMap[filters.turno.toLowerCase()] || [];
-      
-      biddings = biddings.filter(b => {
-        const hora = b.datahora_abertura.split(' ')[1]?.split(':')[0];
-        return horasValidas.includes(hora);
-      });
+    if (filters?.uf && filters.uf.length > 0) {
+      biddings = biddings.filter(b => 
+        filters.uf!.includes(b.uf)
+      );
     }
     
     return biddings;
@@ -270,9 +367,16 @@ export class MemStorage implements IStorage {
     return this.biddings.get(id);
   }
 
-  async getFavorites(userId: number): Promise<Bidding[]> {
-    const userFavorites = Array.from(this.favorites.values())
+  async getFavorites(userId: number, date?: string): Promise<Bidding[]> {
+    let userFavorites = Array.from(this.favorites.values())
       .filter(fav => fav.userId === userId);
+
+    if (date) {
+      userFavorites = userFavorites.filter(fav => {
+        const favDate = fav.createdAt?.toISOString().split('T')[0];
+        return favDate === date;
+      });
+    }
     
     const favoriteBiddings: Bidding[] = [];
     for (const fav of userFavorites) {
@@ -287,7 +391,7 @@ export class MemStorage implements IStorage {
 
   async addFavorite(insertFavorite: InsertFavorite): Promise<Favorite> {
     const id = this.currentFavoriteId++;
-    const favorite: Favorite = { ...insertFavorite, id };
+    const favorite: Favorite = { ...insertFavorite, id, createdAt: new Date() };
     this.favorites.set(id, favorite);
     return favorite;
   }
@@ -304,6 +408,27 @@ export class MemStorage implements IStorage {
   async isFavorite(userId: number, biddingId: number): Promise<boolean> {
     return Array.from(this.favorites.values())
       .some(fav => fav.userId === userId && fav.biddingId === biddingId);
+  }
+
+  async getBoletins(): Promise<Boletim[]> {
+    return Array.from(this.boletins.values());
+  }
+
+  async getBoletinsByDate(date: string): Promise<Boletim[]> {
+    return Array.from(this.boletins.values())
+      .filter(boletim => boletim.data === date);
+  }
+
+  async getBoletim(id: number): Promise<Boletim | undefined> {
+    return this.boletins.get(id);
+  }
+
+  async markBoletimAsViewed(id: number): Promise<void> {
+    const boletim = this.boletins.get(id);
+    if (boletim) {
+      boletim.visualizado = true;
+      this.boletins.set(id, boletim);
+    }
   }
 }
 

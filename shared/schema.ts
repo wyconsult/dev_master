@@ -38,6 +38,19 @@ export const favorites = pgTable("favorites", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").notNull(),
   biddingId: integer("bidding_id").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const boletins = pgTable("boletins", {
+  id: serial("id").primaryKey(),
+  numero_edicao: integer("numero_edicao").notNull(),
+  data: text("data").notNull(),
+  datahora_fechamento: text("datahora_fechamento").notNull(),
+  filtro_id: integer("filtro_id").notNull(),
+  quantidade_licitacoes: integer("quantidade_licitacoes").notNull(),
+  quantidade_acompanhamentos: integer("quantidade_acompanhamentos").notNull(),
+  status: text("status").notNull(),
+  visualizado: boolean("visualizado").default(false).notNull(),
 });
 
 export const insertUserSchema = createInsertSchema(users).pick({
@@ -50,6 +63,11 @@ export const insertBiddingSchema = createInsertSchema(biddings).omit({
 });
 
 export const insertFavoriteSchema = createInsertSchema(favorites).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertBoletimSchema = createInsertSchema(boletins).omit({
   id: true,
 });
 
@@ -64,4 +82,6 @@ export type InsertBidding = z.infer<typeof insertBiddingSchema>;
 export type Bidding = typeof biddings.$inferSelect;
 export type InsertFavorite = z.infer<typeof insertFavoriteSchema>;
 export type Favorite = typeof favorites.$inferSelect;
+export type InsertBoletim = z.infer<typeof insertBoletimSchema>;
+export type Boletim = typeof boletins.$inferSelect;
 export type LoginRequest = z.infer<typeof loginSchema>;

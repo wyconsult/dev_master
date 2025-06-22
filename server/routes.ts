@@ -24,12 +24,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Biddings routes
   app.get("/api/biddings", async (req, res) => {
     try {
-      const { conlicitacao_id, orgao, turno } = req.query;
-      const filters = {
-        conlicitacao_id: conlicitacao_id as string,
-        orgao: orgao as string,
-        turno: turno as string,
-      };
+      const { conlicitacao_id, orgao, uf, numero_controle } = req.query;
+      const filters: any = {};
+      
+      if (conlicitacao_id) filters.conlicitacao_id = conlicitacao_id as string;
+      if (numero_controle) filters.numero_controle = numero_controle as string;
+      if (orgao) {
+        // Handle multiple orgao values
+        filters.orgao = Array.isArray(orgao) ? orgao : [orgao];
+      }
+      if (uf) {
+        // Handle multiple uf values
+        filters.uf = Array.isArray(uf) ? uf : [uf];
+      }
       
       const biddings = await storage.getBiddings(filters);
       res.json(biddings);
@@ -54,10 +61,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Favorites routes
-  app.get("/api/favorites/:userId", async (req, res) => {
+  app.get("/api/favorites", async (req, res) => {
     try {
-      const userId = parseInt(req.params.userId);
-      const favorites = await storage.getFavorites(userId);
+      // In a real app, we'd get the user ID from the session/JWT
+      const userId = 1; // Mock user ID
+      const { date } = req.query;
+      const favorites = await storage.getFavorites(userId, date as string);
       res.json(favorites);
     } catch (error) {
       res.status(500).json({ message: "Erro interno do servidor" });
@@ -98,6 +107,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const isFavorite = await storage.isFavorite(userId, biddingId);
       res.json({ isFavorite });
+    } catch (error) {
+      res.status(500).json({ message: "Erro interno do servidor" });
+    }
+  });
+
+  // Boletins routes
+  app.get("/api/boletins", async (req, res) => {
+    try {
+      const boletins = await storage.getBoletins();
+      res.json(boletins);
+    } catch (error) {
+      res.status(500).json({ message: "Erro interno do servidor" });
+    }
+  });
+
+  app.get("/api/boletins/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const boletim = await storage.getBoletim(id);
+      
+      if (!boletim) {
+        return res.status(404).json({ message: "Boletim não encontrado" });
+      }
+      
+      res.json(boletim);
+    } catch (error) {
+      res.status(500).json({ message: "Erro interno do servidor" });
+    }
+  });
+
+  app.post("/api/boletins/:id/mark-viewed", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      await storage.markBoletimAsViewed(id);
+      res.status(200).json({ message: "Boletim marcado como visualizado" });
     } catch (error) {
       res.status(500).json({ message: "Erro interno do servidor" });
     }

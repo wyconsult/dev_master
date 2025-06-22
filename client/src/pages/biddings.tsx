@@ -1,46 +1,114 @@
 import { useState } from "react";
-import { Card, CardContent } from "@/components/ui/card";
+import { useQuery } from "@tanstack/react-query";
+import { Navbar } from "@/components/navbar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Navbar } from "@/components/navbar";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { BiddingCard } from "@/components/bidding-card";
-import { useQuery } from "@tanstack/react-query";
-import { Search } from "lucide-react";
-import { type Bidding } from "@shared/schema";
+import { Filter, Search, X } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from "@/components/ui/command";
+
+interface Bidding {
+  id: number;
+  orgao: string;
+  codigo: string;
+  cidade: string;
+  uf: string;
+  endereco: string;
+  telefone: string;
+  site: string;
+  objeto: string;
+  situacao: string;
+  datahora_abertura: string;
+  datahora_documento: string;
+  datahora_retirada: string;
+  datahora_visita: string;
+  datahora_prazo: string;
+  edital: string;
+  link_edital: string;
+  processo: string;
+  observacao: string;
+  item: string;
+  preco_edital: string;
+  valor_estimado: string;
+  conlicitacao_id: number;
+}
+
+// Lista de órgãos únicos (extraída dos dados existentes)
+const ORGAOS_OPTIONS = [
+  "Empresa Maranhense de Serviços Hospitalares - EMSERH",
+  "Secretaria Estadual de Saúde", 
+  "Prefeitura Municipal de Mairiporã",
+  "AGEPEN-Agência Estadual de Administracao do Sistema Penitenciário",
+  "MINISTÉRIO DA EDUCAÇÃO - Universidade Federal de Viçosa",
+  "NUCLEBRÁS-Nuclebrás Equipamentos Pesados S/A"
+];
+
+// Lista de UFs
+const UF_OPTIONS = [
+  "AC", "AL", "AP", "AM", "BA", "CE", "DF", "ES", "GO", 
+  "MA", "MT", "MS", "MG", "PA", "PB", "PR", "PE", "PI", 
+  "RJ", "RN", "RS", "RO", "RR", "SC", "SP", "SE", "TO"
+];
 
 export default function Biddings() {
-  const [filters, setFilters] = useState({
-    conlicitacao_id: "",
-    orgao: "all",
-    turno: "all",
-  });
+  const [numeroControle, setNumeroControle] = useState("");
+  const [selectedOrgaos, setSelectedOrgaos] = useState<string[]>([]);
+  const [selectedUFs, setSelectedUFs] = useState<string[]>([]);
+  const [orgaoPopoverOpen, setOrgaoPopoverOpen] = useState(false);
+  const [ufPopoverOpen, setUfPopoverOpen] = useState(false);
 
-  const { data: biddings = [], isLoading, error } = useQuery<Bidding[]>({
-    queryKey: ["/api/biddings", filters],
-  });
-
-  const handleSearch = () => {
-    // The query will automatically refetch when filters change
+  const buildFilters = () => {
+    const filters: any = {};
+    if (numeroControle) filters.numero_controle = numeroControle;
+    if (selectedOrgaos.length > 0) filters.orgao = selectedOrgaos;
+    if (selectedUFs.length > 0) filters.uf = selectedUFs;
+    return filters;
   };
 
-  const handleFilterChange = (key: string, value: string) => {
-    setFilters(prev => ({ ...prev, [key]: value }));
+  const { data: biddings = [], isLoading } = useQuery<Bidding[]>({
+    queryKey: ["/api/biddings", buildFilters()],
+  });
+
+  const toggleOrgao = (orgao: string) => {
+    setSelectedOrgaos(prev => 
+      prev.includes(orgao) 
+        ? prev.filter(o => o !== orgao)
+        : [...prev, orgao]
+    );
   };
 
-  if (error) {
+  const toggleUF = (uf: string) => {
+    setSelectedUFs(prev => 
+      prev.includes(uf) 
+        ? prev.filter(u => u !== uf)
+        : [...prev, uf]
+    );
+  };
+
+  const clearFilters = () => {
+    setNumeroControle("");
+    setSelectedOrgaos([]);
+    setSelectedUFs([]);
+  };
+
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50">
         <Navbar />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <Card>
-            <CardContent className="pt-6">
-              <div className="text-center text-red-600">
-                Erro ao carregar licitações. Tente novamente.
-              </div>
-            </CardContent>
-          </Card>
+          <div className="animate-pulse">
+            <div className="h-8 bg-gray-200 rounded w-1/4 mb-4"></div>
+            <div className="space-y-4">
+              {[...Array(3)].map((_, i) => (
+                <div key={i} className="h-48 bg-gray-200 rounded"></div>
+              ))}
+            </div>
+          </div>
         </div>
       </div>
     );
@@ -49,99 +117,182 @@ export default function Biddings() {
   return (
     <div className="min-h-screen bg-gray-50">
       <Navbar />
-      
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Page Header */}
         <div className="mb-8">
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Licitações</h2>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Licitações</h1>
           <p className="text-gray-600">Encontre e acompanhe processos licitatórios</p>
         </div>
 
-        {/* Search Filters */}
-        <Card className="mb-8">
-          <CardContent className="p-6">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">Filtros de Pesquisa</h3>
+        {/* Filters */}
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Filter className="h-5 w-5" />
+              Filtros de Pesquisa
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              {/* Número de Controle */}
               <div>
-                <Label htmlFor="conlicitacao_id">Filtrar Número ConLicitação</Label>
-                <Input
-                  id="conlicitacao_id"
-                  placeholder="Ex: 13157470"
-                  value={filters.conlicitacao_id}
-                  onChange={(e) => handleFilterChange("conlicitacao_id", e.target.value)}
-                />
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Filtrar Número de Controle
+                </label>
+                <div className="relative">
+                  <Input
+                    placeholder="Ex. 13157470"
+                    value={numeroControle}
+                    onChange={(e) => setNumeroControle(e.target.value)}
+                  />
+                </div>
               </div>
+
+              {/* Filtrar Órgão */}
               <div>
-                <Label htmlFor="orgao">Filtrar Órgão</Label>
-                <Select value={filters.orgao} onValueChange={(value) => handleFilterChange("orgao", value)}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Todos os órgãos" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Todos os órgãos</SelectItem>
-                    <SelectItem value="prefeitura">Prefeitura Municipal</SelectItem>
-                    <SelectItem value="governo">Governo do Estado</SelectItem>
-                    <SelectItem value="superintendência">Superintendência</SelectItem>
-                    <SelectItem value="ministério">Ministério</SelectItem>
-                  </SelectContent>
-                </Select>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Filtrar Órgão
+                </label>
+                <Popover open={orgaoPopoverOpen} onOpenChange={setOrgaoPopoverOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      role="combobox"
+                      className="w-full justify-between"
+                    >
+                      {selectedOrgaos.length === 0
+                        ? "Selecione um ou mais órgãos"
+                        : `${selectedOrgaos.length} selecionado(s)`
+                      }
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-80 p-0">
+                    <Command>
+                      <CommandInput placeholder="Buscar órgão..." />
+                      <CommandEmpty>Nenhum órgão encontrado.</CommandEmpty>
+                      <CommandGroup className="max-h-64 overflow-auto">
+                        {ORGAOS_OPTIONS.map((orgao) => (
+                          <CommandItem
+                            key={orgao}
+                            onSelect={() => toggleOrgao(orgao)}
+                            className="flex items-center gap-2"
+                          >
+                            <Checkbox 
+                              checked={selectedOrgaos.includes(orgao)}
+                              onChange={() => toggleOrgao(orgao)}
+                            />
+                            <span className="flex-1 text-sm">{orgao}</span>
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
+                {selectedOrgaos.length > 0 && (
+                  <div className="mt-2 flex flex-wrap gap-1">
+                    {selectedOrgaos.map((orgao) => (
+                      <Badge key={orgao} variant="secondary" className="text-xs">
+                        {orgao.length > 30 ? `${orgao.substring(0, 30)}...` : orgao}
+                        <button
+                          onClick={() => toggleOrgao(orgao)}
+                          className="ml-1 hover:text-destructive"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </Badge>
+                    ))}
+                  </div>
+                )}
               </div>
+
+              {/* Estado (UF) */}
               <div>
-                <Label htmlFor="turno">Turno</Label>
-                <Select value={filters.turno} onValueChange={(value) => handleFilterChange("turno", value)}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Todos os turnos" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Todos os turnos</SelectItem>
-                    <SelectItem value="manhã">Manhã</SelectItem>
-                    <SelectItem value="tarde">Tarde</SelectItem>
-                    <SelectItem value="noite">Noite</SelectItem>
-                  </SelectContent>
-                </Select>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Estado (UF)
+                </label>
+                <Popover open={ufPopoverOpen} onOpenChange={setUfPopoverOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      role="combobox"
+                      className="w-full justify-between"
+                    >
+                      {selectedUFs.length === 0
+                        ? "Selecione um ou mais UFs"
+                        : selectedUFs.join(", ")
+                      }
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-64 p-0">
+                    <Command>
+                      <CommandInput placeholder="Buscar UF..." />
+                      <CommandEmpty>Nenhuma UF encontrada.</CommandEmpty>
+                      <CommandGroup className="max-h-64 overflow-auto">
+                        {UF_OPTIONS.map((uf) => (
+                          <CommandItem
+                            key={uf}
+                            onSelect={() => toggleUF(uf)}
+                            className="flex items-center gap-2"
+                          >
+                            <Checkbox 
+                              checked={selectedUFs.includes(uf)}
+                              onChange={() => toggleUF(uf)}
+                            />
+                            <span>{uf}</span>
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
+                {selectedUFs.length > 0 && (
+                  <div className="mt-2 flex flex-wrap gap-1">
+                    {selectedUFs.map((uf) => (
+                      <Badge key={uf} variant="secondary" className="text-xs">
+                        {uf}
+                        <button
+                          onClick={() => toggleUF(uf)}
+                          className="ml-1 hover:text-destructive"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </Badge>
+                    ))}
+                  </div>
+                )}
               </div>
-              <div className="flex items-end">
-                <Button onClick={handleSearch} className="w-full">
+
+              {/* Search Button */}
+              <div className="flex items-end gap-2">
+                <Button className="flex-1" variant="default">
                   <Search className="mr-2 h-4 w-4" />
                   Pesquisar
                 </Button>
+                {(numeroControle || selectedOrgaos.length > 0 || selectedUFs.length > 0) && (
+                  <Button variant="outline" onClick={clearFilters}>
+                    Limpar
+                  </Button>
+                )}
               </div>
             </div>
           </CardContent>
         </Card>
 
-        {/* Biddings Grid */}
-        {isLoading ? (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {[...Array(4)].map((_, i) => (
-              <Card key={i} className="animate-pulse">
-                <CardContent className="p-6">
-                  <div className="h-4 bg-gray-200 rounded mb-2"></div>
-                  <div className="h-3 bg-gray-200 rounded mb-4"></div>
-                  <div className="space-y-2">
-                    <div className="h-3 bg-gray-200 rounded"></div>
-                    <div className="h-3 bg-gray-200 rounded"></div>
-                    <div className="h-3 bg-gray-200 rounded"></div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        ) : biddings.length > 0 ? (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {biddings.map((bidding) => (
-              <BiddingCard key={bidding.id} bidding={bidding} />
-            ))}
-          </div>
-        ) : (
-          <Card>
-            <CardContent className="pt-6">
-              <div className="text-center py-8">
-                <p className="text-gray-500">Nenhuma licitação encontrada com os filtros aplicados.</p>
-              </div>
-            </CardContent>
-          </Card>
-        )}
+        {/* Results */}
+        <div className="space-y-4">
+          {biddings.length === 0 ? (
+            <Card>
+              <CardContent className="p-12 text-center">
+                <Search className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">Nenhuma licitação encontrada</h3>
+                <p className="text-gray-600">Não há licitações que correspondam aos seus critérios de pesquisa.</p>
+              </CardContent>
+            </Card>
+          ) : (
+            biddings.map((bidding) => (
+              <BiddingCard key={bidding.id} bidding={bidding} showFavoriteIcon={true} />
+            ))
+          )}
+        </div>
       </div>
     </div>
   );

@@ -1,327 +1,249 @@
 import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
-import { Navbar } from "@/components/navbar";
 import { useQuery } from "@tanstack/react-query";
-import { Search, FileText, Download, Calendar, Building } from "lucide-react";
+import { Navbar } from "@/components/navbar";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Calendar, ChevronLeft, ChevronRight, Eye } from "lucide-react";
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addMonths, subMonths, isToday } from "date-fns";
+import { ptBR } from "date-fns/locale";
+import { cn } from "@/lib/utils";
 
 interface Boletim {
   id: number;
   numero_edicao: number;
+  data: string;
   datahora_fechamento: string;
   filtro_id: number;
   quantidade_licitacoes: number;
   quantidade_acompanhamentos: number;
   status: "Publicado" | "Em Processamento" | "Arquivado";
+  visualizado: boolean;
 }
 
 export default function Boletins() {
-  const [filters, setFilters] = useState({
-    filtro_id: "",
-    status: "all",
-    data_inicio: "",
-    data_fim: ""
+  const [currentDate, setCurrentDate] = useState(new Date());
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+
+  const { data: boletins = [], isLoading } = useQuery<Boletim[]>({
+    queryKey: ["/api/boletins"],
   });
 
-  // Mock data for boletins based on ConLicitação API structure
-  const mockBoletins: Boletim[] = [
-    {
-      id: 44657477,
-      numero_edicao: 21,
-      datahora_fechamento: "2020-11-12 13:01:19",
-      filtro_id: 115425,
-      quantidade_licitacoes: 45,
-      quantidade_acompanhamentos: 12,
-      status: "Publicado"
-    },
-    {
-      id: 44632454,
-      numero_edicao: 20,
-      datahora_fechamento: "2020-11-12 09:43:43",
-      filtro_id: 115425,
-      quantidade_licitacoes: 38,
-      quantidade_acompanhamentos: 8,
-      status: "Publicado"
-    },
-    {
-      id: 44612748,
-      numero_edicao: 19,
-      datahora_fechamento: "2020-11-11 19:14:45",
-      filtro_id: 115425,
-      quantidade_licitacoes: 52,
-      quantidade_acompanhamentos: 15,
-      status: "Publicado"
-    },
-    {
-      id: 44590328,
-      numero_edicao: 18,
-      datahora_fechamento: "2020-11-11 13:14:21",
-      filtro_id: 115425,
-      quantidade_licitacoes: 41,
-      quantidade_acompanhamentos: 9,
-      status: "Arquivado"
-    },
-    {
-      id: 44567343,
-      numero_edicao: 17,
-      datahora_fechamento: "2020-11-11 09:40:40",
-      filtro_id: 115425,
-      quantidade_licitacoes: 33,
-      quantidade_acompanhamentos: 6,
-      status: "Arquivado"
-    }
-  ];
+  const monthStart = startOfMonth(currentDate);
+  const monthEnd = endOfMonth(currentDate);
+  const daysInMonth = eachDayOfInterval({ start: monthStart, end: monthEnd });
 
-  const handleFilterChange = (key: string, value: string) => {
-    setFilters(prev => ({ ...prev, [key]: value }));
-  };
+  // Get boletins for the selected date
+  const selectedDateBoletins = selectedDate 
+    ? boletins.filter(boletim => 
+        isSameDay(new Date(boletim.data), selectedDate)
+      )
+    : [];
 
-  const handleSearch = () => {
-    // Filter logic would be implemented here
-    console.log("Searching with filters:", filters);
-  };
-
-  const formatDateTime = (dateTime: string) => {
-    try {
-      const date = new Date(dateTime);
-      return date.toLocaleString('pt-BR');
-    } catch {
-      return dateTime;
-    }
+  const getBoletinsForDate = (date: Date) => {
+    return boletins.filter(boletim => 
+      isSameDay(new Date(boletim.data), date)
+    );
   };
 
   const getStatusColor = (status: string) => {
     switch (status) {
       case "Publicado":
-        return "bg-green-100 text-green-800";
+        return "bg-green-500";
       case "Em Processamento":
-        return "bg-yellow-100 text-yellow-800";
+        return "bg-gray-500";
       case "Arquivado":
-        return "bg-gray-100 text-gray-800";
+        return "bg-blue-500";
       default:
-        return "bg-gray-100 text-gray-800";
+        return "bg-gray-500";
     }
   };
 
-  const handleDownload = (boletimId: number) => {
-    // Download logic would be implemented here
-    console.log("Downloading boletim:", boletimId);
+  const previousMonth = () => {
+    setCurrentDate(subMonths(currentDate, 1));
   };
 
-  const handleViewDetails = (boletimId: number) => {
-    // Navigation to boletim details would be implemented here
-    console.log("Viewing boletim details:", boletimId);
+  const nextMonth = () => {
+    setCurrentDate(addMonths(currentDate, 1));
   };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <Navbar />
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="animate-pulse">
+            <div className="h-8 bg-gray-200 rounded w-1/4 mb-4"></div>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <div className="lg:col-span-2 h-96 bg-gray-200 rounded"></div>
+              <div className="h-96 bg-gray-200 rounded"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
       <Navbar />
-      
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Boletins</h1>
-          <p className="text-gray-600">
-            Visualize e gerencie todos os boletins de licitações
-          </p>
-        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Calendar Section */}
+          <div className="lg:col-span-2">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-xl">Calendário</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {/* Calendar Header */}
+                <div className="flex items-center justify-between mb-4">
+                  <Button variant="ghost" size="sm" onClick={previousMonth}>
+                    <ChevronLeft className="h-4 w-4" />
+                  </Button>
+                  <h2 className="text-lg font-semibold">
+                    {format(currentDate, "MMMM 'de' yyyy", { locale: ptBR })}
+                  </h2>
+                  <Button variant="ghost" size="sm" onClick={nextMonth}>
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </div>
 
-        {/* Filters */}
-        <Card className="mb-8">
-          <CardContent className="p-6">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">Filtros de Pesquisa</h3>
-            <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-              <div>
-                <Label htmlFor="filtro_id">ID do Filtro</Label>
-                <Input
-                  id="filtro_id"
-                  placeholder="Ex: 115425"
-                  value={filters.filtro_id}
-                  onChange={(e) => handleFilterChange("filtro_id", e.target.value)}
-                />
-              </div>
-              
-              <div>
-                <Label htmlFor="status">Status</Label>
-                <Select value={filters.status} onValueChange={(value) => handleFilterChange("status", value)}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Todos os status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Todos os status</SelectItem>
-                    <SelectItem value="Publicado">Publicado</SelectItem>
-                    <SelectItem value="Em Processamento">Em Processamento</SelectItem>
-                    <SelectItem value="Arquivado">Arquivado</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div>
-                <Label htmlFor="data_inicio">Data Início</Label>
-                <Input
-                  id="data_inicio"
-                  type="date"
-                  value={filters.data_inicio}
-                  onChange={(e) => handleFilterChange("data_inicio", e.target.value)}
-                />
-              </div>
-              
-              <div>
-                <Label htmlFor="data_fim">Data Fim</Label>
-                <Input
-                  id="data_fim"
-                  type="date"
-                  value={filters.data_fim}
-                  onChange={(e) => handleFilterChange("data_fim", e.target.value)}
-                />
-              </div>
-              
-              <div className="flex items-end">
-                <Button onClick={handleSearch} className="w-full">
-                  <Search className="mr-2 h-4 w-4" />
-                  Pesquisar
-                </Button>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Statistics */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center">
-                <FileText className="h-8 w-8 text-blue-600" />
-                <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">Total de Boletins</p>
-                  <p className="text-2xl font-bold text-gray-900">{mockBoletins.length}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center">
-                <Building className="h-8 w-8 text-green-600" />
-                <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">Licitações</p>
-                  <p className="text-2xl font-bold text-gray-900">
-                    {mockBoletins.reduce((acc, boletim) => acc + boletim.quantidade_licitacoes, 0)}
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center">
-                <Calendar className="h-8 w-8 text-purple-600" />
-                <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">Acompanhamentos</p>
-                  <p className="text-2xl font-bold text-gray-900">
-                    {mockBoletins.reduce((acc, boletim) => acc + boletim.quantidade_acompanhamentos, 0)}
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center">
-                <Download className="h-8 w-8 text-orange-600" />
-                <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">Publicados</p>
-                  <p className="text-2xl font-bold text-gray-900">
-                    {mockBoletins.filter(b => b.status === "Publicado").length}
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Boletins List */}
-        <div className="space-y-4">
-          {mockBoletins.map((boletim) => (
-            <Card key={boletim.id} className="hover:shadow-md transition-shadow">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-center space-x-4 mb-3">
-                      <h3 className="text-lg font-semibold text-gray-900">
-                        Boletim Edição #{boletim.numero_edicao}
-                      </h3>
-                      <Badge className={getStatusColor(boletim.status)}>
-                        {boletim.status}
-                      </Badge>
+                {/* Calendar Grid */}
+                <div className="grid grid-cols-7 gap-1 mb-2">
+                  {['DOM', 'SEG', 'TER', 'QUA', 'QUI', 'SEX', 'SAB'].map(day => (
+                    <div key={day} className="p-2 text-center text-sm font-medium text-gray-500">
+                      {day}
                     </div>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm text-gray-600">
-                      <div>
-                        <span className="font-medium">ID:</span> {boletim.id}
+                  ))}
+                </div>
+
+                <div className="grid grid-cols-7 gap-1">
+                  {/* Empty cells for previous month */}
+                  {Array.from({ length: monthStart.getDay() }).map((_, index) => (
+                    <div key={`empty-${index}`} className="h-16 p-1"></div>
+                  ))}
+
+                  {/* Calendar days */}
+                  {daysInMonth.map(day => {
+                    const dayBoletins = getBoletinsForDate(day);
+                    const isSelected = selectedDate && isSameDay(day, selectedDate);
+                    const isTodayDate = isToday(day);
+
+                    return (
+                      <div
+                        key={day.toISOString()}
+                        className={cn(
+                          "h-16 p-1 border border-gray-200 cursor-pointer hover:bg-gray-50 relative",
+                          isSelected && "bg-blue-100 border-blue-500",
+                          isTodayDate && "bg-blue-600 text-white"
+                        )}
+                        onClick={() => setSelectedDate(day)}
+                      >
+                        <div className={cn(
+                          "text-sm font-medium",
+                          isTodayDate ? "text-white" : "text-gray-900",
+                          !isSameMonth(day, currentDate) && "text-gray-400"
+                        )}>
+                          {format(day, "d")}
+                        </div>
+                        
+                        {/* Show boletins for this day */}
+                        <div className="mt-1 space-y-1">
+                          {dayBoletins.slice(0, 2).map((boletim, index) => (
+                            <div
+                              key={`${boletim.id}-${index}`}
+                              className={cn(
+                                "text-xs px-1 py-0.5 rounded text-white text-center",
+                                boletim.visualizado ? "bg-gray-400" : getStatusColor(boletim.status)
+                              )}
+                            >
+                              Boletim {boletim.numero_edicao}
+                            </div>
+                          ))}
+                          {dayBoletins.length > 2 && (
+                            <div className="text-xs text-gray-500 text-center">
+                              +{dayBoletins.length - 2} mais
+                            </div>
+                          )}
+                        </div>
                       </div>
-                      <div>
-                        <span className="font-medium">Filtro ID:</span> {boletim.filtro_id}
-                      </div>
-                      <div>
-                        <span className="font-medium">Data Fechamento:</span> {formatDateTime(boletim.datahora_fechamento)}
-                      </div>
-                      <div>
-                        <span className="font-medium">Licitações:</span> {boletim.quantidade_licitacoes} | 
-                        <span className="font-medium"> Acompanhamentos:</span> {boletim.quantidade_acompanhamentos}
-                      </div>
-                    </div>
+                    );
+                  })}
+                </div>
+
+                {/* Legend */}
+                <div className="mt-4 flex flex-wrap gap-4 text-sm">
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 bg-green-500 rounded"></div>
+                    <span>Não visualizado</span>
                   </div>
-                  
-                  <div className="flex space-x-2 ml-4">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleViewDetails(boletim.id)}
-                    >
-                      <FileText className="mr-1 h-4 w-4" />
-                      Visualizar
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleDownload(boletim.id)}
-                    >
-                      <Download className="mr-1 h-4 w-4" />
-                      Download
-                    </Button>
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 bg-gray-400 rounded"></div>
+                    <span>Visualizado</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 bg-blue-600 rounded"></div>
+                    <span>Visualizado por outro usuário da organização</span>
                   </div>
                 </div>
               </CardContent>
             </Card>
-          ))}
-        </div>
+          </div>
 
-        {/* Pagination */}
-        <div className="mt-8 flex justify-center">
-          <div className="flex space-x-2">
-            <Button variant="outline" size="sm" disabled>
-              Anterior
-            </Button>
-            <Button variant="outline" size="sm" className="bg-primary text-primary-foreground">
-              1
-            </Button>
-            <Button variant="outline" size="sm">
-              2
-            </Button>
-            <Button variant="outline" size="sm">
-              3
-            </Button>
-            <Button variant="outline" size="sm">
-              Próximo
-            </Button>
+          {/* Boletins Sidebar */}
+          <div>
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">
+                  {selectedDate 
+                    ? `Boletins de ${format(selectedDate, "dd 'de' MMMM yyyy", { locale: ptBR })}`
+                    : "Selecione uma data"
+                  }
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {!selectedDate ? (
+                  <div className="text-center py-8">
+                    <Calendar className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                    <p className="text-gray-600">Clique em um dia do calendário para ver os boletins</p>
+                  </div>
+                ) : selectedDateBoletins.length === 0 ? (
+                  <div className="text-center py-8">
+                    <Calendar className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                    <p className="text-gray-600">Nenhum boletim para este dia.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {selectedDateBoletins.map((boletim) => (
+                      <Card key={boletim.id} className="border">
+                        <CardContent className="p-4">
+                          <div className="flex items-start justify-between mb-2">
+                            <h4 className="font-medium">Boletim #{boletim.numero_edicao}</h4>
+                            <Badge 
+                              variant={boletim.visualizado ? "secondary" : "default"}
+                              className={cn(
+                                !boletim.visualizado && getStatusColor(boletim.status)
+                              )}
+                            >
+                              {boletim.status}
+                            </Badge>
+                          </div>
+                          <div className="space-y-1 text-sm text-gray-600">
+                            <p>Licitações: {boletim.quantidade_licitacoes}</p>
+                            <p>Acompanhamentos: {boletim.quantidade_acompanhamentos}</p>
+                          </div>
+                          <Button variant="outline" size="sm" className="w-full mt-3">
+                            <Eye className="h-4 w-4 mr-2" />
+                            Acessar documento
+                          </Button>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           </div>
         </div>
       </div>
