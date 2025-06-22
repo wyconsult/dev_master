@@ -234,13 +234,14 @@ export class MemStorage implements IStorage {
     });
     this.currentBiddingId = 7;
 
-    // Create mock boletins
+    // Create mock boletins - 3 por dia (manhã, tarde, noite) conforme documentação da API
     const mockBoletins: Boletim[] = [
+      // 16/06/2025
       {
         id: 1,
         numero_edicao: 1,
         data: "2025-06-16",
-        datahora_fechamento: "2025-06-16 23:59:59",
+        datahora_fechamento: "2025-06-16 11:59:59",
         filtro_id: 1,
         quantidade_licitacoes: 5,
         quantidade_acompanhamentos: 2,
@@ -250,8 +251,8 @@ export class MemStorage implements IStorage {
       {
         id: 2,
         numero_edicao: 2,
-        data: "2025-06-17",
-        datahora_fechamento: "2025-06-17 23:59:59",
+        data: "2025-06-16",
+        datahora_fechamento: "2025-06-16 17:59:59",
         filtro_id: 1,
         quantidade_licitacoes: 3,
         quantidade_acompanhamentos: 1,
@@ -261,8 +262,54 @@ export class MemStorage implements IStorage {
       {
         id: 3,
         numero_edicao: 3,
+        data: "2025-06-16",
+        datahora_fechamento: "2025-06-16 23:59:59",
+        filtro_id: 1,
+        quantidade_licitacoes: 2,
+        quantidade_acompanhamentos: 0,
+        status: "Publicado",
+        visualizado: false
+      },
+      // 17/06/2025
+      {
+        id: 4,
+        numero_edicao: 4,
+        data: "2025-06-17",
+        datahora_fechamento: "2025-06-17 11:59:59",
+        filtro_id: 1,
+        quantidade_licitacoes: 4,
+        quantidade_acompanhamentos: 1,
+        status: "Publicado",
+        visualizado: false
+      },
+      {
+        id: 5,
+        numero_edicao: 5,
+        data: "2025-06-17",
+        datahora_fechamento: "2025-06-17 17:59:59",
+        filtro_id: 1,
+        quantidade_licitacoes: 6,
+        quantidade_acompanhamentos: 2,
+        status: "Publicado",
+        visualizado: true
+      },
+      {
+        id: 6,
+        numero_edicao: 6,
+        data: "2025-06-17",
+        datahora_fechamento: "2025-06-17 23:59:59",
+        filtro_id: 1,
+        quantidade_licitacoes: 1,
+        quantidade_acompanhamentos: 0,
+        status: "Em Processamento",
+        visualizado: false
+      },
+      // 18/06/2025
+      {
+        id: 7,
+        numero_edicao: 7,
         data: "2025-06-18",
-        datahora_fechamento: "2025-06-18 23:59:59",
+        datahora_fechamento: "2025-06-18 11:59:59",
         filtro_id: 1,
         quantidade_licitacoes: 8,
         quantidade_acompanhamentos: 4,
@@ -270,10 +317,33 @@ export class MemStorage implements IStorage {
         visualizado: false
       },
       {
-        id: 4,
-        numero_edicao: 4,
+        id: 8,
+        numero_edicao: 8,
+        data: "2025-06-18",
+        datahora_fechamento: "2025-06-18 17:59:59",
+        filtro_id: 1,
+        quantidade_licitacoes: 5,
+        quantidade_acompanhamentos: 3,
+        status: "Publicado",
+        visualizado: false
+      },
+      {
+        id: 9,
+        numero_edicao: 9,
+        data: "2025-06-18",
+        datahora_fechamento: "2025-06-18 23:59:59",
+        filtro_id: 1,
+        quantidade_licitacoes: 3,
+        quantidade_acompanhamentos: 1,
+        status: "Publicado",
+        visualizado: false
+      },
+      // 19/06/2025
+      {
+        id: 10,
+        numero_edicao: 10,
         data: "2025-06-19",
-        datahora_fechamento: "2025-06-19 23:59:59",
+        datahora_fechamento: "2025-06-19 11:59:59",
         filtro_id: 1,
         quantidade_licitacoes: 2,
         quantidade_acompanhamentos: 0,
@@ -281,25 +351,93 @@ export class MemStorage implements IStorage {
         visualizado: false
       },
       {
-        id: 5,
-        numero_edicao: 5,
-        data: "2025-06-20",
-        datahora_fechamento: "2025-06-20 23:59:59",
+        id: 11,
+        numero_edicao: 11,
+        data: "2025-06-19",
+        datahora_fechamento: "2025-06-19 17:59:59",
         filtro_id: 1,
-        quantidade_licitacoes: 6,
+        quantidade_licitacoes: 0,
+        quantidade_acompanhamentos: 0,
+        status: "Em Processamento",
+        visualizado: false
+      },
+      {
+        id: 12,
+        numero_edicao: 12,
+        data: "2025-06-19",
+        datahora_fechamento: "2025-06-19 23:59:59",
+        filtro_id: 1,
+        quantidade_licitacoes: 1,
+        quantidade_acompanhamentos: 0,
+        status: "Em Processamento",
+        visualizado: false
+      },
+      // 20/06/2025
+      {
+        id: 13,
+        numero_edicao: 13,
+        data: "2025-06-20",
+        datahora_fechamento: "2025-06-20 11:59:59",
+        filtro_id: 1,
+        quantidade_licitacoes: 7,
         quantidade_acompanhamentos: 3,
         status: "Publicado",
         visualizado: false
       },
       {
-        id: 6,
-        numero_edicao: 6,
+        id: 14,
+        numero_edicao: 14,
+        data: "2025-06-20",
+        datahora_fechamento: "2025-06-20 17:59:59",
+        filtro_id: 1,
+        quantidade_licitacoes: 4,
+        quantidade_acompanhamentos: 2,
+        status: "Publicado",
+        visualizado: false
+      },
+      {
+        id: 15,
+        numero_edicao: 15,
+        data: "2025-06-20",
+        datahora_fechamento: "2025-06-20 23:59:59",
+        filtro_id: 1,
+        quantidade_licitacoes: 2,
+        quantidade_acompanhamentos: 1,
+        status: "Publicado",
+        visualizado: false
+      },
+      // 21/06/2025 - hoje
+      {
+        id: 16,
+        numero_edicao: 16,
+        data: "2025-06-21",
+        datahora_fechamento: "2025-06-21 11:59:59",
+        filtro_id: 1,
+        quantidade_licitacoes: 3,
+        quantidade_acompanhamentos: 1,
+        status: "Publicado",
+        visualizado: false
+      },
+      {
+        id: 17,
+        numero_edicao: 17,
+        data: "2025-06-21",
+        datahora_fechamento: "2025-06-21 17:59:59",
+        filtro_id: 1,
+        quantidade_licitacoes: 0,
+        quantidade_acompanhamentos: 0,
+        status: "Em Processamento",
+        visualizado: false
+      },
+      {
+        id: 18,
+        numero_edicao: 18,
         data: "2025-06-21",
         datahora_fechamento: "2025-06-21 23:59:59",
         filtro_id: 1,
         quantidade_licitacoes: 0,
         quantidade_acompanhamentos: 0,
-        status: "Arquivado",
+        status: "Em Processamento",
         visualizado: false
       }
     ];
@@ -307,7 +445,7 @@ export class MemStorage implements IStorage {
     mockBoletins.forEach(boletim => {
       this.boletins.set(boletim.id, boletim);
     });
-    this.currentBoletimId = 7;
+    this.currentBoletimId = 19;
   }
 
   async getUser(id: number): Promise<User | undefined> {

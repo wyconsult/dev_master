@@ -148,24 +148,29 @@ export default function Boletins() {
                           {format(day, "d")}
                         </div>
                         
-                        {/* Show boletins for this day */}
+                        {/* Show boletins for this day - Always 3 per day */}
                         <div className="mt-1 space-y-1">
-                          {dayBoletins.slice(0, 2).map((boletim, index) => (
-                            <div
-                              key={`${boletim.id}-${index}`}
-                              className={cn(
-                                "text-xs px-1 py-0.5 rounded text-white text-center",
-                                boletim.visualizado ? "bg-gray-400" : getStatusColor(boletim.status)
-                              )}
-                            >
-                              Boletim {boletim.numero_edicao}
-                            </div>
-                          ))}
-                          {dayBoletins.length > 2 && (
-                            <div className="text-xs text-gray-500 text-center">
-                              +{dayBoletins.length - 2} mais
-                            </div>
-                          )}
+                          {dayBoletins.slice(0, 3).map((boletim, index) => {
+                            const getTurno = (fechamento: string) => {
+                              const hora = fechamento.split(' ')[1]?.split(':')[0];
+                              if (hora === '11') return 'M';
+                              if (hora === '17') return 'T';
+                              if (hora === '23') return 'N';
+                              return 'M';
+                            };
+                            
+                            return (
+                              <div
+                                key={`${boletim.id}-${index}`}
+                                className={cn(
+                                  "text-xs px-1 py-0.5 rounded text-white text-center",
+                                  boletim.visualizado ? "bg-gray-400" : getStatusColor(boletim.status)
+                                )}
+                              >
+                                {getTurno(boletim.datahora_fechamento)} {boletim.numero_edicao}
+                              </div>
+                            );
+                          })}
                         </div>
                       </div>
                     );
@@ -215,31 +220,45 @@ export default function Boletins() {
                   </div>
                 ) : (
                   <div className="space-y-3">
-                    {selectedDateBoletins.map((boletim) => (
-                      <Card key={boletim.id} className="border">
-                        <CardContent className="p-4">
-                          <div className="flex items-start justify-between mb-2">
-                            <h4 className="font-medium">Boletim #{boletim.numero_edicao}</h4>
-                            <Badge 
-                              variant={boletim.visualizado ? "secondary" : "default"}
-                              className={cn(
-                                !boletim.visualizado && getStatusColor(boletim.status)
-                              )}
-                            >
-                              {boletim.status}
-                            </Badge>
-                          </div>
-                          <div className="space-y-1 text-sm text-gray-600">
-                            <p>Licitações: {boletim.quantidade_licitacoes}</p>
-                            <p>Acompanhamentos: {boletim.quantidade_acompanhamentos}</p>
-                          </div>
-                          <Button variant="outline" size="sm" className="w-full mt-3">
-                            <Eye className="h-4 w-4 mr-2" />
-                            Acessar documento
-                          </Button>
-                        </CardContent>
-                      </Card>
-                    ))}
+                    {selectedDateBoletins.map((boletim) => {
+                      const getTurnoCompleto = (fechamento: string) => {
+                        const hora = fechamento.split(' ')[1]?.split(':')[0];
+                        if (hora === '11') return 'Manhã';
+                        if (hora === '17') return 'Tarde';
+                        if (hora === '23') return 'Noite';
+                        return 'Manhã';
+                      };
+
+                      return (
+                        <Card key={boletim.id} className="border">
+                          <CardContent className="p-4">
+                            <div className="flex items-start justify-between mb-2">
+                              <div>
+                                <h4 className="font-medium">Boletim #{boletim.numero_edicao}</h4>
+                                <p className="text-xs text-gray-500">{getTurnoCompleto(boletim.datahora_fechamento)}</p>
+                              </div>
+                              <Badge 
+                                variant={boletim.visualizado ? "secondary" : "default"}
+                                className={cn(
+                                  !boletim.visualizado && getStatusColor(boletim.status)
+                                )}
+                              >
+                                {boletim.status}
+                              </Badge>
+                            </div>
+                            <div className="space-y-1 text-sm text-gray-600">
+                              <p>Licitações: {boletim.quantidade_licitacoes}</p>
+                              <p>Acompanhamentos: {boletim.quantidade_acompanhamentos}</p>
+                              <p>Fechamento: {new Date(boletim.datahora_fechamento).toLocaleString('pt-BR')}</p>
+                            </div>
+                            <Button variant="outline" size="sm" className="w-full mt-3">
+                              <Eye className="h-4 w-4 mr-2" />
+                              Acessar documento
+                            </Button>
+                          </CardContent>
+                        </Card>
+                      );
+                    })}
                   </div>
                 )}
               </CardContent>
