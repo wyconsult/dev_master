@@ -121,7 +121,7 @@ export default function Boletins() {
                 <div className="grid grid-cols-7 gap-1">
                   {/* Empty cells for previous month */}
                   {Array.from({ length: monthStart.getDay() }).map((_, index) => (
-                    <div key={`empty-${index}`} className="h-20 p-1"></div>
+                    <div key={`empty-${index}`} className="h-24 p-1"></div>
                   ))}
 
                   {/* Calendar days */}
@@ -134,14 +134,14 @@ export default function Boletins() {
                       <div
                         key={day.toISOString()}
                         className={cn(
-                          "h-20 p-1 border border-gray-200 cursor-pointer hover:bg-gray-50 relative flex flex-col",
+                          "h-24 p-1 border border-gray-200 cursor-pointer hover:bg-gray-50 relative flex flex-col",
                           isSelected && "bg-blue-100 border-blue-500",
                           isTodayDate && "bg-blue-600 text-white"
                         )}
                         onClick={() => setSelectedDate(day)}
                       >
                         <div className={cn(
-                          "text-sm font-medium mb-1",
+                          "text-sm font-medium mb-1 flex-shrink-0",
                           isTodayDate ? "text-white" : "text-gray-900",
                           !isSameMonth(day, currentDate) && "text-gray-400"
                         )}>
@@ -149,7 +149,7 @@ export default function Boletins() {
                         </div>
                         
                         {/* Show boletins for this day - Always 3 per day */}
-                        <div className="flex-1 flex flex-col gap-0.5 overflow-hidden">
+                        <div className="flex-1 flex flex-col justify-start gap-0.5 min-h-0">
                           {dayBoletins.slice(0, 3).map((boletim, index) => {
                             const getTurno = (fechamento: string) => {
                               const hora = fechamento.split(' ')[1]?.split(':')[0];
@@ -163,10 +163,10 @@ export default function Boletins() {
                               <div
                                 key={`${boletim.id}-${index}`}
                                 className={cn(
-                                  "text-xs px-1 py-0.5 rounded text-white text-center min-h-4 flex items-center justify-center",
+                                  "text-xs px-0.5 py-0.5 rounded text-white text-center flex-shrink-0 leading-none",
                                   boletim.visualizado ? "bg-gray-400" : getStatusColor(boletim.status)
                                 )}
-                                style={{ fontSize: '10px' }}
+                                style={{ fontSize: '9px', minHeight: '14px', lineHeight: '14px' }}
                               >
                                 {getTurno(boletim.datahora_fechamento)} {boletim.numero_edicao}
                               </div>
