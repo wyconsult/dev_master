@@ -426,7 +426,7 @@ export class MemStorage implements IStorage {
         filtro_id: 1,
         quantidade_licitacoes: 0,
         quantidade_acompanhamentos: 0,
-        status: "Em Processamento",
+        status: "Arquivado",
         visualizado: false
       },
       {

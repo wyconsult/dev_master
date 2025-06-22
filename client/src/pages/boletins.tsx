@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Navbar } from "@/components/navbar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,6 +8,7 @@ import { Calendar, ChevronLeft, ChevronRight, Eye } from "lucide-react";
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addMonths, subMonths, isToday } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
+import { apiRequest } from "@/lib/queryClient";
 
 interface Boletim {
   id: number;
@@ -24,9 +25,21 @@ interface Boletim {
 export default function Boletins() {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const queryClient = useQueryClient();
 
   const { data: boletins = [], isLoading } = useQuery<Boletim[]>({
     queryKey: ["/api/boletins"],
+  });
+
+  const markAsViewedMutation = useMutation({
+    mutationFn: async (boletimId: number) => {
+      return apiRequest(`/api/boletins/${boletimId}/mark-viewed`, {
+        method: "POST",
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/boletins"] });
+    },
   });
 
   const monthStart = startOfMonth(currentDate);
@@ -46,16 +59,20 @@ export default function Boletins() {
     );
   };
 
-  const getStatusColor = (status: string) => {
+  const getStatusColor = (status: string, visualizado: boolean) => {
+    if (visualizado) {
+      return "bg-gray-400"; // Cinza - visualizado pelo usuário principal
+    }
+    
     switch (status) {
       case "Publicado":
-        return "bg-green-500";
+        return "bg-green-500"; // Verde - não visualizado
       case "Em Processamento":
-        return "bg-gray-500";
+        return "bg-green-500"; // Verde - não visualizado 
       case "Arquivado":
-        return "bg-blue-500";
+        return "bg-blue-500"; // Azul - visualizado por outro usuário da organização
       default:
-        return "bg-gray-500";
+        return "bg-green-500";
     }
   };
 
@@ -164,7 +181,7 @@ export default function Boletins() {
                                 key={`${boletim.id}-${index}`}
                                 className={cn(
                                   "text-xs px-0.5 py-0.5 rounded text-white text-center flex-shrink-0 leading-none",
-                                  boletim.visualizado ? "bg-gray-400" : getStatusColor(boletim.status)
+                                  getStatusColor(boletim.status, boletim.visualizado)
                                 )}
                                 style={{ fontSize: '9px', minHeight: '14px', lineHeight: '14px' }}
                               >
@@ -252,9 +269,15 @@ export default function Boletins() {
                               <p>Acompanhamentos: {boletim.quantidade_acompanhamentos}</p>
                               <p>Fechamento: {new Date(boletim.datahora_fechamento).toLocaleString('pt-BR')}</p>
                             </div>
-                            <Button variant="outline" size="sm" className="w-full mt-3">
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              className="w-full mt-3"
+                              onClick={() => markAsViewedMutation.mutate(boletim.id)}
+                              disabled={markAsViewedMutation.isPending}
+                            >
                               <Eye className="h-4 w-4 mr-2" />
-                              Acessar documento
+                              {markAsViewedMutation.isPending ? "Acessando..." : "Acessar documento"}
                             </Button>
                           </CardContent>
                         </Card>
