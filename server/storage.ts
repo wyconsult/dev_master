@@ -29,7 +29,7 @@ export interface IStorage {
   getBidding(id: number): Promise<Bidding | undefined>;
   
   // Favorites
-  getFavorites(userId: number, date?: string): Promise<Bidding[]>;
+  getFavorites(userId: number, date?: string, dateFrom?: string, dateTo?: string): Promise<Bidding[]>;
   addFavorite(favorite: InsertFavorite): Promise<Favorite>;
   removeFavorite(userId: number, biddingId: number): Promise<void>;
   isFavorite(userId: number, biddingId: number): Promise<boolean>;
@@ -505,14 +505,35 @@ export class MemStorage implements IStorage {
     return this.biddings.get(id);
   }
 
-  async getFavorites(userId: number, date?: string): Promise<Bidding[]> {
+  async getFavorites(userId: number, date?: string, dateFrom?: string, dateTo?: string): Promise<Bidding[]> {
     let userFavorites = Array.from(this.favorites.values())
       .filter(fav => fav.userId === userId);
 
+    // Filter by single date (backward compatibility)
     if (date) {
       userFavorites = userFavorites.filter(fav => {
         const favDate = fav.createdAt?.toISOString().split('T')[0];
         return favDate === date;
+      });
+    }
+    
+    // Filter by date range
+    if (dateFrom || dateTo) {
+      userFavorites = userFavorites.filter(fav => {
+        const favDate = fav.createdAt?.toISOString().split('T')[0];
+        if (!favDate) return false;
+        
+        let isInRange = true;
+        
+        if (dateFrom) {
+          isInRange = isInRange && favDate >= dateFrom;
+        }
+        
+        if (dateTo) {
+          isInRange = isInRange && favDate <= dateTo;
+        }
+        
+        return isInRange;
       });
     }
     

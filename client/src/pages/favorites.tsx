@@ -86,15 +86,18 @@ export default function Favorites() {
   const [numeroControle, setNumeroControle] = useState("");
   const [selectedOrgaos, setSelectedOrgaos] = useState<string[]>([]);
   const [selectedUFs, setSelectedUFs] = useState<string[]>([]);
-  const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
+  const [dateRange, setDateRange] = useState<{from?: Date, to?: Date}>({});
   const [orgaoPopoverOpen, setOrgaoPopoverOpen] = useState(false);
   const [ufPopoverOpen, setUfPopoverOpen] = useState(false);
   const [datePopoverOpen, setDatePopoverOpen] = useState(false);
 
   const buildQueryParams = () => {
     const params = new URLSearchParams();
-    if (selectedDate) {
-      params.append('date', format(selectedDate, 'yyyy-MM-dd'));
+    if (dateRange.from) {
+      params.append('dateFrom', format(dateRange.from, 'yyyy-MM-dd'));
+    }
+    if (dateRange.to) {
+      params.append('dateTo', format(dateRange.to, 'yyyy-MM-dd'));
     }
     return params.toString();
   };
@@ -140,7 +143,7 @@ export default function Favorites() {
     setNumeroControle("");
     setSelectedOrgaos([]);
     setSelectedUFs([]);
-    setSelectedDate(undefined);
+    setDateRange({});
   };
 
   if (isLoading) {
@@ -308,10 +311,10 @@ export default function Favorites() {
                 )}
               </div>
 
-              {/* Selecionar data */}
+              {/* Selecionar período */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Selecionar data
+                  Selecionar período
                 </label>
                 <Popover open={datePopoverOpen} onOpenChange={setDatePopoverOpen}>
                   <PopoverTrigger asChild>
@@ -319,29 +322,44 @@ export default function Favorites() {
                       variant="outline"
                       className={cn(
                         "w-full justify-start text-left font-normal",
-                        !selectedDate && "text-muted-foreground"
+                        !dateRange.from && "text-muted-foreground"
                       )}
                     >
                       <CalendarIcon className="mr-2 h-4 w-4" />
-                      {selectedDate ? format(selectedDate, "PPP", { locale: ptBR }) : "Escolha a data"}
+                      {dateRange.from ? (
+                        dateRange.to ? (
+                          `${format(dateRange.from, "dd/MM/yy")} - ${format(dateRange.to, "dd/MM/yy")}`
+                        ) : (
+                          format(dateRange.from, "dd/MM/yy")
+                        )
+                      ) : (
+                        "Escolha o período"
+                      )}
                     </Button>
                   </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0">
+                  <PopoverContent className="w-auto p-0" align="start">
                     <Calendar
-                      mode="single"
-                      selected={selectedDate}
-                      onSelect={setSelectedDate}
-                      initialFocus
+                      mode="range"
+                      defaultMonth={dateRange.from}
+                      selected={dateRange.from ? { from: dateRange.from, to: dateRange.to } as any : undefined}
+                      onSelect={(range) => setDateRange({ from: range?.from, to: range?.to })}
+                      numberOfMonths={2}
                       locale={ptBR}
                     />
                   </PopoverContent>
                 </Popover>
-                {selectedDate && (
+                {(dateRange.from || dateRange.to) && (
                   <div className="mt-2">
                     <Badge variant="secondary" className="text-xs">
-                      {format(selectedDate, "dd/MM/yyyy")}
+                      {dateRange.from && dateRange.to ? (
+                        `${format(dateRange.from, "dd/MM/yy")} - ${format(dateRange.to, "dd/MM/yy")}`
+                      ) : dateRange.from ? (
+                        format(dateRange.from, "dd/MM/yy")
+                      ) : (
+                        "Período inválido"
+                      )}
                       <button
-                        onClick={() => setSelectedDate(undefined)}
+                        onClick={() => setDateRange({})}
                         className="ml-1 hover:text-destructive"
                       >
                         <X className="h-3 w-3" />
@@ -357,7 +375,7 @@ export default function Favorites() {
                   <Search className="mr-2 h-4 w-4" />
                   Pesquisar
                 </Button>
-                {(numeroControle || selectedOrgaos.length > 0 || selectedUFs.length > 0 || selectedDate) && (
+                {(numeroControle || selectedOrgaos.length > 0 || selectedUFs.length > 0 || dateRange.from) && (
                   <Button variant="outline" onClick={clearFilters}>
                     Limpar
                   </Button>

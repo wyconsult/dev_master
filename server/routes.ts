@@ -65,8 +65,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       // In a real app, we'd get the user ID from the session/JWT
       const userId = 1; // Mock user ID
-      const { date } = req.query;
-      const favorites = await storage.getFavorites(userId, date as string);
+      const { date, dateFrom, dateTo } = req.query;
+      const favorites = await storage.getFavorites(userId, date as string, dateFrom as string, dateTo as string);
       res.json(favorites);
     } catch (error) {
       res.status(500).json({ message: "Erro interno do servidor" });
