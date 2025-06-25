@@ -109,6 +109,7 @@ export default function Favorites() {
   // Filter favorites based on form filters
   const filteredFavorites = favorites.filter(bidding => {
     const matchesNumeroControle = !numeroControle || 
+      bidding.conlicitacao_id?.toString().includes(numeroControle) ||
       bidding.codigo?.toLowerCase().includes(numeroControle.toLowerCase()) ||
       bidding.processo?.toLowerCase().includes(numeroControle.toLowerCase());
     
