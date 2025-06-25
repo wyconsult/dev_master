@@ -48,11 +48,35 @@ const ORGAOS_OPTIONS = [
   "NUCLEBRÁS-Nuclebrás Equipamentos Pesados S/A"
 ];
 
-// Lista de UFs
+// Lista de UFs com nomes completos para evitar confusão
 const UF_OPTIONS = [
-  "AC", "AL", "AP", "AM", "BA", "CE", "DF", "ES", "GO", 
-  "MA", "MT", "MS", "MG", "PA", "PB", "PR", "PE", "PI", 
-  "RJ", "RN", "RS", "RO", "RR", "SC", "SP", "SE", "TO"
+  { code: "AC", name: "AC - Acre" },
+  { code: "AL", name: "AL - Alagoas" },
+  { code: "AP", name: "AP - Amapá" },
+  { code: "AM", name: "AM - Amazonas" },
+  { code: "BA", name: "BA - Bahia" },
+  { code: "CE", name: "CE - Ceará" },
+  { code: "DF", name: "DF - Distrito Federal" },
+  { code: "ES", name: "ES - Espírito Santo" },
+  { code: "GO", name: "GO - Goiás" },
+  { code: "MA", name: "MA - Maranhão" },
+  { code: "MT", name: "MT - Mato Grosso" },
+  { code: "MS", name: "MS - Mato Grosso do Sul" },
+  { code: "MG", name: "MG - Minas Gerais" },
+  { code: "PA", name: "PA - Pará" },
+  { code: "PB", name: "PB - Paraíba" },
+  { code: "PR", name: "PR - Paraná" },
+  { code: "PE", name: "PE - Pernambuco" },
+  { code: "PI", name: "PI - Piauí" },
+  { code: "RJ", name: "RJ - Rio de Janeiro" },
+  { code: "RN", name: "RN - Rio Grande do Norte" },
+  { code: "RS", name: "RS - Rio Grande do Sul" },
+  { code: "RO", name: "RO - Rondônia" },
+  { code: "RR", name: "RR - Roraima" },
+  { code: "SC", name: "SC - Santa Catarina" },
+  { code: "SP", name: "SP - São Paulo" },
+  { code: "SE", name: "SE - Sergipe" },
+  { code: "TO", name: "TO - Tocantins" }
 ];
 
 export default function Biddings() {
@@ -218,7 +242,7 @@ export default function Biddings() {
                     >
                       {selectedUFs.length === 0
                         ? "Selecione um ou mais UFs"
-                        : selectedUFs.join(", ")
+                        : selectedUFs.map(uf => UF_OPTIONS.find(opt => opt.code === uf)?.code || uf).join(", ")
                       }
                     </Button>
                   </PopoverTrigger>
@@ -229,15 +253,15 @@ export default function Biddings() {
                       <CommandGroup className="max-h-64 overflow-auto">
                         {UF_OPTIONS.map((uf) => (
                           <CommandItem
-                            key={uf}
-                            onSelect={() => toggleUF(uf)}
+                            key={uf.code}
+                            onSelect={() => toggleUF(uf.code)}
                             className="flex items-center gap-2"
                           >
                             <Checkbox 
-                              checked={selectedUFs.includes(uf)}
-                              onChange={() => toggleUF(uf)}
+                              checked={selectedUFs.includes(uf.code)}
+                              onChange={() => toggleUF(uf.code)}
                             />
-                            <span>{uf}</span>
+                            <span>{uf.name}</span>
                           </CommandItem>
                         ))}
                       </CommandGroup>
@@ -248,7 +272,7 @@ export default function Biddings() {
                   <div className="mt-2 flex flex-wrap gap-1">
                     {selectedUFs.map((uf) => (
                       <Badge key={uf} variant="secondary" className="text-xs">
-                        {uf}
+                        {UF_OPTIONS.find(opt => opt.code === uf)?.name || uf}
                         <button
                           onClick={() => toggleUF(uf)}
                           className="ml-1 hover:text-destructive"
