@@ -93,10 +93,9 @@ export default function Favorites() {
 
   const buildQueryParams = () => {
     const params = new URLSearchParams();
-    if (dateRange.from) {
+    // Only apply date filters if both from and to are selected
+    if (dateRange.from && dateRange.to) {
       params.append('dateFrom', format(dateRange.from, 'yyyy-MM-dd'));
-    }
-    if (dateRange.to) {
       params.append('dateTo', format(dateRange.to, 'yyyy-MM-dd'));
     }
     return params.toString();
@@ -344,13 +343,6 @@ export default function Favorites() {
                       defaultMonth={dateRange.from}
                       selected={dateRange.from ? { from: dateRange.from, to: dateRange.to } as any : undefined}
                       onSelect={(range) => {
-                        if (range?.from && range?.to && range.from.getTime() === range.to.getTime()) {
-                          // Se selecionou o mesmo dia, permitir desmarcar
-                          if (dateRange.from && dateRange.from.getTime() === range.from.getTime()) {
-                            setDateRange({});
-                            return;
-                          }
-                        }
                         setDateRange({ from: range?.from, to: range?.to });
                       }}
                       numberOfMonths={2}
@@ -358,16 +350,10 @@ export default function Favorites() {
                     />
                   </PopoverContent>
                 </Popover>
-                {(dateRange.from || dateRange.to) && (
+                {(dateRange.from && dateRange.to) && (
                   <div className="mt-2">
                     <Badge variant="secondary" className="text-xs">
-                      {dateRange.from && dateRange.to ? (
-                        `${format(dateRange.from, "dd/MM/yy")} - ${format(dateRange.to, "dd/MM/yy")}`
-                      ) : dateRange.from ? (
-                        format(dateRange.from, "dd/MM/yy")
-                      ) : (
-                        "Período inválido"
-                      )}
+                      {`${format(dateRange.from, "dd/MM/yy")} - ${format(dateRange.to, "dd/MM/yy")}`}
                       <button
                         onClick={() => setDateRange({})}
                         className="ml-1 hover:text-destructive"
@@ -385,7 +371,7 @@ export default function Favorites() {
                   <Search className="mr-2 h-4 w-4" />
                   Pesquisar
                 </Button>
-                {(numeroControle || selectedOrgaos.length > 0 || selectedUFs.length > 0 || dateRange.from) && (
+                {(numeroControle || selectedOrgaos.length > 0 || selectedUFs.length > 0 || (dateRange.from && dateRange.to)) && (
                   <Button variant="outline" onClick={clearFilters}>
                     Limpar
                   </Button>

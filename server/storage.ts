@@ -479,6 +479,7 @@ export class MemStorage implements IStorage {
     
     if (filters?.numero_controle) {
       biddings = biddings.filter(b => 
+        b.conlicitacao_id?.toString().includes(filters.numero_controle!) ||
         b.codigo?.toLowerCase().includes(filters.numero_controle!.toLowerCase()) ||
         b.processo?.toLowerCase().includes(filters.numero_controle!.toLowerCase())
       );
