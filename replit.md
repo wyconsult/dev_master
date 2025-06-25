@@ -1,8 +1,8 @@
-# JLG Licita - Bidding Management System
+# LicitaTraker - Bidding Management System
 
 ## Overview
 
-JLG Licita is a full-stack bidding management application built with React, Node.js/Express, and PostgreSQL. The application provides a platform for managing biddings (licitações), allowing users to browse, filter, and favorite bidding opportunities. It includes features for bulletin management, user authentication, and comprehensive bidding search capabilities.
+LicitaTraker is a full-stack bidding management application built with React, Node.js/Express, and PostgreSQL. The application provides a platform for managing biddings (licitações), allowing users to browse, filter, and favorite bidding opportunities. It includes features for bulletin management, user authentication, and comprehensive bidding search capabilities.
 
 ## System Architecture
 

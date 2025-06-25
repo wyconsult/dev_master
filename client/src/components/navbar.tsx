@@ -19,7 +19,7 @@ export function Navbar() {
             <div className="h-8 w-8 bg-primary rounded-lg flex items-center justify-center">
               <Gavel className="text-white h-4 w-4" />
             </div>
-            <h1 className="text-xl font-semibold text-gray-900">JLG Licita</h1>
+            <h1 className="text-xl font-semibold text-gray-900">LicitaTraker</h1>
           </div>
           
           <div className="flex items-center space-x-6">

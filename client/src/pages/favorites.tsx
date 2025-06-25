@@ -342,7 +342,16 @@ export default function Favorites() {
                       mode="range"
                       defaultMonth={dateRange.from}
                       selected={dateRange.from ? { from: dateRange.from, to: dateRange.to } as any : undefined}
-                      onSelect={(range) => setDateRange({ from: range?.from, to: range?.to })}
+                      onSelect={(range) => {
+                        if (range?.from && range?.to && range.from.getTime() === range.to.getTime()) {
+                          // Se selecionou o mesmo dia, permitir desmarcar
+                          if (dateRange.from && dateRange.from.getTime() === range.from.getTime()) {
+                            setDateRange({});
+                            return;
+                          }
+                        }
+                        setDateRange({ from: range?.from, to: range?.to });
+                      }}
                       numberOfMonths={2}
                       locale={ptBR}
                     />

@@ -74,7 +74,7 @@ export default function Dashboard() {
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            Bem-vindo ao JLG Licita, {user?.email}
+            Bem-vindo ao LicitaTraker, {user?.email}
           </h1>
           <p className="text-gray-600">
             Gerencie suas licitações e boletins em um só lugar

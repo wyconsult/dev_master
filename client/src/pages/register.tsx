@@ -48,7 +48,7 @@ export default function Register() {
           <div className="mx-auto h-16 w-16 bg-primary rounded-full flex items-center justify-center mb-6">
             <Gavel className="text-white h-8 w-8" />
           </div>
-          <h2 className="text-3xl font-bold text-gray-900 mb-2">JLG Licita</h2>
+          <h2 className="text-3xl font-bold text-gray-900 mb-2">LicitaTraker</h2>
           <p className="text-gray-600">Crie sua conta para começar</p>
         </div>
         
