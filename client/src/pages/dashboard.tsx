@@ -143,75 +143,7 @@ export default function Dashboard() {
           ))}
         </div>
 
-        {/* Quick Actions */}
-        <div className="mt-12">
-          <h2 className="text-xl font-semibold text-gray-900 mb-6">
-            Ações Rápidas
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <Button variant="outline" className="h-16 flex-col space-y-2">
-              <FileText className="h-5 w-5" />
-              <span className="text-sm">Novo Filtro</span>
-            </Button>
-            
-            <Button variant="outline" className="h-16 flex-col space-y-2">
-              <TrendingUp className="h-5 w-5" />
-              <span className="text-sm">Relatórios</span>
-            </Button>
-            
-            <Button variant="outline" className="h-16 flex-col space-y-2">
-              <Clock className="h-5 w-5" />
-              <span className="text-sm">Histórico</span>
-            </Button>
-            
-            <Button variant="outline" className="h-16 flex-col space-y-2">
-              <Building className="h-5 w-5" />
-              <span className="text-sm">Configurações</span>
-            </Button>
-          </div>
-        </div>
 
-        {/* Recent Activity */}
-        <div className="mt-12">
-          <h2 className="text-xl font-semibold text-gray-900 mb-6">
-            Atividade Recente
-          </h2>
-          <Card>
-            <CardContent className="p-6">
-              <div className="space-y-4">
-                <div className="flex items-center space-x-4 p-4 bg-gray-50 rounded-lg">
-                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                  <div className="flex-1">
-                    <p className="text-sm font-medium text-gray-900">
-                      Nova licitação adicionada aos favoritos
-                    </p>
-                    <p className="text-xs text-gray-500">Há 2 horas</p>
-                  </div>
-                </div>
-                
-                <div className="flex items-center space-x-4 p-4 bg-gray-50 rounded-lg">
-                  <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                  <div className="flex-1">
-                    <p className="text-sm font-medium text-gray-900">
-                      Novo boletim publicado
-                    </p>
-                    <p className="text-xs text-gray-500">Há 4 horas</p>
-                  </div>
-                </div>
-                
-                <div className="flex items-center space-x-4 p-4 bg-gray-50 rounded-lg">
-                  <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
-                  <div className="flex-1">
-                    <p className="text-sm font-medium text-gray-900">
-                      Filtro de pesquisa atualizado
-                    </p>
-                    <p className="text-xs text-gray-500">Ontem</p>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
       </div>
     </div>
   );
