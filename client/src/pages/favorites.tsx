@@ -341,9 +341,13 @@ export default function Favorites() {
                     <Calendar
                       mode="range"
                       defaultMonth={dateRange.from}
-                      selected={dateRange.from ? { from: dateRange.from, to: dateRange.to } as any : undefined}
+                      selected={dateRange.from && dateRange.to ? { from: dateRange.from, to: dateRange.to } : undefined}
                       onSelect={(range) => {
-                        setDateRange({ from: range?.from, to: range?.to });
+                        if (range) {
+                          setDateRange({ from: range.from, to: range.to });
+                        } else {
+                          setDateRange({});
+                        }
                       }}
                       numberOfMonths={2}
                       locale={ptBR}

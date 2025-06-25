@@ -59,18 +59,35 @@ export default function Boletins() {
 
   const getStatusColor = (status: string, visualizado: boolean) => {
     if (visualizado) {
-      return "bg-gray-400"; // Cinza - visualizado pelo usuário principal
+      return "bg-gray-400 text-white"; // Cinza - visualizado pelo usuário
     }
     
     switch (status) {
       case "Publicado":
-        return "bg-green-500"; // Verde - não visualizado
+        return "bg-green-500 text-white"; // Verde - não visualizado
       case "Em Processamento":
-        return "bg-green-500"; // Verde - não visualizado 
+        return "bg-green-500 text-white"; // Verde - não visualizado 
       case "Arquivado":
-        return "bg-blue-500"; // Azul - visualizado por outro usuário da organização
+        return "bg-blue-500 text-white"; // Azul - visualizado por outro usuário da organização
       default:
-        return "bg-green-500";
+        return "bg-green-500 text-white";
+    }
+  };
+
+  const getStatusText = (status: string, visualizado: boolean) => {
+    if (visualizado) {
+      return "Visualizado";
+    }
+    
+    switch (status) {
+      case "Publicado":
+        return "Não visualizado";
+      case "Em Processamento":
+        return "Não visualizado";
+      case "Arquivado":
+        return "Visualizado por outro usuário";
+      default:
+        return "Não visualizado";
     }
   };
 
@@ -254,12 +271,9 @@ export default function Boletins() {
                                 <p className="text-xs text-gray-500">{getTurnoCompleto(boletim.datahora_fechamento)}</p>
                               </div>
                               <Badge 
-                                variant={boletim.visualizado ? "secondary" : "default"}
-                                className={cn(
-                                  !boletim.visualizado && getStatusColor(boletim.status)
-                                )}
+                                className={getStatusColor(boletim.status, boletim.visualizado)}
                               >
-                                {boletim.status}
+                                {getStatusText(boletim.status, boletim.visualizado)}
                               </Badge>
                             </div>
                             <div className="space-y-1 text-sm text-gray-600">
