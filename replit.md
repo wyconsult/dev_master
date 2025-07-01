@@ -152,6 +152,8 @@ Application runs on `http://localhost:5000` with full API access.
 
 ```
 Changelog:
+- January 2, 2025. Successfully deployed locally on Windows with VS Code integration
+- January 2, 2025. Fixed Windows compatibility issues with IPv4 binding and CommonJS scripts
 - January 2, 2025. Prepared application for local deployment with authorized IP
 - January 2, 2025. ConLicitação API integration with hybrid fallback system
 - June 25, 2025. Initial setup
