@@ -130,10 +130,29 @@ When the API returns errors (401 Unauthorized, IP restrictions, etc.), the syste
 - `server/conlicitacao-storage.ts` - Hybrid storage with API integration and fallbacks
 - Development data matches the exact structure of real API responses
 
+## Local Installation
+
+The application is prepared for local execution with full API access. User's IP (189.89.90.102) is authorized for the ConLicitação API token.
+
+### Setup Files Created:
+- `LOCAL_SETUP.md` - Complete installation guide
+- `INSTALL_LOCAL.md` - Quick start instructions  
+- `setup-local.js` - Automated setup script
+- `package-local.json` - Local package configuration
+- `vite.config.local.ts` - Local Vite configuration
+
+### Local Execution:
+```bash
+npm install
+npm run dev
+```
+Application runs on `http://localhost:5000` with full API access.
+
 ## Changelog
 
 ```
 Changelog:
+- January 2, 2025. Prepared application for local deployment with authorized IP
 - January 2, 2025. ConLicitação API integration with hybrid fallback system
 - June 25, 2025. Initial setup
 ```
