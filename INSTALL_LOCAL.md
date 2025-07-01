@@ -12,8 +12,11 @@ Abra o terminal/prompt de comando na pasta do projeto e execute:
 # Instalar dependências
 npm install
 
-# Executar a aplicação
+# Para Windows (PowerShell/CMD)
 npm run dev
+
+# Ou use o arquivo batch (alternativa para Windows)
+start-windows.cmd
 ```
 
 ### 3. Acesso

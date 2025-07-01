@@ -5,12 +5,13 @@
   "license": "MIT",
   "description": "LicitaTraker - Sistema de Gestão de Licitações",
   "scripts": {
-    "dev": "NODE_ENV=development tsx server/index.ts",
+    "dev": "cross-env NODE_ENV=development tsx server/index.ts",
     "build": "vite build && esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist",
-    "start": "NODE_ENV=production node dist/index.js",
+    "start": "cross-env NODE_ENV=production node dist/index.js",
     "check": "tsc",
     "setup": "node setup-local.js",
-    "local": "npm run setup && npm run dev"
+    "local": "npm run setup && npm run dev",
+    "dev-windows": "start-windows.cmd"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
@@ -48,6 +49,7 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",
+    "cross-env": "^7.0.3",
     "connect-pg-simple": "^10.0.0",
     "date-fns": "^3.6.0",
     "drizzle-orm": "^0.39.1",
