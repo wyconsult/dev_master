@@ -146,29 +146,48 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
   }
 
   private getDevelopmentBoletins(filtroId: number, page: number, perPage: number): { boletins: Boletim[], total: number } {
+    const hoje = new Date();
+    const ontem = new Date(hoje);
+    ontem.setDate(hoje.getDate() - 1);
+    const anteontem = new Date(hoje);
+    anteontem.setDate(hoje.getDate() - 2);
+
     const mockBoletins: Boletim[] = [
+      // Boletim de hoje manhã
       {
         id: 44657477,
         numero_edicao: 21,
-        datahora_fechamento: "2025-01-02 13:01:19 -03:00",
+        datahora_fechamento: `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, '0')}-${String(hoje.getDate()).padStart(2, '0')} 09:30:00 -03:00`,
         filtro_id: filtroId,
         quantidade_licitacoes: 3,
         quantidade_acompanhamentos: 2,
         visualizado: this.viewedBoletins.has(44657477),
       },
+      // Boletim de hoje tarde
+      {
+        id: 44657478,
+        numero_edicao: 22,
+        datahora_fechamento: `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, '0')}-${String(hoje.getDate()).padStart(2, '0')} 14:30:00 -03:00`,
+        filtro_id: filtroId,
+        quantidade_licitacoes: 5,
+        quantidade_acompanhamentos: 3,
+        visualizado: this.viewedBoletins.has(44657478),
+      },
+      // Boletim de ontem
       {
         id: 44632454,
         numero_edicao: 20,
-        datahora_fechamento: "2025-01-02 09:43:43 -03:00",
+        datahora_fechamento: `${ontem.getFullYear()}-${String(ontem.getMonth() + 1).padStart(2, '0')}-${String(ontem.getDate()).padStart(2, '0')} 09:43:43 -03:00`,
         filtro_id: filtroId,
         quantidade_licitacoes: 2,
         quantidade_acompanhamentos: 1,
         visualizado: this.viewedBoletins.has(44632454),
       },
+      // Boletim de anteontem
       {
         id: 44612748,
         numero_edicao: 19,
-        datahora_fechamento: "2025-01-01 19:14:45 -03:00",
+        datahora_fechamento: `${anteontem.getFullYear()}-${String(anteontem.getMonth() + 1).padStart(2, '0')}-${String(anteontem.getDate()).padStart(2, '0')} 19:14:45 -03:00`,
         filtro_id: filtroId,
         quantidade_licitacoes: 4,
         quantidade_acompanhamentos: 3,
@@ -235,10 +254,13 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
   }
 
   private getDevelopmentBoletimData(id: number): { boletim: Boletim, licitacoes: Bidding[], acompanhamentos: Acompanhamento[] } {
+    const hoje = new Date();
+    const dataHoje = `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, '0')}-${String(hoje.getDate()).padStart(2, '0')}`;
+    
     const boletim: Boletim = {
       id: id,
       numero_edicao: 21,
-      datahora_fechamento: "2025-01-02 13:01:19 -03:00",
+      datahora_fechamento: `${dataHoje} 09:30:00 -03:00`,
       filtro_id: 115425,
       quantidade_licitacoes: 3,
       quantidade_acompanhamentos: 2,
@@ -259,7 +281,7 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
         orgao_site: "www.licitacoes-e.com.br",
         objeto: "Contratação de empresa especializada na prestação de serviços contínuos de Nutrição e Alimentação Hospitalar, para atender as necessidades do HOSPITAL MACRORREGIONAL DE COROATÁ E UPA COROATÁ.",
         situacao: "NOVA",
-        datahora_abertura: "2025-01-27 09:00:00",
+        datahora_abertura: `${dataHoje} 09:00:00`,
         datahora_documento: "",
         datahora_retirada: "",
         datahora_visita: "",
@@ -285,7 +307,7 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
         orgao_site: "www.saude.mt.gov.br",
         objeto: "REPETIÇÃO DO PREGÃO ELETRÔNICO N.º 0022/2025 - FRACASSADO - CONTRATAÇÃO DE SERVIÇO ESPECIALIZADO DE NUTRIÇÃO E ALIMENTAÇÃO PARA PLANTONISTAS DO SAMU SERVIÇO DE ATENDIMENTO MÓVEL DE URGÊNCIA",
         situacao: "NOVA",
-        datahora_abertura: "2025-01-30 14:00:00",
+        datahora_abertura: `${dataHoje} 14:00:00`,
         datahora_documento: "",
         datahora_retirada: "",
         datahora_visita: "",
@@ -311,7 +333,7 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
         orgao_site: "",
         objeto: "REGISTRO DE PREÇOS PARA A EVENTUAL AQUISIÇÃO DE MARMITEX, CAFÉ DA MANHÃ, CAFÉ DA TARDE E KIT LANCHES, PARA ATENDER AS NECESSIDADES DE TODAS AS SECRETARIAS MUNICIPAIS",
         situacao: "NOVA",
-        datahora_abertura: "2025-01-30 08:00:00",
+        datahora_abertura: `${dataHoje} 08:00:00`,
         datahora_documento: "",
         datahora_retirada: "",
         datahora_visita: "",
