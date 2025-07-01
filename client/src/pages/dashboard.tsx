@@ -9,11 +9,53 @@ import {
   Heart, 
   TrendingUp, 
   Clock, 
-  Building 
+  Building,
+  Loader2
 } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import type { Bidding, Boletim, Filtro } from "@shared/schema";
 
 export default function Dashboard() {
   const { user } = useAuth();
+
+  // Buscar dados reais da API
+  const { data: filtros = [], isLoading: isLoadingFiltros } = useQuery<Filtro[]>({
+    queryKey: ["/api/filtros"],
+  });
+
+  const { data: biddings = [], isLoading: isLoadingBiddings } = useQuery<Bidding[]>({
+    queryKey: ["/api/biddings"],
+  });
+
+  const { data: boletins = [], isLoading: isLoadingBoletins } = useQuery<Boletim[]>({
+    queryKey: ["/api/boletins"],
+  });
+
+  const { data: favorites = [], isLoading: isLoadingFavorites } = useQuery<Bidding[]>({
+    queryKey: ["/api/favorites", user?.id],
+    enabled: !!user?.id,
+  });
+
+  // Cálculos baseados em dados reais
+  const totalLicitacoes = biddings.length;
+  const licitacoesAtivas = biddings.filter(b => b.situacao === "NOVA" || b.situacao === "ATIVA").length;
+  const editaisRecentes = biddings.filter(b => {
+    if (!b.datahora_abertura) return false;
+    try {
+      const hoje = new Date();
+      const dataAbertura = new Date(b.datahora_abertura);
+      const diffTime = hoje.getTime() - dataAbertura.getTime();
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      return diffDays <= 7; // Últimos 7 dias
+    } catch {
+      return false;
+    }
+  }).length;
+  
+  const orgaosUnicos = new Set(biddings.map(b => b.orgao_nome)).size;
+  const totalBoletins = boletins.length;
+  const boletinsNaoVisualizados = boletins.filter(b => !b.visualizado).length;
+  const totalFavoritos = favorites.length;
 
   const dashboardCards = [
     {
@@ -22,7 +64,7 @@ export default function Dashboard() {
       icon: FileText,
       link: "/boletins",
       color: "bg-blue-500 hover:bg-blue-600",
-      count: "12 novos"
+      count: isLoadingBoletins ? "..." : `${boletinsNaoVisualizados} novos`
     },
     {
       title: "Licitações",
@@ -30,7 +72,7 @@ export default function Dashboard() {
       icon: Gavel,
       link: "/biddings",
       color: "bg-green-500 hover:bg-green-600",
-      count: "6 ativas"
+      count: isLoadingBiddings ? "..." : `${licitacoesAtivas} ativas`
     },
     {
       title: "Favoritos",
@@ -38,29 +80,29 @@ export default function Dashboard() {
       icon: Heart,
       link: "/favorites",
       color: "bg-red-500 hover:bg-red-600",
-      count: "3 salvos"
+      count: isLoadingFavorites ? "..." : `${totalFavoritos} salvos`
     }
   ];
 
   const statsCards = [
     {
       title: "Licitações Ativas",
-      value: "24",
-      change: "+12%",
+      value: isLoadingBiddings ? "..." : licitacoesAtivas.toString(),
+      change: isLoadingBiddings ? "..." : `${totalLicitacoes} total`,
       icon: TrendingUp,
       color: "text-green-600"
     },
     {
       title: "Editais Recentes",
-      value: "8",
-      change: "Hoje",
+      value: isLoadingBiddings ? "..." : editaisRecentes.toString(),
+      change: "Últimos 7 dias",
       icon: Clock,
       color: "text-blue-600"
     },
     {
       title: "Órgãos Monitorados",
-      value: "15",
-      change: "+2 novos",
+      value: isLoadingBiddings ? "..." : orgaosUnicos.toString(),
+      change: isLoadingFiltros ? "..." : `${filtros.length} filtros`,
       icon: Building,
       color: "text-purple-600"
     }
