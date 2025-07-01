@@ -2,7 +2,7 @@
 
 ## Overview
 
-LicitaTraker is a full-stack bidding management application built with React, Node.js/Express, and PostgreSQL. The application provides a platform for managing biddings (licitações), allowing users to browse, filter, and favorite bidding opportunities. It includes features for bulletin management, user authentication, and comprehensive bidding search capabilities.
+LicitaTraker is a full-stack bidding management application built with React, Node.js/Express, and PostgreSQL. The application provides a platform for managing biddings (licitações), allowing users to browse, filter, and favorite bidding opportunities. It includes features for bulletin management, user authentication, and comprehensive bidding search capabilities. The system integrates with the real ConLicitação API for production data and includes development fallbacks for seamless local development.
 
 ## System Architecture
 
@@ -25,6 +25,7 @@ LicitaTraker is a full-stack bidding management application built with React, No
 - **ORM**: Drizzle ORM for type-safe database operations
 - **Schema**: Centralized schema definition in `shared/schema.ts`
 - **Migrations**: Drizzle Kit for database migrations
+- **ConLicitação API**: Production integration with hybrid fallback system for development
 
 ### Authentication and Authorization
 - **Basic Authentication**: Simple email/password authentication
@@ -43,7 +44,12 @@ LicitaTraker is a full-stack bidding management application built with React, No
 - **Authentication Routes**: `/api/auth/login` for user authentication
 - **Biddings Routes**: `/api/biddings` with filtering capabilities
 - **Favorites Routes**: User-specific favorite management
-- **Boletins Routes**: Bulletin retrieval and management
+- **ConLicitação Integration Routes**:
+  - `/api/filtros` - Retrieve available filters from ConLicitação API
+  - `/api/filtro/:filtroId/boletins` - Get bulletins for a specific filter
+  - `/api/boletim/:id` - Get detailed bulletin data with biddings and updates
+  - `/api/boletins` - Compatibility route for current UI
+- **Hybrid Data System**: Automatically switches between real API data and development fallbacks
 
 ### UI Components
 - **Responsive Design**: Mobile-first approach with Tailwind CSS
@@ -96,10 +102,39 @@ LicitaTraker is a full-stack bidding management application built with React, No
 - **Port Configuration**: Internal port 5000, external port 80
 - **Auto-scaling**: Configured for autoscale deployment target
 
+## ConLicitação API Integration
+
+### Overview
+The system integrates with the official ConLicitação API to provide real-time bidding data from Brazilian government tenders. The integration uses a hybrid approach that automatically falls back to development data when the API is unavailable.
+
+### Authentication
+- **API Base URL**: `https://consultaonline.conlicitacao.com.br/api`
+- **Authentication Method**: X-AUTH-TOKEN header with token `27a24a9a-44ce-4de8-a8ac-82cc58ca9f6e`
+- **IP Restrictions**: API requires IP whitelisting for production access
+
+### Data Flow
+1. **Filtros**: Retrieve available client filters from ConLicitação
+2. **Boletins**: Get bulletin lists with pagination support
+3. **Licitações**: Extract detailed bidding information from bulletin data
+4. **Acompanhamentos**: Track bidding updates and results
+
+### Fallback System
+When the API returns errors (401 Unauthorized, IP restrictions, etc.), the system automatically:
+- Logs the error with details
+- Switches to development data that mirrors the real API structure
+- Continues operation seamlessly without interruption
+- Provides realistic test data for development and demonstration
+
+### File Structure
+- `server/conlicitacao-api.ts` - API client for ConLicitação integration
+- `server/conlicitacao-storage.ts` - Hybrid storage with API integration and fallbacks
+- Development data matches the exact structure of real API responses
+
 ## Changelog
 
 ```
 Changelog:
+- January 2, 2025. ConLicitação API integration with hybrid fallback system
 - June 25, 2025. Initial setup
 ```
 
