@@ -14,42 +14,10 @@ import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
+import { type Bidding } from "@shared/schema";
+import { useAuth } from "@/hooks/use-auth";
 
-interface Bidding {
-  id: number;
-  orgao: string;
-  codigo: string;
-  cidade: string;
-  uf: string;
-  endereco: string;
-  telefone: string;
-  site: string;
-  objeto: string;
-  situacao: string;
-  datahora_abertura: string;
-  datahora_documento: string;
-  datahora_retirada: string;
-  datahora_visita: string;
-  datahora_prazo: string;
-  edital: string;
-  link_edital: string;
-  processo: string;
-  observacao: string;
-  item: string;
-  preco_edital: string;
-  valor_estimado: string;
-  conlicitacao_id: number;
-}
 
-// Lista de órgãos únicos
-const ORGAOS_OPTIONS = [
-  "Empresa Maranhense de Serviços Hospitalares - EMSERH",
-  "Secretaria Estadual de Saúde", 
-  "Prefeitura Municipal de Mairiporã",
-  "AGEPEN-Agência Estadual de Administracao do Sistema Penitenciário",
-  "MINISTÉRIO DA EDUCAÇÃO - Universidade Federal de Viçosa",
-  "NUCLEBRÁS-Nuclebrás Equipamentos Pesados S/A"
-];
 
 // Lista de UFs com nomes completos para evitar confusão
 const UF_OPTIONS = [
@@ -83,6 +51,7 @@ const UF_OPTIONS = [
 ];
 
 export default function Favorites() {
+  const { user } = useAuth();
   const [numeroControle, setNumeroControle] = useState("");
   const [selectedOrgaos, setSelectedOrgaos] = useState<string[]>([]);
   const [selectedUFs, setSelectedUFs] = useState<string[]>([]);
@@ -102,23 +71,23 @@ export default function Favorites() {
   };
 
   const { data: favorites = [], isLoading } = useQuery<Bidding[]>({
-    queryKey: ["/api/favorites", buildQueryParams()],
+    queryKey: [`/api/favorites/${user?.id}`, buildQueryParams()],
+    enabled: !!user,
   });
+
+  // Extrair órgãos únicos dos favoritos
+  const uniqueOrgaos = Array.from(new Set(favorites.map(b => b.orgao_nome))).sort();
 
   // Filter favorites based on form filters
   const filteredFavorites = favorites.filter(bidding => {
     const matchesNumeroControle = !numeroControle || 
-      bidding.conlicitacao_id?.toString().includes(numeroControle) ||
-      bidding.codigo?.toLowerCase().includes(numeroControle.toLowerCase()) ||
-      bidding.processo?.toLowerCase().includes(numeroControle.toLowerCase());
+      bidding.conlicitacao_id?.toString().includes(numeroControle);
     
     const matchesOrgao = selectedOrgaos.length === 0 || 
-      selectedOrgaos.some(orgao => 
-        bidding.orgao.toLowerCase().includes(orgao.toLowerCase())
-      );
+      selectedOrgaos.includes(bidding.orgao_nome);
     
     const matchesUF = selectedUFs.length === 0 || 
-      selectedUFs.includes(bidding.uf);
+      selectedUFs.includes(bidding.orgao_uf);
 
     return matchesNumeroControle && matchesOrgao && matchesUF;
   });
@@ -220,7 +189,7 @@ export default function Favorites() {
                       <CommandInput placeholder="Buscar órgão..." />
                       <CommandEmpty>Nenhum órgão encontrado.</CommandEmpty>
                       <CommandGroup className="max-h-64 overflow-auto">
-                        {ORGAOS_OPTIONS.map((orgao) => (
+                        {uniqueOrgaos.map((orgao) => (
                           <CommandItem
                             key={orgao}
                             onSelect={() => toggleOrgao(orgao)}

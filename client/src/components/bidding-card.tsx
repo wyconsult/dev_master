@@ -44,7 +44,7 @@ export function BiddingCard({ bidding, showFavoriteIcon = true }: BiddingCardPro
     }
   };
 
-  const formatDateTime = (dateTime: string) => {
+  const formatDateTime = (dateTime: string | null) => {
     if (!dateTime) return "-";
     try {
       const date = new Date(dateTime);
@@ -61,7 +61,9 @@ export function BiddingCard({ bidding, showFavoriteIcon = true }: BiddingCardPro
   };
 
   const handleLinkClick = () => {
-    window.open(bidding.link_edital, '_blank');
+    if (bidding.documento_url) {
+      window.open(bidding.documento_url, '_blank');
+    }
   };
 
   return (
@@ -106,7 +108,7 @@ export function BiddingCard({ bidding, showFavoriteIcon = true }: BiddingCardPro
             <span className="text-gray-700"><strong>Datas:</strong> {formatDateTime(bidding.datahora_abertura)}</span>
             <span className={cn(
               "px-2 py-1 rounded text-xs font-medium text-white",
-              getStatusColor(bidding.situacao)
+              getStatusColor(bidding.situacao || "")
             )}>
               {bidding.situacao}
             </span>
@@ -118,12 +120,12 @@ export function BiddingCard({ bidding, showFavoriteIcon = true }: BiddingCardPro
           </div>
           
           <div className="flex justify-between">
-            <span className="text-gray-700"><strong>Órgão:</strong> {bidding.orgao}</span>
+            <span className="text-gray-700"><strong>Órgão:</strong> {bidding.orgao_nome}</span>
             <span className="text-gray-700"><strong>Status da Sessão:</strong> {bidding.situacao}</span>
           </div>
           
           <div className="flex justify-between">
-            <span className="text-gray-700"><strong>Cidade:</strong> {bidding.cidade} - {bidding.uf}</span>
+            <span className="text-gray-700"><strong>Cidade:</strong> {bidding.orgao_cidade} - {bidding.orgao_uf}</span>
             <Button 
               variant="link" 
               size="sm" 

@@ -11,42 +11,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from "@/components/ui/command";
+import { type Bidding } from "@shared/schema";
 
-interface Bidding {
-  id: number;
-  orgao: string;
-  codigo: string;
-  cidade: string;
-  uf: string;
-  endereco: string;
-  telefone: string;
-  site: string;
-  objeto: string;
-  situacao: string;
-  datahora_abertura: string;
-  datahora_documento: string;
-  datahora_retirada: string;
-  datahora_visita: string;
-  datahora_prazo: string;
-  edital: string;
-  link_edital: string;
-  processo: string;
-  observacao: string;
-  item: string;
-  preco_edital: string;
-  valor_estimado: string;
-  conlicitacao_id: number;
-}
 
-// Lista de órgãos únicos (extraída dos dados existentes)
-const ORGAOS_OPTIONS = [
-  "Empresa Maranhense de Serviços Hospitalares - EMSERH",
-  "Secretaria Estadual de Saúde", 
-  "Prefeitura Municipal de Mairiporã",
-  "AGEPEN-Agência Estadual de Administracao do Sistema Penitenciário",
-  "MINISTÉRIO DA EDUCAÇÃO - Universidade Federal de Viçosa",
-  "NUCLEBRÁS-Nuclebrás Equipamentos Pesados S/A"
-];
 
 // Lista de UFs com nomes completos para evitar confusão
 const UF_OPTIONS = [
@@ -94,8 +61,31 @@ export default function Biddings() {
     return filters;
   };
 
-  const { data: biddings = [], isLoading } = useQuery<Bidding[]>({
-    queryKey: ["/api/biddings", buildFilters()],
+  const { data: allBiddings = [], isLoading } = useQuery<Bidding[]>({
+    queryKey: ["/api/biddings"],
+  });
+
+  // Extrair órgãos únicos dos dados reais
+  const uniqueOrgaos = Array.from(new Set(allBiddings.map(b => b.orgao_nome))).sort();
+
+  // Filtro dinâmico em tempo real
+  const filteredBiddings = allBiddings.filter(bidding => {
+    // Filtro por número de controle (dinâmico)
+    if (numeroControle && !bidding.conlicitacao_id.toString().includes(numeroControle)) {
+      return false;
+    }
+    
+    // Filtro por órgãos selecionados
+    if (selectedOrgaos.length > 0 && !selectedOrgaos.includes(bidding.orgao_nome)) {
+      return false;
+    }
+    
+    // Filtro por UFs selecionados
+    if (selectedUFs.length > 0 && !selectedUFs.includes(bidding.orgao_uf)) {
+      return false;
+    }
+    
+    return true;
   });
 
   const toggleOrgao = (orgao: string) => {
@@ -194,7 +184,7 @@ export default function Biddings() {
                       <CommandInput placeholder="Buscar órgão..." />
                       <CommandEmpty>Nenhum órgão encontrado.</CommandEmpty>
                       <CommandGroup className="max-h-64 overflow-auto">
-                        {ORGAOS_OPTIONS.map((orgao) => (
+                        {uniqueOrgaos.map((orgao) => (
                           <CommandItem
                             key={orgao}
                             onSelect={() => toggleOrgao(orgao)}
@@ -303,7 +293,7 @@ export default function Biddings() {
 
         {/* Results */}
         <div className="space-y-4">
-          {biddings.length === 0 ? (
+          {filteredBiddings.length === 0 ? (
             <Card>
               <CardContent className="p-12 text-center">
                 <Search className="h-12 w-12 text-gray-400 mx-auto mb-4" />
@@ -312,7 +302,7 @@ export default function Biddings() {
               </CardContent>
             </Card>
           ) : (
-            biddings.map((bidding) => (
+            filteredBiddings.map((bidding) => (
               <BiddingCard key={bidding.id} bidding={bidding} showFavoriteIcon={true} />
             ))
           )}
