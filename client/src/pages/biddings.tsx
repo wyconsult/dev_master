@@ -129,16 +129,26 @@ export default function Biddings() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
       <Navbar />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Licitações</h1>
-          <p className="text-gray-600">Encontre e acompanhe processos licitatórios</p>
+        <div className="mb-12 text-center">
+          <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-gradient-to-r from-green-500 to-emerald-600 text-white mb-6 shadow-lg">
+            <Search className="h-10 w-10" />
+          </div>
+          <h1 className="text-4xl font-bold bg-gradient-to-r from-gray-900 to-green-700 bg-clip-text text-transparent mb-3">
+            Licitações
+          </h1>
+          <p className="text-xl text-gray-600 mb-2">
+            Busca Inteligente 🔍
+          </p>
+          <p className="text-gray-500">
+            Encontre e acompanhe processos licitatórios
+          </p>
         </div>
 
         {/* Filters */}
-        <Card className="mb-6">
+        <Card className="mb-6 border-0 shadow-xl bg-white/80 backdrop-blur-sm">
           <CardHeader>
             <CardTitle className="text-lg flex items-center gap-2">
               <Filter className="h-5 w-5" />
