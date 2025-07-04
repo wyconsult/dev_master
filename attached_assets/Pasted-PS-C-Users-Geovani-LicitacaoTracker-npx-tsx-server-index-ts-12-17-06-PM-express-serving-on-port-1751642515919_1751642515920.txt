@@ -1,0 +1,27 @@
+PS C:\Users\Geovani\LicitacaoTracker> npx tsx server/index.ts
+12:17:06 PM [express] serving on port 5000
+Browserslist: browsers data (caniuse-lite) is 9 months old. Please run:
+  npx update-browserslist-db@latest
+  Why you should do it regularly: https://github.com/browserslist/update-db#readme
+12:17:40 PM [express] POST /api/auth/login 200 in 5ms :: {"user":{"id":1,"email":"admin@test.com"}}
+12:17:41 PM [express] GET /api/favorites 200 in 1ms :: []
+Erro ao buscar filtros da API real: Error: API request failed: 401 Unauthorized - {"errors":[{"error":"Token inválido ou IP de origem não cadastrado","request_ip":"201.182.52.6","token":"27a24a9a-44ce-4de8-a8ac-82cc58ca9f6e"}]}
+    at ConLicitacaoAPI.makeRequest (C:\Users\Geovani\LicitacaoTracker\server\conlicitacao-api.ts:21:13)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async ConLicitacaoStorage.getFiltros (C:\Users\Geovani\LicitacaoTracker\server\conlicitacao-storage.ts:86:24)
+    at async <anonymous> (C:\Users\Geovani\LicitacaoTracker\server\routes.ts:119:23)
+12:17:41 PM [express] GET /api/filtros 200 in 725ms :: []
+Erro ao buscar filtros da API real: Error: API request failed: 401 Unauthorized - {"errors":[{"error":"Token inválido ou IP de origem não cadastrado","request_ip":"201.182.52.6","token":"27a24a9a-44ce-4de8-a8ac-82cc58ca9f6e"}]}
+    at ConLicitacaoAPI.makeRequest (C:\Users\Geovani\LicitacaoTracker\server\conlicitacao-api.ts:21:13)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async ConLicitacaoStorage.getFiltros (C:\Users\Geovani\LicitacaoTracker\server\conlicitacao-storage.ts:86:24)
+    at async ConLicitacaoStorage.refreshBiddingsCache (C:\Users\Geovani\LicitacaoTracker\server\conlicitacao-storage.ts:274:23)
+    at async ConLicitacaoStorage.getBiddings (C:\Users\Geovani\LicitacaoTracker\server\conlicitacao-storage.ts:235:7)
+    at async <anonymous> (C:\Users\Geovani\LicitacaoTracker\server\routes.ts:42:24)
+12:17:41 PM [express] GET /api/biddings 200 in 638ms :: []
+Erro ao buscar filtros da API real: Error: API request failed: 401 Unauthorized - {"errors":[{"error":"Token inválido ou IP de origem não cadastrado","request_ip":"201.182.52.6","token":"27a24a9a-44ce-4de8-a8ac-82cc58ca9f6e"}]}
+    at ConLicitacaoAPI.makeRequest (C:\Users\Geovani\LicitacaoTracker\server\conlicitacao-api.ts:21:13)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async ConLicitacaoStorage.getFiltros (C:\Users\Geovani\LicitacaoTracker\server\conlicitacao-storage.ts:86:24)
+    at async <anonymous> (C:\Users\Geovani\LicitacaoTracker\server\routes.ts:163:23)
+12:17:41 PM [express] GET /api/boletins 200 in 649ms :: []
