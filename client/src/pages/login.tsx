@@ -61,18 +61,19 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 px-4">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-blue-50 px-4">
       <div className="max-w-md w-full space-y-8">
         <div className="text-center">
-          <div className="mx-auto h-16 w-16 bg-primary rounded-full flex items-center justify-center mb-6">
-            <Gavel className="text-white h-8 w-8" />
+          <div className="mx-auto w-20 h-20 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center mb-6 shadow-lg">
+            <Gavel className="text-white h-10 w-10" />
           </div>
-          <h2 className="text-3xl font-bold text-gray-900 mb-2">LicitaTraker</h2>
-          <p className="text-gray-600">Acesse sua conta para continuar</p>
+          <h2 className="text-4xl font-bold bg-gradient-to-r from-gray-900 to-blue-700 bg-clip-text text-transparent mb-3">LicitaTraker</h2>
+          <p className="text-xl text-gray-600 mb-2">Bem-vindo de volta! 👋</p>
+          <p className="text-gray-500">Acesse sua conta para continuar</p>
         </div>
         
-        <Card>
-          <CardContent className="pt-6">
+        <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm">
+          <CardContent className="pt-8 pb-8 px-8">
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                 <FormField
@@ -113,19 +114,19 @@ export default function Login() {
 
                 <Button 
                   type="submit" 
-                  className="w-full"
+                  className="w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-semibold py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5"
                   disabled={loginMutation.isPending}
                 >
-                  <LogIn className="mr-2 h-4 w-4" />
+                  <LogIn className="mr-2 h-5 w-5" />
                   {loginMutation.isPending ? "Entrando..." : "Entrar"}
                 </Button>
 
-                <div className="flex items-center justify-between text-sm">
+                <div className="flex items-center justify-between text-sm pt-2">
                   <Button 
                     type="button" 
                     variant="link"
                     onClick={handleSignup}
-                    className="p-0 h-auto text-primary hover:text-blue-700"
+                    className="p-0 h-auto text-blue-600 hover:text-blue-800 font-medium transition-colors duration-200"
                   >
                     Cadastrar-se
                   </Button>
@@ -133,7 +134,7 @@ export default function Login() {
                     type="button" 
                     variant="link"
                     onClick={handleForgotPassword}
-                    className="p-0 h-auto text-primary hover:text-blue-700"
+                    className="p-0 h-auto text-blue-600 hover:text-blue-800 font-medium transition-colors duration-200"
                   >
                     Esqueceu a senha?
                   </Button>
