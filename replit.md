@@ -130,23 +130,16 @@ When the API returns errors (401 Unauthorized, IP restrictions, etc.), the syste
 - `server/conlicitacao-storage.ts` - Hybrid storage with API integration and fallbacks
 - Development data matches the exact structure of real API responses
 
-## Local Installation
+## Local Development
 
-The application is prepared for local execution with full API access. User's IP (189.89.90.102) is authorized for the ConLicitação API token.
-
-### Setup Files Created:
-- `LOCAL_SETUP.md` - Complete installation guide
-- `INSTALL_LOCAL.md` - Quick start instructions  
-- `setup-local.js` - Automated setup script
-- `package-local.json` - Local package configuration
-- `vite.config.local.ts` - Local Vite configuration
+The application is configured for local development via VS Code terminal. User executes locally with authorized IP for ConLicitação API access.
 
 ### Local Execution:
 ```bash
 npm install
-npm run dev
+npx tsx server/index.ts
 ```
-Application runs on `http://localhost:5000` with full API access.
+Application runs on `http://localhost:5000` with full API access when IP is authorized.
 
 ## Changelog
 
