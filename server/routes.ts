@@ -62,10 +62,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Favorites routes
-  app.get("/api/favorites", async (req, res) => {
+  app.get("/api/favorites/:userId", async (req, res) => {
     try {
-      // In a real app, we'd get the user ID from the session/JWT
-      const userId = 1; // Mock user ID
+      const userId = parseInt(req.params.userId);
       const { date, dateFrom, dateTo } = req.query;
       const favorites = await conLicitacaoStorage.getFavorites(userId, date as string, dateFrom as string, dateTo as string);
       res.json(favorites);

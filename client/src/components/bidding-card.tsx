@@ -104,10 +104,10 @@ export function BiddingCard({ bidding, showFavoriteIcon = true }: BiddingCardPro
 
         {/* Main info grid */}
         <div className="space-y-2 text-sm">
-          <div className="flex justify-between">
-            <span className="text-gray-700"><strong>Datas:</strong> {formatDateTime(bidding.datahora_abertura)}</span>
+          <div className="flex justify-between items-start">
+            <span className="text-gray-700 flex-1"><strong>Datas:</strong> {formatDateTime(bidding.datahora_abertura)}</span>
             <span className={cn(
-              "px-2 py-1 rounded text-xs font-medium text-white",
+              "px-2 py-1 rounded text-xs font-medium text-white whitespace-nowrap ml-2 flex-shrink-0",
               getStatusColor(bidding.situacao || "")
             )}>
               {bidding.situacao}
