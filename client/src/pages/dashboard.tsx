@@ -63,24 +63,30 @@ export default function Dashboard() {
       description: "Visualize e gerencie boletins de licitações",
       icon: FileText,
       link: "/boletins",
-      color: "bg-blue-500 hover:bg-blue-600",
-      count: isLoadingBoletins ? "..." : `${boletinsNaoVisualizados} novos`
+      gradient: "bg-gradient-to-br from-blue-500 to-blue-700",
+      hoverGradient: "hover:from-blue-600 hover:to-blue-800",
+      count: isLoadingBoletins ? "..." : `${boletinsNaoVisualizados} novos`,
+      bgPattern: "bg-blue-50"
     },
     {
       title: "Licitações",
       description: "Explore todas as licitações disponíveis",
       icon: Gavel,
       link: "/biddings",
-      color: "bg-green-500 hover:bg-green-600",
-      count: isLoadingBiddings ? "..." : `${licitacoesAtivas} ativas`
+      gradient: "bg-gradient-to-br from-green-500 to-emerald-700",
+      hoverGradient: "hover:from-green-600 hover:to-emerald-800",
+      count: isLoadingBiddings ? "..." : `${licitacoesAtivas} ativas`,
+      bgPattern: "bg-green-50"
     },
     {
       title: "Favoritos",
       description: "Acesse suas licitações favoritas",
       icon: Heart,
       link: "/favorites",
-      color: "bg-red-500 hover:bg-red-600",
-      count: isLoadingFavorites ? "..." : `${totalFavoritos} salvos`
+      gradient: "bg-gradient-to-br from-red-500 to-pink-700",
+      hoverGradient: "hover:from-red-600 hover:to-pink-800",
+      count: isLoadingFavorites ? "..." : `${totalFavoritos} salvos`,
+      bgPattern: "bg-red-50"
     }
   ];
 
@@ -109,39 +115,45 @@ export default function Dashboard() {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
       <Navbar />
       
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            Bem-vindo ao LicitaTraker, {user?.email}
+        <div className="mb-12 text-center">
+          <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 text-white mb-6 shadow-lg">
+            <Gavel className="h-10 w-10" />
+          </div>
+          <h1 className="text-4xl font-bold bg-gradient-to-r from-gray-900 to-blue-700 bg-clip-text text-transparent mb-3">
+            Bem-vindo ao LicitaTraker
           </h1>
-          <p className="text-gray-600">
-            Gerencie suas licitações e boletins em um só lugar
+          <p className="text-xl text-gray-600 mb-2">
+            Olá, {user?.email?.split('@')[0]}! 👋
+          </p>
+          <p className="text-gray-500">
+            Gerencie suas licitações e boletins de forma inteligente
           </p>
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
           {statsCards.map((stat, index) => (
-            <Card key={index} className="hover:shadow-md transition-shadow">
+            <Card key={index} className="hover:shadow-xl hover:-translate-y-1 transition-all duration-300 border-0 shadow-md bg-white/80 backdrop-blur-sm">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-gray-600 mb-1">
+                    <p className="text-sm font-medium text-gray-500 mb-2">
                       {stat.title}
                     </p>
-                    <p className="text-2xl font-bold text-gray-900">
+                    <p className="text-3xl font-bold text-gray-900 mb-1">
                       {stat.value}
                     </p>
-                    <p className={`text-sm ${stat.color} font-medium`}>
+                    <p className={`text-sm ${stat.color} font-semibold`}>
                       {stat.change}
                     </p>
                   </div>
-                  <div className={`p-3 rounded-full bg-gray-100`}>
-                    <stat.icon className={`h-6 w-6 ${stat.color}`} />
+                  <div className={`p-4 rounded-xl bg-gradient-to-br from-white to-gray-50 shadow-lg`}>
+                    <stat.icon className={`h-7 w-7 ${stat.color}`} />
                   </div>
                 </div>
               </CardContent>
@@ -153,30 +165,35 @@ export default function Dashboard() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {dashboardCards.map((card, index) => (
             <Link key={index} href={card.link}>
-              <Card className="hover:shadow-lg transition-all duration-300 cursor-pointer group">
-                <CardContent className="p-8 text-center">
-                  <div className={`inline-flex items-center justify-center w-16 h-16 rounded-full ${card.color} text-white mb-6 group-hover:scale-110 transition-transform duration-300`}>
-                    <card.icon className="h-8 w-8" />
+              <Card className={`hover:shadow-2xl hover:-translate-y-2 transition-all duration-500 cursor-pointer group border-0 shadow-lg overflow-hidden ${card.bgPattern}/30 backdrop-blur-sm`}>
+                <CardContent className="p-8 text-center relative">
+                  {/* Background pattern */}
+                  <div className="absolute inset-0 opacity-5">
+                    <div className="w-full h-full bg-gradient-to-br from-transparent to-black/10"></div>
                   </div>
                   
-                  <h3 className="text-xl font-semibold text-gray-900 mb-3">
+                  <div className={`inline-flex items-center justify-center w-20 h-20 rounded-2xl ${card.gradient} ${card.hoverGradient} text-white mb-6 group-hover:scale-110 group-hover:rotate-3 transition-all duration-500 shadow-lg`}>
+                    <card.icon className="h-10 w-10" />
+                  </div>
+                  
+                  <h3 className="text-2xl font-bold text-gray-900 mb-3">
                     {card.title}
                   </h3>
                   
-                  <p className="text-gray-600 mb-4">
+                  <p className="text-gray-600 mb-6 leading-relaxed">
                     {card.description}
                   </p>
                   
-                  <div className="inline-flex items-center justify-center px-3 py-1 rounded-full bg-gray-100 text-sm font-medium text-gray-700">
+                  <div className="inline-flex items-center justify-center px-4 py-2 rounded-full bg-white/80 backdrop-blur-sm text-sm font-semibold text-gray-700 shadow-md border border-gray-200/50">
                     {card.count}
                   </div>
                   
-                  <div className="mt-6">
+                  <div className="mt-8">
                     <Button 
                       variant="ghost" 
-                      className="group-hover:bg-gray-100 transition-colors"
+                      className="group-hover:bg-white/20 group-hover:backdrop-blur-sm transition-all duration-300 font-semibold"
                     >
-                      Acessar →
+                      Acessar <span className="ml-2 group-hover:translate-x-1 transition-transform duration-300">→</span>
                     </Button>
                   </div>
                 </CardContent>
