@@ -68,10 +68,10 @@ export function BiddingCard({ bidding, showFavoriteIcon = true }: BiddingCardPro
 
   return (
     <Card className={cn(
-      "hover:shadow-md transition-shadow border border-gray-200",
+      "hover:shadow-md transition-shadow border border-gray-200 overflow-visible",
       showFavoriteIcon && isFavorite && "border-l-4 border-l-accent"
     )}>
-      <CardContent className="p-4">
+      <CardContent className="p-4 relative overflow-visible">
         {/* Header with favorite */}
         <div className="flex justify-between items-start mb-3">
           <div className="flex-1">
@@ -103,12 +103,12 @@ export function BiddingCard({ bidding, showFavoriteIcon = true }: BiddingCardPro
         </div>
 
         {/* Status badge */}
-        <div className="flex justify-end mb-3">
+        <div className="flex justify-end mb-3 overflow-visible">
           <span className={cn(
-            "px-3 py-1 rounded-full text-xs font-medium text-white",
+            "px-4 py-2 rounded-full text-sm font-medium text-white whitespace-nowrap",
             getStatusColor(bidding.situacao || "")
           )}>
-            {bidding.situacao}
+            {bidding.situacao?.toUpperCase()}
           </span>
         </div>
 
