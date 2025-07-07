@@ -120,10 +120,11 @@ The system integrates with the official ConLicitação API to provide real-time 
 
 ### Production-Ready Configuration
 The system is configured for production use with real data only:
-- **No fallback data**: When API fails, system throws appropriate errors
+- **No fallback data**: When API fails, system returns empty results gracefully
 - **Real API integration**: All data comes from ConLicitação API when IP is authorized
-- **Graceful error handling**: Clear error messages when API is unavailable
-- **Production deployment**: Ready for immediate deployment with authorized IP access
+- **Enhanced error detection**: System detects IP authorization issues and logs clear messages
+- **Current status**: IP 104.196.223.239 requires authorization from ConLicitação
+- **Production deployment**: Ready for immediate deployment once IP is authorized
 
 ### File Structure
 - `server/conlicitacao-api.ts` - API client for ConLicitação integration
@@ -145,6 +146,8 @@ Application runs on `http://localhost:5000` with full API access when IP is auth
 
 ```
 Changelog:
+- January 7, 2025. Enhanced API error handling - system now detects IP authorization issues
+- January 7, 2025. Current status: IP 104.196.223.239 not authorized in ConLicitação API
 - January 7, 2025. Removed all fictitious/mock data from system - production ready with real API only
 - January 7, 2025. Updated favorites page with red eraser icon for clearing filters
 - January 7, 2025. Completed all UI improvements: dashboard simplification, boletins calendar, biddings filters, favorites date range

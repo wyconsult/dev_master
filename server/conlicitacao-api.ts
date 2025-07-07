@@ -7,21 +7,42 @@ export class ConLicitacaoAPI {
   private async makeRequest(endpoint: string): Promise<any> {
     const url = `${CONLICITACAO_BASE_URL}${endpoint}`;
     
-    const response = await fetch(url, {
-      method: 'GET',
-      headers: {
-        'X-AUTH-TOKEN': AUTH_TOKEN,
-        'Content-Type': 'application/json',
-        'User-Agent': 'LicitaTraker/1.0',
-      },
-    });
-    
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`API request failed: ${response.status} ${response.statusText} - ${errorText}`);
-    }
+    try {
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'X-AUTH-TOKEN': AUTH_TOKEN,
+          'Content-Type': 'application/json',
+          'User-Agent': 'LicitaTraker/1.0',
+        },
+      });
+      
+      const responseData = await response.json();
+      
+      // Verifica se há erro de autenticação/IP
+      if (responseData.errors && Array.isArray(responseData.errors)) {
+        const authError = responseData.errors.find((err: any) => 
+          err.error && err.error.includes('Token inválido ou IP de origem não cadastrado')
+        );
+        
+        if (authError) {
+          throw new Error('IP_NOT_AUTHORIZED');
+        }
+      }
+      
+      if (!response.ok) {
+        throw new Error(`API request failed: ${response.status} ${response.statusText}`);
+      }
 
-    return response.json();
+      return responseData;
+    } catch (error: any) {
+      if (error.message === 'IP_NOT_AUTHORIZED') {
+        throw error;
+      }
+      
+      console.error(`ConLicitação API Error - ${endpoint}:`, error);
+      throw new Error(`Erro de conexão com a API ConLicitação: ${error.message}`);
+    }
   }
 
   async getFiltros() {
