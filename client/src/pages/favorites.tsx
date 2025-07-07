@@ -60,18 +60,8 @@ export default function Favorites() {
   const [ufPopoverOpen, setUfPopoverOpen] = useState(false);
 
 
-  const buildQueryParams = () => {
-    const params = new URLSearchParams();
-    // Only apply date filters if both from and to are selected
-    if (dateRange.from && dateRange.to) {
-      params.append('dateFrom', format(dateRange.from, 'yyyy-MM-dd'));
-      params.append('dateTo', format(dateRange.to, 'yyyy-MM-dd'));
-    }
-    return params.toString();
-  };
-
   const { data: favorites = [], isLoading } = useQuery<Bidding[]>({
-    queryKey: [`/api/favorites/${user?.id}`, buildQueryParams()],
+    queryKey: [`/api/favorites/${user?.id}`],
     enabled: !!user,
   });
 
@@ -89,7 +79,22 @@ export default function Favorites() {
     const matchesUF = selectedUFs.length === 0 || 
       selectedUFs.includes(bidding.orgao_uf);
 
-    return matchesNumeroControle && matchesOrgao && matchesUF;
+    // Date filter logic - if both dates are selected, check if bidding date is within range
+    let matchesDateRange = true;
+    if (dateRange.from && dateRange.to) {
+      const biddingDate = new Date(bidding.data_abertura);
+      const startDate = new Date(dateRange.from);
+      const endDate = new Date(dateRange.to);
+      
+      // Set time to beginning/end of day for accurate comparison
+      startDate.setHours(0, 0, 0, 0);
+      endDate.setHours(23, 59, 59, 999);
+      biddingDate.setHours(0, 0, 0, 0);
+      
+      matchesDateRange = biddingDate >= startDate && biddingDate <= endDate;
+    }
+
+    return matchesNumeroControle && matchesOrgao && matchesUF && matchesDateRange;
   });
 
   const toggleOrgao = (orgao: string) => {
@@ -295,82 +300,70 @@ export default function Favorites() {
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Selecionar período
                 </label>
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-2 gap-3">
                   {/* Data de Início */}
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        className={cn(
-                          "w-full justify-start text-left font-normal h-14",
-                          !dateRange.from && "text-muted-foreground"
-                        )}
-                      >
-                        <CalendarIcon className="mr-2 h-4 w-4" />
-                        <div className="flex flex-col text-left">
-                          <span className="text-xs text-gray-500">Início</span>
-                          <span className="text-sm font-medium">
-                            {dateRange.from ? format(dateRange.from, "dd/MM/yyyy") : "DD/MM/AAAA"}
+                  <div>
+                    <label className="block text-xs text-gray-500 mb-1">Início</label>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          className={cn(
+                            "w-full justify-start text-left font-normal h-10",
+                            !dateRange.from && "text-muted-foreground"
+                          )}
+                        >
+                          <CalendarIcon className="mr-2 h-4 w-4" />
+                          <span className="text-sm">
+                            {dateRange.from ? format(dateRange.from, "dd/MM/yyyy") : "01/07/2025"}
                           </span>
-                        </div>
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar
-                        mode="single"
-                        selected={dateRange.from}
-                        onSelect={(date) => setDateRange(prev => ({ ...prev, from: date }))}
-                        initialFocus
-                        numberOfMonths={2}
-                        locale={ptBR}
-                      />
-                    </PopoverContent>
-                  </Popover>
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={dateRange.from}
+                          onSelect={(date) => setDateRange(prev => ({ ...prev, from: date }))}
+                          initialFocus
+                          numberOfMonths={1}
+                          locale={ptBR}
+                        />
+                      </PopoverContent>
+                    </Popover>
+                  </div>
 
                   {/* Data de Fim */}
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        className={cn(
-                          "w-full justify-start text-left font-normal h-14",
-                          !dateRange.to && "text-muted-foreground"
-                        )}
-                      >
-                        <CalendarIcon className="mr-2 h-4 w-4" />
-                        <div className="flex flex-col text-left">
-                          <span className="text-xs text-gray-500">Fim</span>
-                          <span className="text-sm font-medium">
-                            {dateRange.to ? format(dateRange.to, "dd/MM/yyyy") : "DD/MM/AAAA"}
+                  <div>
+                    <label className="block text-xs text-gray-500 mb-1">Fim</label>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          className={cn(
+                            "w-full justify-start text-left font-normal h-10",
+                            !dateRange.to && "text-muted-foreground"
+                          )}
+                        >
+                          <CalendarIcon className="mr-2 h-4 w-4" />
+                          <span className="text-sm">
+                            {dateRange.to ? format(dateRange.to, "dd/MM/yyyy") : "04/07/2025"}
                           </span>
-                        </div>
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar
-                        mode="single"
-                        selected={dateRange.to}
-                        onSelect={(date) => setDateRange(prev => ({ ...prev, to: date }))}
-                        initialFocus
-                        numberOfMonths={2}
-                        locale={ptBR}
-                        disabled={(date) => dateRange.from ? date < dateRange.from : false}
-                      />
-                    </PopoverContent>
-                  </Popover>
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={dateRange.to}
+                          onSelect={(date) => setDateRange(prev => ({ ...prev, to: date }))}
+                          initialFocus
+                          numberOfMonths={1}
+                          locale={ptBR}
+                          disabled={(date) => dateRange.from ? date < dateRange.from : false}
+                        />
+                      </PopoverContent>
+                    </Popover>
+                  </div>
                 </div>
-                
-                {/* Botão Pesquisar */}
-                <Button 
-                  className="w-full mt-4 h-12 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white shadow-lg text-base font-semibold"
-                  onClick={() => {
-                    // A funcionalidade de filtro por data já está implementada no useQuery
-                    console.log('Aplicando filtros de período:', dateRange);
-                  }}
-                >
-                  <Search className="h-5 w-5 mr-2" />
-                  Pesquisar
-                </Button>
                 
                 {(dateRange.from || dateRange.to) && (
                   <div className="mt-2">
@@ -392,21 +385,29 @@ export default function Favorites() {
                 )}
               </div>
 
-              {/* Search Button */}
-              <div className="flex items-end gap-2">
-                <Button className="flex-1" variant="default">
-                  <Search className="mr-2 h-4 w-4" />
-                  Pesquisar
-                </Button>
-                {(numeroControle || selectedOrgaos.length > 0 || selectedUFs.length > 0 || (dateRange.from && dateRange.to)) && (
+              {/* Clear Filters Button */}
+              {(numeroControle || selectedOrgaos.length > 0 || selectedUFs.length > 0 || (dateRange.from && dateRange.to)) && (
+                <div className="flex justify-end">
                   <Button variant="outline" onClick={clearFilters}>
-                    Limpar
+                    Limpar Filtros
                   </Button>
-                )}
-              </div>
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
+
+        {/* Results Header */}
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-lg font-semibold text-gray-900">
+            {filteredFavorites.length === 0 ? 'Nenhum favorito encontrado' : `${filteredFavorites.length} favorito${filteredFavorites.length > 1 ? 's' : ''} encontrado${filteredFavorites.length > 1 ? 's' : ''}`}
+          </h2>
+          {filteredFavorites.length > 0 && filteredFavorites.length !== favorites.length && (
+            <span className="text-sm text-gray-500">
+              {favorites.length} total
+            </span>
+          )}
+        </div>
 
         {/* Results */}
         <div className="space-y-4">
