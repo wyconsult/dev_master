@@ -172,7 +172,7 @@ export default function Favorites() {
                   onClick={clearFilters}
                   className="h-8 w-8 p-0 hover:bg-gray-100"
                 >
-                  <Eraser className="h-4 w-4 text-gray-500" />
+                  <Eraser className="h-4 w-4 text-red-500 hover:text-red-600" />
                 </Button>
               )}
             </CardTitle>
