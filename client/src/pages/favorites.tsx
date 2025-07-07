@@ -295,71 +295,73 @@ export default function Favorites() {
                 )}
               </div>
 
-              {/* Data de Início */}
+              {/* Selecionar período */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Início
+                  Selecionar período
                 </label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className={cn(
-                        "w-full justify-start text-left font-normal",
-                        !dateRange.from && "text-muted-foreground"
-                      )}
-                    >
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      <span className="text-sm truncate">
-                        {dateRange.from ? format(dateRange.from, "dd/MM/yyyy") : "01/07/2025"}
-                      </span>
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={dateRange.from}
-                      onSelect={(date) => setDateRange(prev => ({ ...prev, from: date }))}
-                      initialFocus
-                      numberOfMonths={1}
-                      locale={ptBR}
-                    />
-                  </PopoverContent>
-                </Popover>
-              </div>
+                <div className="grid grid-cols-2 gap-1">
+                  {/* Data de Início */}
+                  <div>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          className={cn(
+                            "w-full justify-start text-left font-normal text-xs h-9 px-2",
+                            !dateRange.from && "text-muted-foreground"
+                          )}
+                        >
+                          <CalendarIcon className="mr-1 h-3 w-3" />
+                          <span className="truncate">
+                            {dateRange.from ? format(dateRange.from, "dd/MM/yyyy") : "Início"}
+                          </span>
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={dateRange.from}
+                          onSelect={(date) => setDateRange(prev => ({ ...prev, from: date }))}
+                          initialFocus
+                          numberOfMonths={1}
+                          locale={ptBR}
+                        />
+                      </PopoverContent>
+                    </Popover>
+                  </div>
 
-              {/* Data de Fim */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Fim
-                </label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className={cn(
-                        "w-full justify-start text-left font-normal",
-                        !dateRange.to && "text-muted-foreground"
-                      )}
-                    >
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      <span className="text-sm truncate">
-                        {dateRange.to ? format(dateRange.to, "dd/MM/yyyy") : "05/07/2025"}
-                      </span>
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={dateRange.to}
-                      onSelect={(date) => setDateRange(prev => ({ ...prev, to: date }))}
-                      initialFocus
-                      numberOfMonths={1}
-                      locale={ptBR}
-                      disabled={(date) => dateRange.from ? date < dateRange.from : false}
-                    />
-                  </PopoverContent>
-                </Popover>
+                  {/* Data de Fim */}
+                  <div>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          className={cn(
+                            "w-full justify-start text-left font-normal text-xs h-9 px-2",
+                            !dateRange.to && "text-muted-foreground"
+                          )}
+                        >
+                          <CalendarIcon className="mr-1 h-3 w-3" />
+                          <span className="truncate">
+                            {dateRange.to ? format(dateRange.to, "dd/MM/yyyy") : "Fim"}
+                          </span>
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={dateRange.to}
+                          onSelect={(date) => setDateRange(prev => ({ ...prev, to: date }))}
+                          initialFocus
+                          numberOfMonths={1}
+                          locale={ptBR}
+                          disabled={(date) => dateRange.from ? date < dateRange.from : false}
+                        />
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+                </div>
               </div>
 
               {/* Clear Filters Button */}
