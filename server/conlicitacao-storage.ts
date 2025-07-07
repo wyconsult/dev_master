@@ -62,6 +62,9 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
     };
     this.users.set(1, testUser);
     this.currentUserId = 2;
+
+    // Sistema configurado para usar apenas dados reais da API ConLicitação
+    // Cache será populado quando IP estiver autorizado
   }
 
   // Métodos de usuário (mantemos localmente)
@@ -99,11 +102,13 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
       return filtros;
     } catch (error: any) {
       if (error.message === 'IP_NOT_AUTHORIZED') {
-        console.log('❌ IP não autorizado na ConLicitação API. Execute localmente com IP autorizado.');
-        return [];
+        console.log('API ConLicitação: IP não autorizado. Contate o administrador para autorizar acesso.');
+      } else {
+        console.error('Erro ao buscar filtros da API:', error);
       }
-      console.error('Erro ao buscar filtros da API real:', error);
-      throw new Error('Falha ao conectar com a API ConLicitação. Verifique sua conexão e autorização de IP.');
+      
+      // Retorna array vazio - sistema aguarda autorização de IP para dados reais
+      return [];
     }
   }
 
@@ -129,11 +134,13 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
       };
     } catch (error: any) {
       if (error.message === 'IP_NOT_AUTHORIZED') {
-        console.log('❌ IP não autorizado na ConLicitação API. Execute localmente com IP autorizado.');
-        return { boletins: [], total: 0 };
+        console.log('API ConLicitação: IP não autorizado. Contate o administrador para autorizar acesso.');
+      } else {
+        console.error('Erro ao buscar boletins da API:', error);
       }
-      console.error('Erro ao buscar boletins da API real:', error);
-      throw new Error('Falha ao conectar com a API ConLicitação. Verifique sua conexão e autorização de IP.');
+      
+      // Retorna array vazio - sistema aguarda autorização de IP para dados reais
+      return { boletins: [], total: 0 };
     }
   }
 
@@ -181,11 +188,11 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
       return { boletim, licitacoes, acompanhamentos };
     } catch (error: any) {
       if (error.message === 'IP_NOT_AUTHORIZED') {
-        console.log('❌ IP não autorizado na ConLicitação API. Execute localmente com IP autorizado.');
-        return undefined;
+        console.log('API ConLicitação: IP não autorizado. Contate o administrador para autorizar acesso.');
+      } else {
+        console.error('Erro ao buscar boletim da API:', error);
       }
-      console.error('Erro ao buscar boletim da API real:', error);
-      throw new Error('Falha ao conectar com a API ConLicitação. Verifique sua conexão e autorização de IP.');
+      return undefined;
     }
   }
 
@@ -290,10 +297,10 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
       }
     } catch (error: any) {
       if (error.message === 'IP_NOT_AUTHORIZED') {
-        console.log('❌ IP não autorizado na ConLicitação API. Execute localmente com IP autorizado.');
-        return;
+        console.log('API ConLicitação: IP não autorizado. Contate o administrador para autorizar acesso.');
+      } else {
+        console.error('Erro ao atualizar cache de licitações:', error);
       }
-      console.error('Erro ao atualizar cache de licitações:', error);
     }
   }
 
