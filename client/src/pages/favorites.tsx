@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { BiddingCard } from "@/components/bidding-card";
-import { Filter, Search, X, Calendar as CalendarIcon, Heart } from "lucide-react";
+import { Filter, Search, X, Calendar as CalendarIcon, Heart, Eraser } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from "@/components/ui/command";
@@ -160,9 +160,21 @@ export default function Favorites() {
         {/* Filters */}
         <Card className="mb-6 border-0 shadow-xl bg-white/80 backdrop-blur-sm">
           <CardHeader>
-            <CardTitle className="text-lg flex items-center gap-2">
-              <Filter className="h-5 w-5" />
-              Filtros de Pesquisa
+            <CardTitle className="text-lg flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Filter className="h-5 w-5" />
+                Filtros de Pesquisa
+              </div>
+              {(numeroControle || selectedOrgaos.length > 0 || selectedUFs.length > 0 || (dateRange.from && dateRange.to)) && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={clearFilters}
+                  className="h-8 w-8 p-0 hover:bg-gray-100"
+                >
+                  <Eraser className="h-4 w-4 text-gray-500" />
+                </Button>
+              )}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -308,11 +320,11 @@ export default function Favorites() {
                         <Button
                           variant="outline"
                           className={cn(
-                            "w-full justify-start text-left font-normal text-xs h-9 px-2",
+                            "w-full justify-start text-left font-normal text-sm h-10 px-3",
                             !dateRange.from && "text-muted-foreground"
                           )}
                         >
-                          <CalendarIcon className="mr-1 h-3 w-3" />
+                          <CalendarIcon className="mr-2 h-4 w-4" />
                           <span className="truncate">
                             {dateRange.from ? format(dateRange.from, "dd/MM/yyyy") : "Início"}
                           </span>
@@ -338,11 +350,11 @@ export default function Favorites() {
                         <Button
                           variant="outline"
                           className={cn(
-                            "w-full justify-start text-left font-normal text-xs h-9 px-2",
+                            "w-full justify-start text-left font-normal text-sm h-10 px-3",
                             !dateRange.to && "text-muted-foreground"
                           )}
                         >
-                          <CalendarIcon className="mr-1 h-3 w-3" />
+                          <CalendarIcon className="mr-2 h-4 w-4" />
                           <span className="truncate">
                             {dateRange.to ? format(dateRange.to, "dd/MM/yyyy") : "Fim"}
                           </span>
@@ -364,14 +376,7 @@ export default function Favorites() {
                 </div>
               </div>
 
-              {/* Clear Filters Button */}
-              {(numeroControle || selectedOrgaos.length > 0 || selectedUFs.length > 0 || (dateRange.from && dateRange.to)) && (
-                <div className="flex justify-end">
-                  <Button variant="outline" onClick={clearFilters}>
-                    Limpar Filtros
-                  </Button>
-                </div>
-              )}
+
             </div>
           </CardContent>
         </Card>
