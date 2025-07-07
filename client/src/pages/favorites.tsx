@@ -58,7 +58,7 @@ export default function Favorites() {
   const [dateRange, setDateRange] = useState<{from?: Date, to?: Date}>({});
   const [orgaoPopoverOpen, setOrgaoPopoverOpen] = useState(false);
   const [ufPopoverOpen, setUfPopoverOpen] = useState(false);
-  const [datePopoverOpen, setDatePopoverOpen] = useState(false);
+
 
   const buildQueryParams = () => {
     const params = new URLSearchParams();
@@ -295,48 +295,92 @@ export default function Favorites() {
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Selecionar período
                 </label>
-                <Popover open={datePopoverOpen} onOpenChange={setDatePopoverOpen}>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className={cn(
-                        "w-full justify-start text-left font-normal",
-                        !dateRange.from && "text-muted-foreground"
-                      )}
-                    >
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {dateRange.from ? (
-                        dateRange.to ? (
-                          `${format(dateRange.from, "dd/MM/yy")} - ${format(dateRange.to, "dd/MM/yy")}`
-                        ) : (
-                          format(dateRange.from, "dd/MM/yy")
-                        )
-                      ) : (
-                        "Escolha o período"
-                      )}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="range"
-                      defaultMonth={dateRange.from}
-                      selected={dateRange.from && dateRange.to ? { from: dateRange.from, to: dateRange.to } : undefined}
-                      onSelect={(range) => {
-                        if (range) {
-                          setDateRange({ from: range.from, to: range.to });
-                        } else {
-                          setDateRange({});
-                        }
-                      }}
-                      numberOfMonths={2}
-                      locale={ptBR}
-                    />
-                  </PopoverContent>
-                </Popover>
-                {(dateRange.from && dateRange.to) && (
+                <div className="grid grid-cols-2 gap-2">
+                  {/* Data de Início */}
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className={cn(
+                          "w-full justify-start text-left font-normal h-14",
+                          !dateRange.from && "text-muted-foreground"
+                        )}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        <div className="flex flex-col text-left">
+                          <span className="text-xs text-gray-500">Início</span>
+                          <span className="text-sm font-medium">
+                            {dateRange.from ? format(dateRange.from, "dd/MM/yyyy") : "DD/MM/AAAA"}
+                          </span>
+                        </div>
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={dateRange.from}
+                        onSelect={(date) => setDateRange(prev => ({ ...prev, from: date }))}
+                        initialFocus
+                        numberOfMonths={2}
+                        locale={ptBR}
+                      />
+                    </PopoverContent>
+                  </Popover>
+
+                  {/* Data de Fim */}
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className={cn(
+                          "w-full justify-start text-left font-normal h-14",
+                          !dateRange.to && "text-muted-foreground"
+                        )}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        <div className="flex flex-col text-left">
+                          <span className="text-xs text-gray-500">Fim</span>
+                          <span className="text-sm font-medium">
+                            {dateRange.to ? format(dateRange.to, "dd/MM/yyyy") : "DD/MM/AAAA"}
+                          </span>
+                        </div>
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={dateRange.to}
+                        onSelect={(date) => setDateRange(prev => ({ ...prev, to: date }))}
+                        initialFocus
+                        numberOfMonths={2}
+                        locale={ptBR}
+                        disabled={(date) => dateRange.from ? date < dateRange.from : false}
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+                
+                {/* Botão Pesquisar */}
+                <Button 
+                  className="w-full mt-4 h-12 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white shadow-lg text-base font-semibold"
+                  onClick={() => {
+                    // A funcionalidade de filtro por data já está implementada no useQuery
+                    console.log('Aplicando filtros de período:', dateRange);
+                  }}
+                >
+                  <Search className="h-5 w-5 mr-2" />
+                  Pesquisar
+                </Button>
+                
+                {(dateRange.from || dateRange.to) && (
                   <div className="mt-2">
                     <Badge variant="secondary" className="text-xs">
-                      {`${format(dateRange.from, "dd/MM/yy")} - ${format(dateRange.to, "dd/MM/yy")}`}
+                      {dateRange.from && dateRange.to 
+                        ? `${format(dateRange.from, "dd/MM/yy")} - ${format(dateRange.to, "dd/MM/yy")}`
+                        : dateRange.from
+                        ? `A partir de ${format(dateRange.from, "dd/MM/yy")}`
+                        : `Até ${format(dateRange.to!, "dd/MM/yy")}`
+                      }
                       <button
                         onClick={() => setDateRange({})}
                         className="ml-1 hover:text-destructive"

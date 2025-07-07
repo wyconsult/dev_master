@@ -90,29 +90,7 @@ export default function Dashboard() {
     }
   ];
 
-  const statsCards = [
-    {
-      title: "Licitações Ativas",
-      value: isLoadingBiddings ? "..." : licitacoesAtivas.toString(),
-      change: isLoadingBiddings ? "..." : `${totalLicitacoes} total`,
-      icon: TrendingUp,
-      color: "text-green-600"
-    },
-    {
-      title: "Editais Recentes",
-      value: isLoadingBiddings ? "..." : editaisRecentes.toString(),
-      change: "Últimos 7 dias",
-      icon: Clock,
-      color: "text-blue-600"
-    },
-    {
-      title: "Órgãos Monitorados",
-      value: isLoadingBiddings ? "..." : orgaosUnicos.toString(),
-      change: isLoadingFiltros ? "..." : `${filtros.length} filtros`,
-      icon: Building,
-      color: "text-purple-600"
-    }
-  ];
+
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
@@ -133,32 +111,6 @@ export default function Dashboard() {
           <p className="text-gray-500">
             Gerencie suas licitações e boletins de forma inteligente
           </p>
-        </div>
-
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-          {statsCards.map((stat, index) => (
-            <Card key={index} className="hover:shadow-xl hover:-translate-y-1 transition-all duration-300 border-0 shadow-md bg-white/80 backdrop-blur-sm">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-gray-500 mb-2">
-                      {stat.title}
-                    </p>
-                    <p className="text-3xl font-bold text-gray-900 mb-1">
-                      {stat.value}
-                    </p>
-                    <p className={`text-sm ${stat.color} font-semibold`}>
-                      {stat.change}
-                    </p>
-                  </div>
-                  <div className={`p-4 rounded-xl bg-gradient-to-br from-white to-gray-50 shadow-lg`}>
-                    <stat.icon className={`h-7 w-7 ${stat.color}`} />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
         </div>
 
         {/* Main Navigation Cards */}

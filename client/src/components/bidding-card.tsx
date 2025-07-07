@@ -62,7 +62,18 @@ export function BiddingCard({ bidding, showFavoriteIcon = true }: BiddingCardPro
 
   const handleLinkClick = () => {
     if (bidding.documento_url) {
-      window.open(bidding.documento_url, '_blank');
+      // Se a URL não estiver completa, tentar buscar na API ConLicitação
+      if (bidding.documento_url.includes('consultaonline.conlicitacao.com.br')) {
+        window.open(bidding.documento_url, '_blank');
+      } else {
+        // Fallback para ConLicitação ID se documento_url não estiver funcionando
+        const conlicitacaoUrl = `https://consultaonline.conlicitacao.com.br/licitacao/visualizar/${bidding.conlicitacao_id}`;
+        window.open(conlicitacaoUrl, '_blank');
+      }
+    } else if (bidding.conlicitacao_id) {
+      // Usar ConLicitação ID como fallback
+      const conlicitacaoUrl = `https://consultaonline.conlicitacao.com.br/licitacao/visualizar/${bidding.conlicitacao_id}`;
+      window.open(conlicitacaoUrl, '_blank');
     }
   };
 

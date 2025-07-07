@@ -4,20 +4,32 @@ import { Navbar } from "@/components/navbar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, ChevronLeft, ChevronRight, Eye } from "lucide-react";
+import { Calendar, ChevronLeft, ChevronRight, Eye, ArrowLeft } from "lucide-react";
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addMonths, subMonths, isToday } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { apiRequest } from "@/lib/queryClient";
-import type { Boletim } from "@shared/schema";
+import { BiddingCard } from "@/components/bidding-card";
+import type { Boletim, Bidding, Acompanhamento } from "@shared/schema";
 
 export default function Boletins() {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [selectedBoletim, setSelectedBoletim] = useState<number | null>(null);
   const queryClient = useQueryClient();
 
   const { data: boletins = [], isLoading } = useQuery<Boletim[]>({
     queryKey: ["/api/boletins"],
+  });
+
+  // Query para buscar dados específicos do boletim selecionado
+  const { data: boletimData, isLoading: isLoadingBoletimData } = useQuery<{
+    boletim: Boletim;
+    licitacoes: Bidding[];
+    acompanhamentos: Acompanhamento[];
+  }>({
+    queryKey: [`/api/boletim/${selectedBoletim}`],
+    enabled: !!selectedBoletim,
   });
 
   const markAsViewedMutation = useMutation({
@@ -28,6 +40,15 @@ export default function Boletins() {
       queryClient.invalidateQueries({ queryKey: ["/api/boletins"] });
     },
   });
+
+  const handleBoletimClick = (boletimId: number) => {
+    markAsViewedMutation.mutate(boletimId);
+    setSelectedBoletim(boletimId);
+  };
+
+  const handleBackToCalendar = () => {
+    setSelectedBoletim(null);
+  };
 
   const monthStart = startOfMonth(currentDate);
   const monthEnd = endOfMonth(currentDate);
@@ -95,6 +116,77 @@ export default function Boletins() {
             <div className="h-8 bg-gray-200 rounded w-1/4 mb-4"></div>
             <div className="h-96 bg-gray-200 rounded"></div>
           </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Se um boletim estiver selecionado, mostrar as licitações
+  if (selectedBoletim && boletimData) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
+        <Navbar />
+        
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          {/* Header com botão de volta */}
+          <div className="mb-8 flex items-center justify-between">
+            <div>
+              <Button 
+                variant="outline" 
+                onClick={handleBackToCalendar}
+                className="mb-4"
+              >
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Voltar ao Calendário
+              </Button>
+              <h1 className="text-3xl font-bold text-gray-900">
+                Boletim #{boletimData.boletim.numero_edicao}
+              </h1>
+              <p className="text-gray-600">
+                {boletimData.licitacoes.length} licitações encontradas
+              </p>
+            </div>
+          </div>
+
+          {/* Loading state */}
+          {isLoadingBoletimData && (
+            <div className="flex justify-center py-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+            </div>
+          )}
+
+          {/* Lista de licitações */}
+          <div className="grid gap-6">
+            {boletimData.licitacoes.map((licitacao) => (
+              <BiddingCard 
+                key={licitacao.id} 
+                bidding={licitacao} 
+                showFavoriteIcon={true} 
+              />
+            ))}
+          </div>
+
+          {/* Acompanhamentos se houver */}
+          {boletimData.acompanhamentos.length > 0 && (
+            <div className="mt-8">
+              <h2 className="text-2xl font-bold text-gray-900 mb-4">Acompanhamentos</h2>
+              <div className="space-y-4">
+                {boletimData.acompanhamentos.map((acomp) => (
+                  <Card key={acomp.id} className="border-l-4 border-l-purple-500">
+                    <CardContent className="p-4">
+                      <h3 className="font-medium text-gray-900">{acomp.objeto}</h3>
+                      <p className="text-sm text-gray-600 mt-1">{acomp.sintese}</p>
+                      <div className="mt-2 text-xs text-gray-500">
+                        <p><strong>Órgão:</strong> {acomp.orgao_nome}</p>
+                        <p><strong>Processo:</strong> {acomp.processo}</p>
+                        <p><strong>Data:</strong> {new Date(acomp.data_fonte).toLocaleString('pt-BR')}</p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </div>
     );
@@ -258,11 +350,11 @@ export default function Boletins() {
                             variant="outline" 
                             size="sm" 
                             className="w-full mt-3"
-                            onClick={() => markAsViewedMutation.mutate(boletim.id)}
+                            onClick={() => handleBoletimClick(boletim.id)}
                             disabled={markAsViewedMutation.isPending}
                           >
                             <Eye className="h-4 w-4 mr-2" />
-                            {markAsViewedMutation.isPending ? "Acessando..." : "Acessar documento"}
+                            {markAsViewedMutation.isPending ? "Acessando..." : "Ver Licitações"}
                           </Button>
                         </CardContent>
                       </Card>
