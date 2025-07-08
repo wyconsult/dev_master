@@ -123,7 +123,7 @@ The system is configured for production use with real data only:
 - **No fallback data**: When API access is restricted, system returns empty results gracefully
 - **Real API integration**: All data comes from ConLicitação API when IP is authorized
 - **Enhanced error detection**: System detects IP authorization and compares with authorized IP
-- **Authorized IP**: 189.89.90.102 (only IP with ConLicitação API access)
+- **Authorized IPs**: 189.89.90.102 (development), 31.97.26.138 (production)
 - **Production deployment**: Ready for deployment with IP authorization workflow documented
 - **IP Management**: Automatic detection and comparison with authorized IPs list
 
@@ -151,7 +151,7 @@ Changelog:
 - January 7, 2025. Enhanced API error handling - system detects IP authorization status
 - January 7, 2025. Added automatic IP detection with authorized IP comparison
 - January 7, 2025. Prepared system for production deployment with IP authorization workflow
-- January 7, 2025. Current status: IP 189.89.90.102 authorized for development
+- January 7, 2025. Current status: Both IPs configured - Dev: 189.89.90.102, Prod: 31.97.26.138
 - January 7, 2025. System configured for real API data only - no fallback data
 - January 7, 2025. Updated favorites page with red eraser icon for clearing filters
 - January 7, 2025. Completed all UI improvements: dashboard simplification, boletins calendar, biddings filters, favorites date range

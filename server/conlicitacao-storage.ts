@@ -103,9 +103,9 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
     } catch (error: any) {
       if (error.message === 'IP_NOT_AUTHORIZED') {
         console.log('🚫 API ConLicitação: IP não autorizado.');
-        console.log('💡 Para acesso aos dados reais:');
-        console.log('   - Desenvolvimento: Execute no ambiente com IP 189.89.90.102');
-        console.log('   - Produção: Solicite autorização do IP do servidor ao admin ConLicitação');
+        console.log('💡 Para acesso aos dados reais, execute em ambiente com IP autorizado:');
+        console.log('   - Desenvolvimento: 189.89.90.102');
+        console.log('   - Produção: 31.97.26.138');
       } else {
         console.error('Erro ao buscar filtros da API:', error);
       }
@@ -138,9 +138,9 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
     } catch (error: any) {
       if (error.message === 'IP_NOT_AUTHORIZED') {
         console.log('🚫 API ConLicitação: IP não autorizado.');
-        console.log('💡 Para acesso aos dados reais:');
-        console.log('   - Desenvolvimento: Execute no ambiente com IP 189.89.90.102');
-        console.log('   - Produção: Solicite autorização do IP do servidor ao admin ConLicitação');
+        console.log('💡 Para acesso aos dados reais, execute em ambiente com IP autorizado:');
+        console.log('   - Desenvolvimento: 189.89.90.102');
+        console.log('   - Produção: 31.97.26.138');
       } else {
         console.error('Erro ao buscar boletins da API:', error);
       }
@@ -195,9 +195,9 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
     } catch (error: any) {
       if (error.message === 'IP_NOT_AUTHORIZED') {
         console.log('🚫 API ConLicitação: IP não autorizado.');
-        console.log('💡 Para acesso aos dados reais:');
-        console.log('   - Desenvolvimento: Execute no ambiente com IP 189.89.90.102');
-        console.log('   - Produção: Solicite autorização do IP do servidor ao admin ConLicitação');
+        console.log('💡 Para acesso aos dados reais, execute em ambiente com IP autorizado:');
+        console.log('   - Desenvolvimento: 189.89.90.102');
+        console.log('   - Produção: 31.97.26.138');
       } else {
         console.error('Erro ao buscar boletim da API:', error);
       }
@@ -307,9 +307,9 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
     } catch (error: any) {
       if (error.message === 'IP_NOT_AUTHORIZED') {
         console.log('🚫 API ConLicitação: IP não autorizado.');
-        console.log('💡 Para acesso aos dados reais:');
-        console.log('   - Desenvolvimento: Execute no ambiente com IP 189.89.90.102');
-        console.log('   - Produção: Solicite autorização do IP do servidor ao admin ConLicitação');
+        console.log('💡 Para acesso aos dados reais, execute em ambiente com IP autorizado:');
+        console.log('   - Desenvolvimento: 189.89.90.102');
+        console.log('   - Produção: 31.97.26.138');
       } else {
         console.error('Erro ao atualizar cache de licitações:', error);
       }

@@ -73,8 +73,10 @@ Para funcionar com dados reais, seu IP deve estar autorizado na ConLicitação. 
 
 ### ❌ Erro 401 (Token inválido ou IP não cadastrado)
 **Causa**: Seu IP não está autorizado na ConLicitação  
-**IP Autorizado**: 189.89.90.102 (único IP com acesso autorizado)
-**Solução**: Execute a aplicação no ambiente com IP 189.89.90.102 para acesso completo aos dados
+**IPs Autorizados**: 
+- Desenvolvimento: 189.89.90.102
+- Produção: 31.97.26.138
+**Solução**: Execute a aplicação no ambiente com um dos IPs autorizados
 
 **Status no console do servidor:**
 ```

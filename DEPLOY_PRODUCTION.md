@@ -2,13 +2,14 @@
 
 ## Pré-requisitos para Deploy
 
-### 1. Autorização de IP na ConLicitação
-Antes do deploy, é necessário solicitar ao administrador da ConLicitação a autorização do IP do servidor de produção.
+### 1. IPs Autorizados na ConLicitação
+Os seguintes IPs estão configurados e autorizados na ConLicitação:
 
-**Passos:**
-1. Obter o IP público do servidor de produção onde a aplicação será deployada
-2. Solicitar autorização deste IP ao administrador da ConLicitação
-3. Atualizar a lista de IPs autorizados no código
+**IPs Autorizados:**
+- **Desenvolvimento**: 189.89.90.102 (localhost)
+- **Produção**: 31.97.26.138 (servidor de produção)
+
+Ambos os IPs já estão configurados no sistema.
 
 ### 2. Configuração de IPs Autorizados
 
@@ -16,8 +17,8 @@ Editar o arquivo `server/ip-detector.ts`:
 
 ```typescript
 const authorizedIPs = [
-  '189.89.90.102',        // IP de desenvolvimento
-  'XXX.XXX.XXX.XXX'       // IP do servidor de produção (substituir pelo IP real)
+  '189.89.90.102',        // IP de desenvolvimento (localhost)
+  '31.97.26.138'          // IP do servidor de produção
 ];
 ```
 
@@ -37,17 +38,9 @@ O sistema está configurado com:
    npm run build
    ```
 
-2. **Obter IP do servidor**:
+2. **Verificar IP do servidor**:
    - O sistema detectará automaticamente o IP no primeiro acesso
-   - Verificar logs do console para obter o IP atual
-
-3. **Autorizar IP**:
-   - Enviar o IP detectado para o administrador da ConLicitação
-   - Aguardar confirmação de autorização
-
-4. **Atualizar código**:
-   - Adicionar o IP autorizado na lista de `authorizedIPs`
-   - Fazer commit das alterações
+   - Verificar logs do console para confirmar se IP coincide com o autorizado (31.97.26.138)
 
 5. **Deploy**:
    - Usar o botão "Deploy" do Replit
