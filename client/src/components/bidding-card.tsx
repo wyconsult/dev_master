@@ -60,23 +60,17 @@ export function BiddingCard({ bidding, showFavoriteIcon = true }: BiddingCardPro
     }
   };
 
-  const handleLinkClick = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    
+  const handleLinkClick = () => {
     if (bidding.link_edital && bidding.link_edital.trim() !== '') {
       // Usar o link do edital diretamente da API real
-      window.open(bidding.link_edital, '_blank', 'noopener,noreferrer');
+      const link = bidding.link_edital.startsWith('http') 
+        ? bidding.link_edital 
+        : `https://${bidding.link_edital}`;
+      window.open(link, '_blank');
     } else if (bidding.conlicitacao_id) {
-      // Tentar diferentes URLs da ConLicitação
-      const urls = [
-        `https://consultaonline.conlicitacao.com.br/licitacao/visualizar/${bidding.conlicitacao_id}`,
-        `https://consultaonline.conlicitacao.com.br/boletim_web/public/licitacoes/${bidding.conlicitacao_id}`,
-        `https://consultaonline.conlicitacao.com.br/public/licitacao/${bidding.conlicitacao_id}`
-      ];
-      
-      // Tentar a primeira URL
-      window.open(urls[0], '_blank', 'noopener,noreferrer');
+      // URL correta para visualizar licitação no ConLicitação
+      const url = `https://consultaonline.conlicitacao.com.br/licitacao/visualizar/${bidding.conlicitacao_id}`;
+      window.open(url, '_blank');
     }
   };
 
@@ -118,12 +112,19 @@ export function BiddingCard({ bidding, showFavoriteIcon = true }: BiddingCardPro
 
         {/* Status badge */}
         <div className="flex justify-end mb-3">
-          <span className={cn(
-            "px-3 py-1 rounded text-xs font-medium text-white",
+          <div className={cn(
+            "px-4 py-2 rounded-lg text-xs font-bold text-white",
             getStatusColor(bidding.situacao || "")
-          )} style={{ minWidth: '80px', textAlign: 'center', fontSize: '10px', whiteSpace: 'nowrap' }}>
+          )} style={{ 
+            minWidth: '90px', 
+            textAlign: 'center', 
+            fontSize: '12px', 
+            whiteSpace: 'nowrap',
+            display: 'inline-block',
+            overflow: 'visible'
+          }}>
             {bidding.situacao?.toUpperCase()}
-          </span>
+          </div>
         </div>
 
         {/* Main info grid */}
@@ -144,13 +145,13 @@ export function BiddingCard({ bidding, showFavoriteIcon = true }: BiddingCardPro
           
           <div className="flex justify-between">
             <span className="text-gray-700"><strong>Cidade:</strong> {bidding.orgao_cidade} - {bidding.orgao_uf}</span>
-            <a 
-              href="#"
+            <span 
               className="text-blue-600 hover:text-blue-800 underline text-sm cursor-pointer"
               onClick={handleLinkClick}
+              style={{ userSelect: 'none' }}
             >
               <strong>Link:</strong> Acessar documento
-            </a>
+            </span>
           </div>
         </div>
       </CardContent>
