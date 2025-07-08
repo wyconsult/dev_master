@@ -61,18 +61,12 @@ export function BiddingCard({ bidding, showFavoriteIcon = true }: BiddingCardPro
   };
 
   const handleLinkClick = () => {
-    if (bidding.documento_url) {
-      // Se a URL não estiver completa, tentar buscar na API ConLicitação
-      if (bidding.documento_url.includes('consultaonline.conlicitacao.com.br')) {
-        window.open(bidding.documento_url, '_blank');
-      } else {
-        // Fallback para ConLicitação ID se documento_url não estiver funcionando
-        const conlicitacaoUrl = `https://consultaonline.conlicitacao.com.br/licitacao/visualizar/${bidding.conlicitacao_id}`;
-        window.open(conlicitacaoUrl, '_blank');
-      }
+    if (bidding.link_edital && bidding.link_edital.trim() !== '') {
+      // Usar o link do edital diretamente da API real
+      window.open(bidding.link_edital, '_blank');
     } else if (bidding.conlicitacao_id) {
-      // Usar ConLicitação ID como fallback
-      const conlicitacaoUrl = `https://consultaonline.conlicitacao.com.br/licitacao/visualizar/${bidding.conlicitacao_id}`;
+      // Fallback: construir URL padrão da ConLicitação
+      const conlicitacaoUrl = `https://consultaonline.conlicitacao.com.br/boletim_web/public/licitacoes/${bidding.conlicitacao_id}/arquivos/`;
       window.open(conlicitacaoUrl, '_blank');
     }
   };
@@ -116,7 +110,7 @@ export function BiddingCard({ bidding, showFavoriteIcon = true }: BiddingCardPro
         {/* Status badge */}
         <div className="flex justify-end mb-3 overflow-visible">
           <span className={cn(
-            "px-4 py-2 rounded-full text-sm font-medium text-white whitespace-nowrap",
+            "px-3 py-1 rounded-full text-xs font-medium text-white whitespace-nowrap min-w-fit",
             getStatusColor(bidding.situacao || "")
           )}>
             {bidding.situacao?.toUpperCase()}
