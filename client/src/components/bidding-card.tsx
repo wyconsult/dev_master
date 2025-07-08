@@ -121,7 +121,7 @@ export function BiddingCard({ bidding, showFavoriteIcon = true }: BiddingCardPro
           <span className={cn(
             "px-3 py-1 rounded text-xs font-medium text-white",
             getStatusColor(bidding.situacao || "")
-          )} style={{ minWidth: '70px', textAlign: 'center', fontSize: '11px', lineHeight: '1.2' }}>
+          )} style={{ minWidth: '80px', textAlign: 'center', fontSize: '10px', whiteSpace: 'nowrap' }}>
             {bidding.situacao?.toUpperCase()}
           </span>
         </div>
@@ -144,13 +144,13 @@ export function BiddingCard({ bidding, showFavoriteIcon = true }: BiddingCardPro
           
           <div className="flex justify-between">
             <span className="text-gray-700"><strong>Cidade:</strong> {bidding.orgao_cidade} - {bidding.orgao_uf}</span>
-            <button 
-              type="button"
-              className="text-blue-600 hover:text-blue-800 underline text-sm cursor-pointer bg-transparent border-none p-0"
+            <a 
+              href="#"
+              className="text-blue-600 hover:text-blue-800 underline text-sm cursor-pointer"
               onClick={handleLinkClick}
             >
               <strong>Link:</strong> Acessar documento
-            </button>
+            </a>
           </div>
         </div>
       </CardContent>
