@@ -212,8 +212,9 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
       `${tel.ddd ? '(' + tel.ddd + ')' : ''} ${tel.numero}${tel.ramal ? ' ramal ' + tel.ramal : ''}`
     ).join(', ') || '';
 
-    // Extrair link do edital da API real
-    const linkEdital = licitacao.documento?.[0]?.url || '';
+    // Extrair link do edital da API real (campo documento[])
+    const linkEdital = licitacao.documento?.[0] || '';
+    const documentoUrl = typeof linkEdital === 'string' ? linkEdital : linkEdital?.url || '';
 
     return {
       id: licitacao.id,
@@ -233,7 +234,8 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
       datahora_visita: licitacao.datahora_visita,
       datahora_prazo: licitacao.datahora_prazo,
       edital: licitacao.edital,
-      link_edital: linkEdital,
+      link_edital: documentoUrl,
+      documento_url: documentoUrl,
       processo: licitacao.processo,
       observacao: licitacao.observacao,
       item: licitacao.item,

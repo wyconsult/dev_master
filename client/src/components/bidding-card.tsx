@@ -61,11 +61,14 @@ export function BiddingCard({ bidding, showFavoriteIcon = true }: BiddingCardPro
   };
 
   const handleLinkClick = () => {
-    if (bidding.link_edital && bidding.link_edital.trim() !== '') {
-      // Usar o link do edital diretamente da API real
-      const link = bidding.link_edital.startsWith('http') 
-        ? bidding.link_edital 
-        : `https://${bidding.link_edital}`;
+    // Primeiro tentar documento_url, depois link_edital
+    const documentLink = bidding.documento_url || bidding.link_edital;
+    
+    if (documentLink && documentLink.trim() !== '') {
+      // Usar o link do documento diretamente da API real
+      const link = documentLink.startsWith('http') 
+        ? documentLink 
+        : `https://${documentLink}`;
       window.open(link, '_blank');
     } else if (bidding.conlicitacao_id) {
       // URL correta para visualizar licitação no ConLicitação
@@ -113,15 +116,18 @@ export function BiddingCard({ bidding, showFavoriteIcon = true }: BiddingCardPro
         {/* Status badge */}
         <div className="flex justify-end mb-3">
           <div className={cn(
-            "px-4 py-2 rounded-lg text-xs font-bold text-white",
+            "px-2 py-1 rounded text-white font-medium",
             getStatusColor(bidding.situacao || "")
           )} style={{ 
-            minWidth: '90px', 
+            minWidth: '70px', 
             textAlign: 'center', 
-            fontSize: '12px', 
+            fontSize: '10px', 
             whiteSpace: 'nowrap',
-            display: 'inline-block',
-            overflow: 'visible'
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            height: '20px',
+            maxWidth: '100px'
           }}>
             {bidding.situacao?.toUpperCase()}
           </div>

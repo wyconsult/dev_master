@@ -27,6 +27,7 @@ export const biddings = pgTable("biddings", {
   datahora_prazo: text("datahora_prazo"),
   edital: text("edital"),
   link_edital: text("link_edital"),
+  documento_url: text("documento_url"),
   processo: text("processo"),
   observacao: text("observacao"),
   item: text("item"),
