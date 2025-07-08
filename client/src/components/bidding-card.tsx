@@ -32,6 +32,7 @@ export function BiddingCard({ bidding, showFavoriteIcon = true }: BiddingCardPro
       case "em_analise":
         return "bg-yellow-500";
       case "urgente":
+      case "URGENTE":
         return "bg-red-500";
       case "prorrogada":
         return "bg-orange-500";
@@ -69,11 +70,15 @@ export function BiddingCard({ bidding, showFavoriteIcon = true }: BiddingCardPro
       const link = documentLink.startsWith('http') 
         ? documentLink 
         : `https://${documentLink}`;
-      window.open(link, '_blank');
+      window.open(link, '_blank', 'noopener,noreferrer');
     } else if (bidding.conlicitacao_id) {
       // URL correta para visualizar licitação no ConLicitação
       const url = `https://consultaonline.conlicitacao.com.br/licitacao/visualizar/${bidding.conlicitacao_id}`;
-      window.open(url, '_blank');
+      window.open(url, '_blank', 'noopener,noreferrer');
+    } else {
+      // Fallback para busca geral
+      const searchUrl = `https://consultaonline.conlicitacao.com.br/busca?q=${encodeURIComponent(bidding.edital || '')}`;
+      window.open(searchUrl, '_blank', 'noopener,noreferrer');
     }
   };
 
@@ -115,22 +120,21 @@ export function BiddingCard({ bidding, showFavoriteIcon = true }: BiddingCardPro
 
         {/* Status badge */}
         <div className="flex justify-end mb-3">
-          <div className={cn(
-            "px-2 py-1 rounded text-white font-medium",
+          <span className={cn(
+            "inline-block rounded font-bold text-white",
             getStatusColor(bidding.situacao || "")
           )} style={{ 
-            minWidth: '70px', 
+            padding: '4px 12px',
+            minWidth: '85px', 
+            width: 'fit-content',
             textAlign: 'center', 
-            fontSize: '10px', 
+            fontSize: '11px', 
             whiteSpace: 'nowrap',
-            display: 'inline-flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            height: '20px',
-            maxWidth: '100px'
+            lineHeight: '1.3',
+            letterSpacing: '0.5px'
           }}>
             {bidding.situacao?.toUpperCase()}
-          </div>
+          </span>
         </div>
 
         {/* Main info grid */}
