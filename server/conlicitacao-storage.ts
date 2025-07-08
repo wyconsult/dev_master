@@ -110,8 +110,16 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
         console.error('Erro ao buscar filtros da API:', error);
       }
       
-      // Retorna array vazio - sistema aguarda autorização de IP para dados reais
-      return [];
+      // Dados de teste para desenvolvimento enquanto IP não está autorizado
+      return [{
+        id: 1,
+        descricao: "Filtro teste - aguardando autorização IP",
+        cliente_id: 1,
+        cliente_razao_social: "Cliente Teste",
+        manha: true,
+        tarde: true,
+        noite: true,
+      }];
     }
   }
 
@@ -145,8 +153,20 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
         console.error('Erro ao buscar boletins da API:', error);
       }
       
-      // Retorna array vazio - sistema aguarda autorização de IP para dados reais
-      return { boletins: [], total: 0 };
+      // Dados de teste para desenvolvimento enquanto IP não está autorizado
+      const boletimTeste: Boletim = {
+        id: 1,
+        datahora_fechamento: new Date().toISOString(),
+        cliente_id: 1,
+        cliente_razao_social: "Cliente Teste", 
+        filtro_id: filtroId,
+        filtro_descricao: "Filtro teste",
+        quantidade_licitacoes: 2,
+        quantidade_acompanhamentos: 0,
+        viewed: false
+      };
+
+      return { boletins: [boletimTeste], total: 1 };
     }
   }
 
@@ -201,7 +221,88 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
       } else {
         console.error('Erro ao buscar boletim da API:', error);
       }
-      return undefined;
+      
+      // Dados de teste para verificar badge URGENTE e links
+      const boletimTeste: Boletim = {
+        id: id,
+        datahora_fechamento: new Date().toISOString(),
+        cliente_id: 1,
+        cliente_razao_social: "Cliente Teste",
+        filtro_id: 1,
+        filtro_descricao: "Filtro teste",
+        quantidade_licitacoes: 2,
+        quantidade_acompanhamentos: 0,
+        viewed: this.viewedBoletins.has(id)
+      };
+
+      const licitacoesTeste: Bidding[] = [
+        {
+          id: 1,
+          conlicitacao_id: 17942339,
+          orgao_nome: "Fundação de Apoio ao Ensino, Pesquisa, Extensão e Interiorização do IFAM- FAEPI",
+          orgao_codigo: "UASG123",
+          orgao_cidade: "Manaus",
+          orgao_uf: "AM",
+          orgao_endereco: "Endereço teste",
+          orgao_telefone: "(92) 1234-5678",
+          orgao_site: "www.teste.gov.br",
+          objeto: "Produto/Serviço Quant. Unidade Produto/Serviço: Serviço de apoio logístico para evento",
+          situacao: "URGENTE",
+          datahora_abertura: "15/07/2025",
+          datahora_documento: null,
+          datahora_retirada: null,
+          datahora_visita: null,
+          datahora_prazo: "15/07/2025",
+          edital: "SM/715/2025",
+          link_edital: "https://consultaonline.conlicitacao.com.br/documento/teste1.pdf",
+          documento_url: "https://consultaonline.conlicitacao.com.br/documento/teste1.pdf",
+          processo: "23456.789012/2025-01",
+          observacao: "Observação teste",
+          item: "Item teste",
+          preco_edital: 50000.00,
+          valor_estimado: 50000.00,
+          boletim_id: id,
+        },
+        {
+          id: 2,
+          conlicitacao_id: 17942355,
+          orgao_nome: "Fundação de Apoio ao Ensino, Pesquisa, Extensão e Interiorização do IFAM- FAEPI",
+          orgao_codigo: "UASG456",
+          orgao_cidade: "Manaus",
+          orgao_uf: "AM",
+          orgao_endereco: "Endereço teste 2",
+          orgao_telefone: "(92) 9876-5432",
+          orgao_site: "www.teste2.gov.br",
+          objeto: "Produto/Serviço Quant. Unidade Produto/Serviço: Iogurte zero açúcar",
+          situacao: "URGENTE",
+          datahora_abertura: "11/07/2025",
+          datahora_documento: null,
+          datahora_retirada: null,
+          datahora_visita: null,
+          datahora_prazo: "11/07/2025",
+          edital: "SM/711/2025",
+          link_edital: "https://consultaonline.conlicitacao.com.br/documento/teste2.pdf",
+          documento_url: "https://consultaonline.conlicitacao.com.br/documento/teste2.pdf",
+          processo: "98765.432109/2025-02",
+          observacao: "Observação teste 2",
+          item: "Item teste 2",
+          preco_edital: 25000.00,
+          valor_estimado: 25000.00,
+          boletim_id: id,
+        }
+      ];
+
+      // Adicionar ao cache
+      licitacoesTeste.forEach(licitacao => {
+        this.cachedBiddings.set(licitacao.id, licitacao);
+      });
+      this.lastCacheUpdate = Date.now();
+
+      return { 
+        boletim: boletimTeste, 
+        licitacoes: licitacoesTeste, 
+        acompanhamentos: [] 
+      };
     }
   }
 
