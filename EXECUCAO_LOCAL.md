@@ -73,8 +73,8 @@ Para funcionar com dados reais, seu IP deve estar autorizado na ConLicitação. 
 
 ### ❌ Erro 401 (Token inválido ou IP não cadastrado)
 **Causa**: Seu IP não está autorizado na ConLicitação  
-**IP local para autorização**: `189.89.90.102`  
-**Solução**: Entre em contato com a ConLicitação para autorizar seu IP
+**IP Dinâmico**: O sistema detecta automaticamente o IP atual no console  
+**Solução**: Entre em contato com a ConLicitação para autorizar o IP mostrado no console
 
 **Status no console do servidor:**
 ```

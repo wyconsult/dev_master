@@ -102,7 +102,8 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
       return filtros;
     } catch (error: any) {
       if (error.message === 'IP_NOT_AUTHORIZED') {
-        console.log('API ConLicitação: IP não autorizado. Contate o administrador para autorizar acesso.');
+        console.log('🚫 API ConLicitação: IP não autorizado.');
+        console.log('💡 Solução: Forneça o IP mostrado acima ao administrador da ConLicitação para autorizar acesso.');
       } else {
         console.error('Erro ao buscar filtros da API:', error);
       }

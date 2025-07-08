@@ -148,7 +148,8 @@ Application runs on `http://localhost:5000` with full API access when IP is auth
 Changelog:
 - January 7, 2025. API access temporarily restricted - admin resolving authorization issue
 - January 7, 2025. Enhanced API error handling - system detects IP authorization status
-- January 7, 2025. Current status: Awaiting IP authorization from ConLicitação admin (IP local: 189.89.90.102)
+- January 7, 2025. Added automatic IP detection for dynamic IP addresses
+- January 7, 2025. Current status: Awaiting IP authorization from ConLicitação admin (detects IP automatically)
 - January 7, 2025. System configured for real API data only - no fallback data
 - January 7, 2025. Updated favorites page with red eraser icon for clearing filters
 - January 7, 2025. Completed all UI improvements: dashboard simplification, boletins calendar, biddings filters, favorites date range

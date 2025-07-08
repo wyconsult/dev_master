@@ -1,4 +1,5 @@
 import fetch from 'node-fetch';
+import { logCurrentIP } from './ip-detector.js';
 
 const CONLICITACAO_BASE_URL = 'https://consultaonline.conlicitacao.com.br/api';
 const AUTH_TOKEN = '27a24a9a-44ce-4de8-a8ac-82cc58ca9f6e';
@@ -26,6 +27,8 @@ export class ConLicitacaoAPI {
         );
         
         if (authError) {
+          // Detectar e mostrar IP atual para autorização
+          await logCurrentIP();
           throw new Error('IP_NOT_AUTHORIZED');
         }
       }
