@@ -65,8 +65,8 @@ export function BiddingCard({ bidding, showFavoriteIcon = true }: BiddingCardPro
       // Usar o link do edital diretamente da API real
       window.open(bidding.link_edital, '_blank');
     } else if (bidding.conlicitacao_id) {
-      // Fallback: construir URL padrão da ConLicitação
-      const conlicitacaoUrl = `https://consultaonline.conlicitacao.com.br/boletim_web/public/licitacoes/${bidding.conlicitacao_id}/arquivos/`;
+      // Usar a URL correta para visualizar a licitação
+      const conlicitacaoUrl = `https://consultaonline.conlicitacao.com.br/licitacao/visualizar/${bidding.conlicitacao_id}`;
       window.open(conlicitacaoUrl, '_blank');
     }
   };
@@ -108,11 +108,11 @@ export function BiddingCard({ bidding, showFavoriteIcon = true }: BiddingCardPro
         </div>
 
         {/* Status badge */}
-        <div className="flex justify-end mb-3 overflow-visible">
+        <div className="flex justify-end mb-3">
           <span className={cn(
-            "px-3 py-1 rounded-full text-xs font-medium text-white whitespace-nowrap min-w-fit",
+            "px-2 py-0.5 rounded text-xs font-semibold text-white inline-block",
             getStatusColor(bidding.situacao || "")
-          )}>
+          )} style={{ minWidth: 'auto', fontSize: '10px' }}>
             {bidding.situacao?.toUpperCase()}
           </span>
         </div>
