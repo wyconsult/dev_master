@@ -60,14 +60,23 @@ export function BiddingCard({ bidding, showFavoriteIcon = true }: BiddingCardPro
     }
   };
 
-  const handleLinkClick = () => {
+  const handleLinkClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
     if (bidding.link_edital && bidding.link_edital.trim() !== '') {
       // Usar o link do edital diretamente da API real
-      window.open(bidding.link_edital, '_blank');
+      window.open(bidding.link_edital, '_blank', 'noopener,noreferrer');
     } else if (bidding.conlicitacao_id) {
-      // Usar a URL correta para visualizar a licitação
-      const conlicitacaoUrl = `https://consultaonline.conlicitacao.com.br/licitacao/visualizar/${bidding.conlicitacao_id}`;
-      window.open(conlicitacaoUrl, '_blank');
+      // Tentar diferentes URLs da ConLicitação
+      const urls = [
+        `https://consultaonline.conlicitacao.com.br/licitacao/visualizar/${bidding.conlicitacao_id}`,
+        `https://consultaonline.conlicitacao.com.br/boletim_web/public/licitacoes/${bidding.conlicitacao_id}`,
+        `https://consultaonline.conlicitacao.com.br/public/licitacao/${bidding.conlicitacao_id}`
+      ];
+      
+      // Tentar a primeira URL
+      window.open(urls[0], '_blank', 'noopener,noreferrer');
     }
   };
 
@@ -110,9 +119,9 @@ export function BiddingCard({ bidding, showFavoriteIcon = true }: BiddingCardPro
         {/* Status badge */}
         <div className="flex justify-end mb-3">
           <span className={cn(
-            "px-2 py-0.5 rounded text-xs font-semibold text-white inline-block",
+            "px-3 py-1 rounded text-xs font-medium text-white",
             getStatusColor(bidding.situacao || "")
-          )} style={{ minWidth: 'auto', fontSize: '10px' }}>
+          )} style={{ minWidth: '70px', textAlign: 'center', fontSize: '11px', lineHeight: '1.2' }}>
             {bidding.situacao?.toUpperCase()}
           </span>
         </div>
@@ -135,14 +144,13 @@ export function BiddingCard({ bidding, showFavoriteIcon = true }: BiddingCardPro
           
           <div className="flex justify-between">
             <span className="text-gray-700"><strong>Cidade:</strong> {bidding.orgao_cidade} - {bidding.orgao_uf}</span>
-            <Button 
-              variant="link" 
-              size="sm" 
-              className="text-blue-600 hover:text-blue-800 p-0 h-auto"
+            <button 
+              type="button"
+              className="text-blue-600 hover:text-blue-800 underline text-sm cursor-pointer bg-transparent border-none p-0"
               onClick={handleLinkClick}
             >
               <strong>Link:</strong> Acessar documento
-            </Button>
+            </button>
           </div>
         </div>
       </CardContent>
