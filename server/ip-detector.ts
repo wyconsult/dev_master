@@ -27,16 +27,22 @@ export async function getCurrentExternalIP(): Promise<string> {
 export async function logCurrentIP(): Promise<void> {
   try {
     const currentIP = await getCurrentExternalIP();
-    const authorizedIP = '189.89.90.102';
+    // IPs autorizados - adicione novos IPs conforme necessário para produção
+    const authorizedIPs = [
+      '189.89.90.102' // IP de desenvolvimento autorizado
+      // Adicionar IP do servidor de produção quando autorizado
+    ];
     
     console.log(`🌐 IP externo atual: ${currentIP}`);
-    console.log(`✅ IP autorizado na ConLicitação: ${authorizedIP}`);
+    console.log(`✅ IPs autorizados na ConLicitação: ${authorizedIPs.join(', ')}`);
     
-    if (currentIP === authorizedIP) {
-      console.log(`✅ IP atual coincide com o autorizado - API deve funcionar`);
+    if (authorizedIPs.includes(currentIP)) {
+      console.log(`✅ IP atual está autorizado - API deve funcionar`);
     } else {
-      console.log(`⚠️ IP atual (${currentIP}) diferente do autorizado (${authorizedIP})`);
-      console.log(`💡 Execute a aplicação no ambiente com IP ${authorizedIP} para acesso completo`);
+      console.log(`⚠️ IP atual (${currentIP}) não está na lista de IPs autorizados`);
+      console.log(`💡 Para acesso completo aos dados:`);
+      console.log(`   - Desenvolvimento: Execute no ambiente com IP ${authorizedIPs[0]}`);
+      console.log(`   - Produção: Solicite autorização do IP do servidor de produção`);
     }
   } catch (error) {
     console.log('❌ Não foi possível detectar o IP externo automaticamente');
