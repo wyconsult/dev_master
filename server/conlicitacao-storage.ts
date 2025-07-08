@@ -103,7 +103,7 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
     } catch (error: any) {
       if (error.message === 'IP_NOT_AUTHORIZED') {
         console.log('🚫 API ConLicitação: IP não autorizado.');
-        console.log('💡 Solução: Forneça o IP mostrado acima ao administrador da ConLicitação para autorizar acesso.');
+        console.log('💡 Execute a aplicação no ambiente com IP 189.89.90.102 para acesso aos dados reais.');
       } else {
         console.error('Erro ao buscar filtros da API:', error);
       }
@@ -135,7 +135,8 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
       };
     } catch (error: any) {
       if (error.message === 'IP_NOT_AUTHORIZED') {
-        console.log('API ConLicitação: IP não autorizado. Contate o administrador para autorizar acesso.');
+        console.log('🚫 API ConLicitação: IP não autorizado.');
+        console.log('💡 Execute a aplicação no ambiente com IP 189.89.90.102 para acesso aos dados reais.');
       } else {
         console.error('Erro ao buscar boletins da API:', error);
       }
@@ -189,7 +190,8 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
       return { boletim, licitacoes, acompanhamentos };
     } catch (error: any) {
       if (error.message === 'IP_NOT_AUTHORIZED') {
-        console.log('API ConLicitação: IP não autorizado. Contate o administrador para autorizar acesso.');
+        console.log('🚫 API ConLicitação: IP não autorizado.');
+        console.log('💡 Execute a aplicação no ambiente com IP 189.89.90.102 para acesso aos dados reais.');
       } else {
         console.error('Erro ao buscar boletim da API:', error);
       }
@@ -298,7 +300,8 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
       }
     } catch (error: any) {
       if (error.message === 'IP_NOT_AUTHORIZED') {
-        console.log('API ConLicitação: IP não autorizado. Contate o administrador para autorizar acesso.');
+        console.log('🚫 API ConLicitação: IP não autorizado.');
+        console.log('💡 Execute a aplicação no ambiente com IP 189.89.90.102 para acesso aos dados reais.');
       } else {
         console.error('Erro ao atualizar cache de licitações:', error);
       }
