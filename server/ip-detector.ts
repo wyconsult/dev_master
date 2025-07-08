@@ -29,8 +29,8 @@ export async function logCurrentIP(): Promise<void> {
     const currentIP = await getCurrentExternalIP();
     // IPs autorizados na ConLicitação API
     const authorizedIPs = [
-      '189.89.90.102', // IP de desenvolvimento (localhost)
-      '31.97.26.138'   // IP do servidor de produção
+      '104.196.156.252', // IP de desenvolvimento (Replit)
+      '31.97.26.138'     // IP do servidor de produção
     ];
     
     console.log(`🌐 IP externo atual: ${currentIP}`);
