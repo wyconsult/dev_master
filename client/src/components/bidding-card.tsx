@@ -105,20 +105,18 @@ export function BiddingCard({ bidding, showFavoriteIcon = true }: BiddingCardPro
               disabled={isLoading}
               className={cn(
                 "transition-colors ml-2 flex-shrink-0",
-                isFavorite 
-                  ? "text-accent hover:text-accent/80" 
+                isFavorite
+                  ? "text-accent hover:text-accent/80"
                   : "text-gray-400 hover:text-accent"
               )}
             >
-              <Heart 
-                className={cn("h-4 w-4", isFavorite && "fill-current")} 
-              />
+              <Heart className={cn("h-4 w-4", isFavorite && "fill-current")} />
             </Button>
           )}
         </div>
 
         <div className="flex justify-end mb-3">
-          <span 
+          <span
             className={cn(
               "inline-block rounded font-bold text-white text-sm px-4 py-1 min-w-fit",
               getStatusColor(bidding.situacao || "")
