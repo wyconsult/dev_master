@@ -1,6 +1,7 @@
+
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Heart, ArrowRight } from "lucide-react";
+import { Heart } from "lucide-react";
 import { type Bidding } from "@shared/schema";
 import { useFavorites } from "@/hooks/use-favorites";
 import { useAuth } from "@/hooks/use-auth";
@@ -25,7 +26,6 @@ export function BiddingCard({ bidding, showFavoriteIcon = true }: BiddingCardPro
 
   const getStatusColor = (status: string) => {
     const normalizedStatus = status.toString().toUpperCase();
-    
     switch (normalizedStatus) {
       case "NOVA":
         return "bg-green-500";
@@ -87,14 +87,11 @@ export function BiddingCard({ bidding, showFavoriteIcon = true }: BiddingCardPro
   };
 
   return (
-    <Card
-      className={cn(
-        "hover:shadow-md transition-shadow border border-gray-200 bg-white",
-        showFavoriteIcon && isFavorite && "border-l-4 border-l-blue-500"
-      )}
-    >
+    <Card className={cn(
+      "hover:shadow-md transition-shadow border border-gray-200 bg-white",
+      showFavoriteIcon && isFavorite && "border-l-4 border-l-blue-500"
+    )}>
       <CardContent className="p-4 relative overflow-visible">
-        {/* Header with favorite */}
         <div className="flex justify-between items-start mb-3">
           <div className="flex-1">
             <p className="text-sm text-gray-900 mb-1">
@@ -109,65 +106,43 @@ export function BiddingCard({ bidding, showFavoriteIcon = true }: BiddingCardPro
               disabled={isLoading}
               className={cn(
                 "transition-colors ml-2 flex-shrink-0",
-                isFavorite
-                  ? "text-accent hover:text-accent/80"
+                isFavorite 
+                  ? "text-accent hover:text-accent/80" 
                   : "text-gray-400 hover:text-accent"
               )}
             >
-              <Heart
-                className={cn("h-4 w-4", isFavorite && "fill-current")}
+              <Heart 
+                className={cn("h-4 w-4", isFavorite && "fill-current")} 
               />
             </Button>
           )}
         </div>
 
-        {/* Status badge */}
         <div className="flex justify-end mb-3">
-          <span
+          <span 
             className={cn(
-              "inline-block rounded font-bold text-white text-sm px-3 py-1",
+              "inline-block rounded font-bold text-white text-sm px-4 py-1 min-w-fit",
               getStatusColor(bidding.situacao || "")
             )}
-            style={{
-              minWidth: "max-content",
-              maxWidth: "100%",
-              whiteSpace: "nowrap",
-              overflow: "visible",
-              textAlign: "center",
-              fontWeight: "bold",
-              textTransform: "uppercase",
-            }}
           >
             {bidding.situacao?.toUpperCase()}
           </span>
         </div>
 
-        {/* Main info grid */}
         <div className="space-y-2 text-sm">
           <div>
             <span className="text-gray-700">
               <strong>Datas:</strong> {formatDateTime(bidding.datahora_abertura)}
             </span>
           </div>
-
           <div className="flex justify-between">
-            <span className="text-gray-700">
-              <strong>Edital:</strong> {bidding.edital}
-            </span>
-            <span className="text-gray-700">
-              <strong>Nº ConLicitação:</strong> {bidding.conlicitacao_id}
-            </span>
+            <span className="text-gray-700"><strong>Edital:</strong> {bidding.edital}</span>
+            <span className="text-gray-700"><strong>Nº ConLicitação:</strong> {bidding.conlicitacao_id}</span>
           </div>
-
           <div className="flex justify-between">
-            <span className="text-gray-700">
-              <strong>Órgão:</strong> {bidding.orgao_nome}
-            </span>
-            <span className="text-gray-700">
-              <strong>Status da Sessão:</strong> {bidding.situacao}
-            </span>
+            <span className="text-gray-700"><strong>Órgão:</strong> {bidding.orgao_nome}</span>
+            <span className="text-gray-700"><strong>Status da Sessão:</strong> {bidding.situacao}</span>
           </div>
-
           <div className="flex justify-between items-center">
             <span className="text-gray-700">
               <strong>Cidade:</strong> {bidding.orgao_cidade} - {bidding.orgao_uf}
