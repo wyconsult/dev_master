@@ -162,16 +162,48 @@ button[role="gridcell"], button[aria-selected] {
   text-overflow: clip !important;
 }
 
-/* CSS para garantir que o badge URGENTE apareça completo */
+/* Corrigir problemas de calendário - impedir expansão */
+.rdp-day, .rdp-day button, .rdp-cell {
+  width: 40px !important;
+  height: 40px !important;
+  max-width: 40px !important;
+  min-width: 40px !important;
+  overflow: hidden !important;
+  flex-shrink: 0 !important;
+  transform: none !important;
+  transition: none !important;
+  animation: none !important;
+}
+
+.rdp-day_selected, .rdp-day:hover, .rdp-day_selected button, .rdp-day:hover button {
+  width: 40px !important;
+  max-width: 40px !important;
+  min-width: 40px !important;
+  transform: none !important;
+  transition: none !important;
+  animation: none !important;
+}
+
+/* Garantir que os badges não sejam cortados */
 .bg-red-500, .bg-green-500, .bg-blue-500, .bg-yellow-500, .bg-orange-500, .bg-purple-500, .bg-gray-500 {
   min-width: 90px !important;
   width: auto !important;
   max-width: none !important;
-  padding: 8px 16px !important;
   white-space: nowrap !important;
   overflow: visible !important;
   text-overflow: clip !important;
-  box-sizing: border-box !important;
+  word-break: keep-all !important;
+}
+
+/* Evitar truncamento de texto em badges */
+*[class*="bg-red-500"], *[class*="bg-green-500"], *[class*="bg-blue-500"], *[class*="bg-yellow-500"], *[class*="bg-orange-500"], *[class*="bg-purple-500"], *[class*="bg-gray-500"] {
+  min-width: 90px !important;
+  width: auto !important;
+  max-width: none !important;
+  white-space: nowrap !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
+  word-break: keep-all !important;
 }
 
 /* Button styling */

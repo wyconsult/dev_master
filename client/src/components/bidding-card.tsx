@@ -1,4 +1,3 @@
-
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Heart } from "lucide-react";
@@ -125,7 +124,7 @@ export function BiddingCard({ bidding, showFavoriteIcon = true }: BiddingCardPro
               getStatusColor(bidding.situacao || "")
             )}
           >
-            {bidding.situacao?.toUpperCase()}
+            {bidding.situacao?.toUpperCase() || "NOVA"}
           </span>
         </div>
 
