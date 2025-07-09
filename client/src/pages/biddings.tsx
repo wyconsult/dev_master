@@ -167,6 +167,7 @@ export default function Biddings() {
                     placeholder="Ex. 13157470"
                     value={numeroControle}
                     onChange={(e) => setNumeroControle(e.target.value)}
+                    className="border-gray-300 text-black placeholder:text-gray-400"
                   />
                 </div>
               </div>
@@ -181,7 +182,7 @@ export default function Biddings() {
                     <Button
                       variant="outline"
                       role="combobox"
-                      className="w-full justify-between"
+                      className="w-full justify-between border-gray-300"
                     >
                       {selectedOrgaos.length === 0
                         ? "Selecione um ou mais órgãos"
@@ -238,7 +239,7 @@ export default function Biddings() {
                     <Button
                       variant="outline"
                       role="combobox"
-                      className="w-full justify-between"
+                      className="w-full justify-between border-gray-300"
                     >
                       {selectedUFs.length === 0
                         ? "Selecione um ou mais UFs"
@@ -287,12 +288,12 @@ export default function Biddings() {
 
               {/* Search Button */}
               <div className="flex items-end gap-2">
-                <Button className="flex-1" variant="default">
+                <Button className="flex-1 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white border-0 shadow-lg">
                   <Search className="mr-2 h-4 w-4" />
                   Pesquisar
                 </Button>
                 {(numeroControle || selectedOrgaos.length > 0 || selectedUFs.length > 0) && (
-                  <Button variant="outline" onClick={clearFilters}>
+                  <Button variant="outline" onClick={clearFilters} className="border-gray-300 text-gray-700 hover:bg-gray-50">
                     Limpar
                   </Button>
                 )}

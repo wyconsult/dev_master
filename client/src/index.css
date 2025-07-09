@@ -111,6 +111,16 @@ button[role="gridcell"], button[aria-selected] {
   border: 1px solid #d1d5db !important;
 }
 
+/* Fix search input styles in Command components */
+[cmdk-input] {
+  border-color: #d1d5db !important;
+  color: #000000 !important;
+}
+
+[cmdk-input]::placeholder {
+  color: #9ca3af !important;
+}
+
 /* Button styling */
 .btn, button {
   border-radius: 0.5rem !important;
