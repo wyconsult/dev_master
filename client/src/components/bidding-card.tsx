@@ -64,15 +64,12 @@ export function BiddingCard({ bidding, showFavoriteIcon = true }: BiddingCardPro
   };
 
   const handleLinkClick = () => {
-    // Primeiro tentar documento_url, depois link_edital
+    // Usar documento_url primeiro (vem do campo documento[0].url da API)
     const documentLink = bidding.documento_url || bidding.link_edital;
     
     if (documentLink && documentLink.trim() !== '') {
-      // Usar o link do documento diretamente da API real
-      const link = documentLink.startsWith('http') 
-        ? documentLink 
-        : `https://${documentLink}`;
-      window.open(link, '_blank', 'noopener,noreferrer');
+      // Link já está formatado corretamente no backend
+      window.open(documentLink, '_blank', 'noopener,noreferrer');
     } else if (bidding.conlicitacao_id) {
       // URL correta para visualizar licitação no ConLicitação
       const url = `https://consultaonline.conlicitacao.com.br/licitacao/visualizar/${bidding.conlicitacao_id}`;

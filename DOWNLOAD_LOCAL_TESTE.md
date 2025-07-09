@@ -57,9 +57,11 @@ O campo `situacao` pode ter os seguintes valores:
 - `FINALIZADA` - Licitação finalizada (cinza)
 
 ### Links dos Documentos
-- **Campo principal**: `documento[0]` da API
-- **Mapeamento**: `documento_url` e `link_edital`
+- **Campo principal**: `documento[0].url` da API
+- **Base URL**: `https://consultaonline.conlicitacao.com.br`
+- **Mapeamento**: URL completa em `documento_url` e `link_edital`
 - **Fallback**: URL do ConLicitação com `conlicitacao_id`
+- **Importante**: Links são temporários (válidos por 24h)
 
 ## Verificação de Funcionamento
 

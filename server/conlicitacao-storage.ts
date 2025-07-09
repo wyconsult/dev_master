@@ -254,8 +254,8 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
           datahora_visita: null,
           datahora_prazo: "15/07/2025",
           edital: "SM/715/2025",
-          link_edital: "https://consultaonline.conlicitacao.com.br/documento/teste1.pdf",
-          documento_url: "https://consultaonline.conlicitacao.com.br/documento/teste1.pdf",
+          link_edital: "https://consultaonline.conlicitacao.com.br/boletim_web/public/api/download?auth=teste1",
+          documento_url: "https://consultaonline.conlicitacao.com.br/boletim_web/public/api/download?auth=teste1",
           processo: "23456.789012/2025-01",
           observacao: "Observação teste",
           item: "Item teste",
@@ -281,8 +281,8 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
           datahora_visita: null,
           datahora_prazo: "11/07/2025",
           edital: "SM/711/2025",
-          link_edital: "https://consultaonline.conlicitacao.com.br/documento/teste2.pdf",
-          documento_url: "https://consultaonline.conlicitacao.com.br/documento/teste2.pdf",
+          link_edital: "https://consultaonline.conlicitacao.com.br/boletim_web/public/api/download?auth=teste2",
+          documento_url: "https://consultaonline.conlicitacao.com.br/boletim_web/public/api/download?auth=teste2",
           processo: "98765.432109/2025-02",
           observacao: "Observação teste 2",
           item: "Item teste 2",
@@ -313,9 +313,18 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
       `${tel.ddd ? '(' + tel.ddd + ')' : ''} ${tel.numero}${tel.ramal ? ' ramal ' + tel.ramal : ''}`
     ).join(', ') || '';
 
-    // Extrair link do edital da API real (campo documento[])
-    const linkEdital = licitacao.documento?.[0] || '';
-    const documentoUrl = typeof linkEdital === 'string' ? linkEdital : linkEdital?.url || '';
+    // Extrair link do edital da API real (campo documento[0].url)
+    const documentoItem = licitacao.documento?.[0];
+    let documentoUrl = '';
+    
+    if (documentoItem) {
+      const baseUrl = 'https://consultaonline.conlicitacao.com.br';
+      if (typeof documentoItem === 'string') {
+        documentoUrl = documentoItem.startsWith('http') ? documentoItem : baseUrl + documentoItem;
+      } else if (documentoItem.url) {
+        documentoUrl = documentoItem.url.startsWith('http') ? documentoItem.url : baseUrl + documentoItem.url;
+      }
+    }
 
     // Normalizar situação para compatibilidade com UI
     const situacao = licitacao.situacao || 'NOVA';
