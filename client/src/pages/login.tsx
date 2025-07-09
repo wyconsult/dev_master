@@ -72,7 +72,7 @@ export default function Login() {
           <p className="text-gray-500">Acesse sua conta para continuar</p>
         </div>
         
-        <Card className="bg-white border border-gray-200 shadow-lg" style={{borderColor: '#d1d5db'}}>
+        <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm">
           <CardContent className="pt-8 pb-8 px-8">
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">

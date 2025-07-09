@@ -65,71 +65,18 @@
   z-index: 1000 !important;
 }
 
-/* Global input and border styling - override all dark borders */
-input, textarea, select, button, 
-.input, [data-slot="input"], [role="combobox"], button[role="combobox"],
-input[type="text"], input[type="email"], input[type="password"], input[type="search"],
-input[type="number"], input[type="tel"], input[type="url"], input[type="date"] {
-  border: 1px solid #d1d5db !important;
-  background: white !important;
-  border-radius: 0.5rem !important;
-  padding: 0.75rem !important;
-  font-size: 0.875rem !important;
-  transition: all 0.2s ease !important;
-  color: #374151 !important;
+/* Melhoria sutil apenas para inputs - sem quebrar o design */
+input[type="text"], input[type="email"], input[type="password"], 
+input[type="search"], input[type="number"], input[type="tel"] {
+  border: 1px solid #d1d5db;
+  transition: border-color 0.2s ease;
 }
 
-input:focus, textarea:focus, select:focus, button:focus,
-.input:focus, [data-slot="input"]:focus, [role="combobox"]:focus, button[role="combobox"]:focus,
-input[type="text"]:focus, input[type="email"]:focus, input[type="password"]:focus {
-  border-color: #3b82f6 !important;
-  outline: none !important;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1) !important;
-}
-
-input:hover, textarea:hover, select:hover, button:hover,
-.input:hover, [data-slot="input"]:hover, [role="combobox"]:hover, button[role="combobox"]:hover {
-  border-color: #9ca3af !important;
-}
-
-/* Remove ALL dark borders globally - force light borders */
-*, *::before, *::after {
-  border-color: #d1d5db !important;
-}
-
-/* Force light borders on all form controls */
-input, textarea, select, button, fieldset {
-  border-color: #d1d5db !important;
-  --tw-border-opacity: 1 !important;
-  border-color: rgb(209 213 219 / var(--tw-border-opacity)) !important;
-}
-
-.border-black, .border-slate-900, .border-gray-900, .border-gray-800, .border-slate-800 {
-  border-color: #d1d5db !important;
-}
-
-/* Override ALL border classes with light color */
-.border, .border-input, .border-destructive, .border-muted, .border-border,
-.border-slate-200, .border-slate-300, .border-gray-200, .border-gray-300,
-[class*="border-"], [class*="border "] {
-  border-color: #d1d5db !important;
-  --tw-border-opacity: 1 !important;
-  border-color: rgb(209 213 219 / var(--tw-border-opacity)) !important;
-}
-
-/* Card and component styling */
-[data-radix-collection-item], [data-state="open"], [data-state="closed"],
-.card, [role="dialog"], [role="alertdialog"], [role="menu"], [role="listbox"] {
-  border-color: #d1d5db !important;
-  background: white !important;
-}
-
-/* Popover and dropdown styling */
-[data-side="bottom"], [data-side="top"], [data-side="left"], [data-side="right"],
-[data-radix-popper-content], [data-radix-dropdown-menu-content] {
-  border: 1px solid #d1d5db !important;
-  background: white !important;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1) !important;
+input[type="text"]:focus, input[type="email"]:focus, input[type="password"]:focus,
+input[type="search"]:focus, input[type="number"]:focus, input[type="tel"]:focus {
+  border-color: #3b82f6;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
 /* Button styling */

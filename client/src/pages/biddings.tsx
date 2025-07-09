@@ -148,7 +148,7 @@ export default function Biddings() {
         </div>
 
         {/* Filters */}
-        <Card className="mb-6 bg-white border border-gray-200 shadow-lg">
+        <Card className="mb-6 border-0 shadow-xl bg-white/80 backdrop-blur-sm">
           <CardHeader>
             <CardTitle className="text-lg flex items-center gap-2">
               <Filter className="h-5 w-5" />
