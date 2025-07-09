@@ -162,16 +162,45 @@ button[role="gridcell"], button[aria-selected] {
   text-overflow: clip !important;
 }
 
-/* CSS para garantir que o badge URGENTE apareça completo */
-.bg-red-500, .bg-green-500, .bg-blue-500, .bg-yellow-500, .bg-orange-500, .bg-purple-500, .bg-gray-500 {
-  min-width: 90px !important;
+/* Corrigir problemas de calendário */
+.rdp-day, .rdp-day button {
+  width: 40px !important;
+  height: 40px !important;
+  max-width: 40px !important;
+  min-width: 40px !important;
+  overflow: hidden !important;
+  flex-shrink: 0 !important;
+}
+
+.rdp-day_selected, .rdp-day:hover, .rdp-day_selected button, .rdp-day:hover button {
+  width: 40px !important;
+  max-width: 40px !important;
+  min-width: 40px !important;
+  transform: none !important;
+  transition: none !important;
+}
+
+/* Evitar expansão nas células do calendário */
+.rdp-cell {
+  width: 40px !important;
+  max-width: 40px !important;
+  min-width: 40px !important;
+}
+
+/* Badge URGENTE - correção definitiva */
+.badge-status {
+  min-width: 80px !important;
   width: auto !important;
   max-width: none !important;
-  padding: 8px 16px !important;
   white-space: nowrap !important;
   overflow: visible !important;
   text-overflow: clip !important;
+  word-wrap: normal !important;
+  word-break: keep-all !important;
+  display: inline-block !important;
   box-sizing: border-box !important;
+  font-weight: bold !important;
+  text-align: center !important;
 }
 
 /* Button styling */

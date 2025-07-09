@@ -125,20 +125,11 @@ export function BiddingCard({ bidding, showFavoriteIcon = true }: BiddingCardPro
         <div className="flex justify-end mb-3">
           <span
             className={cn(
-              "inline-block rounded font-bold text-white text-sm px-3 py-1",
+              "badge-status rounded text-white font-bold text-xs px-3 py-1 inline-block text-center uppercase",
               getStatusColor(bidding.situacao || "")
             )}
-            style={{
-              minWidth: "max-content",
-              maxWidth: "100%",
-              whiteSpace: "nowrap",
-              overflow: "visible",
-              textAlign: "center",
-              fontWeight: "bold",
-              textTransform: "uppercase",
-            }}
           >
-            {bidding.situacao?.toUpperCase()}
+            {bidding.situacao?.toUpperCase() || "NOVA"}
           </span>
         </div>
 
