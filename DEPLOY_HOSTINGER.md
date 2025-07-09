@@ -34,6 +34,7 @@ pm2 restart all
 ## Status do Código
 - ✅ Correções de UI aplicadas
 - ✅ IP do servidor (31.97.26.138) configurado como produção
+- ⚠️ IP Replit mudou para 35.227.80.200 - precisa autorização na ConLicitação
 - ✅ Sistema pronto para produção com dados reais da ConLicitação
 - ✅ Links de documentos corrigidos
 - ✅ Badge URGENTE com correções de layout

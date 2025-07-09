@@ -123,7 +123,7 @@ The system is configured for production use with real data only:
 - **No fallback data**: When API access is restricted, system returns empty results gracefully
 - **Real API integration**: All data comes from ConLicitação API when IP is authorized
 - **Enhanced error detection**: System detects IP authorization and compares with authorized IP
-- **Authorized IPs**: 104.196.156.252 (development - Replit), 31.97.26.138 (production)
+- **Authorized IPs**: 35.227.80.200 (development - Replit atual), 31.97.26.138 (production)
 - **Production deployment**: Ready for deployment with IP authorization workflow documented
 - **IP Management**: Automatic detection and comparison with authorized IPs list
 
@@ -147,6 +147,7 @@ Application runs on `http://localhost:5000` with full API access when IP is auth
 
 ```
 Changelog:
+- January 8, 2025. IP Replit mudou para 35.227.80.200 - necessária nova autorização
 - January 8, 2025. Configured Replit IP (104.196.156.252) as development environment
 - January 8, 2025. Fixed production issues: URGENTE badge text cutting and document links
 - January 8, 2025. Established Replit as primary development environment with download workflow for production
