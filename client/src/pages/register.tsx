@@ -42,13 +42,13 @@ export default function Register() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-blue-50 px-4">
       <div className="max-w-md w-full space-y-8">
         <div className="text-center">
-          <div className="mx-auto w-20 h-20 rounded-full bg-green-500 flex items-center justify-center mb-6 shadow-lg">
+          <div className="mx-auto w-20 h-20 rounded-full bg-gradient-to-r from-green-500 to-emerald-600 flex items-center justify-center mb-6 shadow-lg">
             <UserPlus className="text-white h-10 w-10" />
           </div>
-          <h2 className="text-4xl font-bold text-gray-900 mb-3">LicitaTraker</h2>
+          <h2 className="text-4xl font-bold bg-gradient-to-r from-gray-900 to-green-700 bg-clip-text text-transparent mb-3">LicitaTraker</h2>
           <p className="text-xl text-gray-600 mb-2">Junte-se a nós! 🚀</p>
           <p className="text-gray-500">Crie sua conta para começar</p>
         </div>

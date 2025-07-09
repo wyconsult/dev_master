@@ -61,13 +61,13 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 px-4">
       <div className="max-w-md w-full space-y-8">
         <div className="text-center">
-          <div className="mx-auto w-20 h-20 rounded-full bg-blue-500 flex items-center justify-center mb-6 shadow-lg">
+          <div className="mx-auto w-20 h-20 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center mb-6 shadow-lg">
             <Gavel className="text-white h-10 w-10" />
           </div>
-          <h2 className="text-4xl font-bold text-gray-900 mb-3">LicitaTraker</h2>
+          <h2 className="text-4xl font-bold bg-gradient-to-r from-gray-900 to-blue-700 bg-clip-text text-transparent mb-3">LicitaTraker</h2>
           <p className="text-xl text-gray-600 mb-2">Bem-vindo de volta! 👋</p>
           <p className="text-gray-500">Acesse sua conta para continuar</p>
         </div>
