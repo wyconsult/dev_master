@@ -129,14 +129,14 @@ export default function Biddings() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
+    <div className="min-h-screen bg-gray-50">
       <Navbar />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-12 text-center">
-          <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-gradient-to-r from-green-500 to-emerald-600 text-white mb-6 shadow-lg">
+          <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-green-500 text-white mb-6 shadow-lg">
             <Search className="h-10 w-10" />
           </div>
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-gray-900 to-green-700 bg-clip-text text-transparent mb-3">
+          <h1 className="text-4xl font-bold text-gray-900 mb-3">
             Licitações
           </h1>
           <p className="text-xl text-gray-600 mb-2">
@@ -148,7 +148,7 @@ export default function Biddings() {
         </div>
 
         {/* Filters */}
-        <Card className="mb-6 border-0 shadow-xl bg-white/80 backdrop-blur-sm">
+        <Card className="mb-6 bg-white border border-gray-200 shadow-sm">
           <CardHeader>
             <CardTitle className="text-lg flex items-center gap-2">
               <Filter className="h-5 w-5" />
@@ -189,7 +189,7 @@ export default function Biddings() {
                       }
                     </Button>
                   </PopoverTrigger>
-                  <PopoverContent className="w-80 p-0">
+                  <PopoverContent className="w-80 p-0 z-50 bg-white border border-gray-200 shadow-lg">
                     <Command>
                       <CommandInput placeholder="Buscar órgão..." />
                       <CommandEmpty>Nenhum órgão encontrado.</CommandEmpty>
@@ -246,7 +246,7 @@ export default function Biddings() {
                       }
                     </Button>
                   </PopoverTrigger>
-                  <PopoverContent className="w-64 p-0">
+                  <PopoverContent className="w-64 p-0 z-50 bg-white border border-gray-200 shadow-lg">
                     <Command>
                       <CommandInput placeholder="Buscar UF..." />
                       <CommandEmpty>Nenhuma UF encontrada.</CommandEmpty>

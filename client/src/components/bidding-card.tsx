@@ -84,8 +84,8 @@ export function BiddingCard({ bidding, showFavoriteIcon = true }: BiddingCardPro
 
   return (
     <Card className={cn(
-      "hover:shadow-md transition-shadow border border-gray-200 overflow-visible",
-      showFavoriteIcon && isFavorite && "border-l-4 border-l-accent"
+      "hover:shadow-md transition-shadow border border-gray-200 bg-white",
+      showFavoriteIcon && isFavorite && "border-l-4 border-l-blue-500"
     )}>
       <CardContent className="p-4 relative overflow-visible">
         {/* Header with favorite */}
