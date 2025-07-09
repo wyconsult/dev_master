@@ -53,7 +53,7 @@ export default function Register() {
           <p className="text-gray-500">Crie sua conta para começar</p>
         </div>
         
-        <Card className="bg-white border border-gray-200 shadow-lg">
+        <Card className="bg-white border border-gray-200 shadow-lg" style={{borderColor: '#d1d5db'}}>
           <CardContent className="pt-8 pb-8 px-8">
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
