@@ -24,21 +24,23 @@ export function BiddingCard({ bidding, showFavoriteIcon = true }: BiddingCardPro
   const isFavorite = favoriteStatus?.isFavorite || false;
 
   const getStatusColor = (status: string) => {
-    switch (status.toLowerCase()) {
-      case "nova":
+    const normalizedStatus = status.toString().toUpperCase();
+    
+    switch (normalizedStatus) {
+      case "NOVA":
         return "bg-green-500";
-      case "aberta":
+      case "ABERTA":
         return "bg-blue-500";
-      case "em_analise":
+      case "EM_ANALISE":
+      case "EM ANÁLISE":
         return "bg-yellow-500";
-      case "urgente":
       case "URGENTE":
         return "bg-red-500";
-      case "prorrogada":
+      case "PRORROGADA":
         return "bg-orange-500";
-      case "alterada":
+      case "ALTERADA":
         return "bg-purple-500";
-      case "finalizada":
+      case "FINALIZADA":
         return "bg-gray-500";
       default:
         return "bg-gray-500";

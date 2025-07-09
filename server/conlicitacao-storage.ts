@@ -317,31 +317,35 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
     const linkEdital = licitacao.documento?.[0] || '';
     const documentoUrl = typeof linkEdital === 'string' ? linkEdital : linkEdital?.url || '';
 
+    // Normalizar situação para compatibilidade com UI
+    const situacao = licitacao.situacao || 'NOVA';
+    const situacaoNormalizada = situacao.toString().toUpperCase();
+
     return {
       id: licitacao.id,
       conlicitacao_id: licitacao.id,
-      orgao_nome: licitacao.orgao.nome,
-      orgao_codigo: licitacao.orgao.codigo,
-      orgao_cidade: licitacao.orgao.cidade,
-      orgao_uf: licitacao.orgao.uf,
-      orgao_endereco: licitacao.orgao.endereco,
+      orgao_nome: licitacao.orgao.nome || '',
+      orgao_codigo: licitacao.orgao.codigo || '',
+      orgao_cidade: licitacao.orgao.cidade || '',
+      orgao_uf: licitacao.orgao.uf || '',
+      orgao_endereco: licitacao.orgao.endereco || '',
       orgao_telefone: telefones,
-      orgao_site: licitacao.orgao.site,
-      objeto: licitacao.objeto,
-      situacao: licitacao.situacao,
-      datahora_abertura: licitacao.datahora_abertura,
-      datahora_documento: licitacao.datahora_documento,
-      datahora_retirada: licitacao.datahora_retirada,
-      datahora_visita: licitacao.datahora_visita,
-      datahora_prazo: licitacao.datahora_prazo,
-      edital: licitacao.edital,
+      orgao_site: licitacao.orgao.site || '',
+      objeto: licitacao.objeto || '',
+      situacao: situacaoNormalizada,
+      datahora_abertura: licitacao.datahora_abertura || '',
+      datahora_documento: licitacao.datahora_documento || null,
+      datahora_retirada: licitacao.datahora_retirada || null,
+      datahora_visita: licitacao.datahora_visita || null,
+      datahora_prazo: licitacao.datahora_prazo || '',
+      edital: licitacao.edital || '',
       link_edital: documentoUrl,
       documento_url: documentoUrl,
-      processo: licitacao.processo,
-      observacao: licitacao.observacao,
-      item: licitacao.item,
-      preco_edital: licitacao.preco_edital,
-      valor_estimado: licitacao.valor_estimado,
+      processo: licitacao.processo || '',
+      observacao: licitacao.observacao || '',
+      item: licitacao.item || '',
+      preco_edital: licitacao.preco_edital || 0,
+      valor_estimado: licitacao.valor_estimado || 0,
       boletim_id: boletimId,
     };
   }
@@ -412,7 +416,7 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
       if (error.message === 'IP_NOT_AUTHORIZED') {
         console.log('🚫 API ConLicitação: IP não autorizado.');
         console.log('💡 Para acesso aos dados reais, execute em ambiente com IP autorizado:');
-        console.log('   - Desenvolvimento: 189.89.90.102');
+        console.log('   - Desenvolvimento (Replit): 35.227.80.200');
         console.log('   - Produção: 31.97.26.138');
       } else {
         console.error('Erro ao atualizar cache de licitações:', error);

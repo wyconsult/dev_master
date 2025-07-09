@@ -147,6 +147,7 @@ Application runs on `http://localhost:5000` with full API access when IP is auth
 
 ```
 Changelog:
+- January 9, 2025. Sistema preparado para dados reais da API - mapeamento URGENTE e links corrigidos
 - January 8, 2025. IP Replit mudou para 35.227.80.200 - necessária nova autorização
 - January 8, 2025. Configured Replit IP (104.196.156.252) as development environment
 - January 8, 2025. Fixed production issues: URGENTE badge text cutting and document links
