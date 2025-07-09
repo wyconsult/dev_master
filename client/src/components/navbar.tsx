@@ -13,7 +13,7 @@ export function Navbar() {
 
   return (
     <nav className="bg-gradient-to-r from-white/60 to-blue-50/60 backdrop-blur-xl shadow-2xl border-b border-gray-200/30">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="w-full mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-20">
           <div className="flex items-center space-x-4">
             <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
