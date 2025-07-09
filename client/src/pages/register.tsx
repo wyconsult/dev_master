@@ -66,6 +66,7 @@ export default function Register() {
                       <FormControl>
                         <Input 
                           placeholder="Sua empresa" 
+                          className="border-gray-300 text-gray-600 placeholder:text-gray-400"
                           {...field} 
                         />
                       </FormControl>
@@ -84,6 +85,7 @@ export default function Register() {
                         <Input 
                           placeholder="00000000000000" 
                           maxLength={14}
+                          className="border-gray-300 text-gray-600 placeholder:text-gray-400"
                           {...field} 
                         />
                       </FormControl>
@@ -101,6 +103,7 @@ export default function Register() {
                       <FormControl>
                         <Input 
                           placeholder="Seu nome completo" 
+                          className="border-gray-300 text-gray-600 placeholder:text-gray-400"
                           {...field} 
                         />
                       </FormControl>
@@ -119,6 +122,7 @@ export default function Register() {
                         <Input 
                           type="email" 
                           placeholder="seu@email.com" 
+                          className="border-gray-300 text-gray-600 placeholder:text-gray-400"
                           {...field} 
                         />
                       </FormControl>
@@ -137,6 +141,7 @@ export default function Register() {
                         <Input 
                           type="password" 
                           placeholder="Sua senha" 
+                          className="border-gray-300 text-gray-600 placeholder:text-gray-400"
                           {...field} 
                         />
                       </FormControl>
