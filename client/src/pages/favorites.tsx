@@ -189,6 +189,7 @@ export default function Favorites() {
                     placeholder="Ex. 13157470"
                     value={numeroControle}
                     onChange={(e) => setNumeroControle(e.target.value)}
+                    className="border-gray-300 text-gray-700 placeholder:text-gray-400 h-10"
                   />
                 </div>
               </div>
@@ -203,7 +204,7 @@ export default function Favorites() {
                     <Button
                       variant="outline"
                       role="combobox"
-                      className="w-full justify-between"
+                      className="w-full justify-between border-gray-300 text-gray-700 h-10"
                     >
                       {selectedOrgaos.length === 0
                         ? "Selecione um ou mais órgãos"
@@ -211,7 +212,7 @@ export default function Favorites() {
                       }
                     </Button>
                   </PopoverTrigger>
-                  <PopoverContent className="w-80 p-0">
+                  <PopoverContent className="w-80 p-0 z-50 bg-white border border-gray-200 shadow-lg">
                     <Command>
                       <CommandInput placeholder="Buscar órgão..." />
                       <CommandEmpty>Nenhum órgão encontrado.</CommandEmpty>
@@ -260,7 +261,7 @@ export default function Favorites() {
                     <Button
                       variant="outline"
                       role="combobox"
-                      className="w-full justify-between"
+                      className="w-full justify-between border-gray-300 text-gray-700 h-10"
                     >
                       {selectedUFs.length === 0
                         ? "Selecione um ou mais UFs"
@@ -268,7 +269,7 @@ export default function Favorites() {
                       }
                     </Button>
                   </PopoverTrigger>
-                  <PopoverContent className="w-64 p-0">
+                  <PopoverContent className="w-64 p-0 z-50 bg-white border border-gray-200 shadow-lg">
                     <Command>
                       <CommandInput placeholder="Buscar UF..." />
                       <CommandEmpty>Nenhuma UF encontrada.</CommandEmpty>
@@ -320,8 +321,8 @@ export default function Favorites() {
                         <Button
                           variant="outline"
                           className={cn(
-                            "w-full justify-start text-left font-normal text-sm h-10 px-3",
-                            !dateRange.from && "text-muted-foreground"
+                            "w-full justify-start text-left font-normal text-sm h-10 px-3 border-gray-300 text-gray-700",
+                            !dateRange.from && "text-gray-400"
                           )}
                         >
                           <CalendarIcon className="mr-2 h-4 w-4" />
@@ -330,7 +331,7 @@ export default function Favorites() {
                           </span>
                         </Button>
                       </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
+                      <PopoverContent className="w-auto p-0 z-[60] bg-white border border-gray-200 shadow-xl" align="start">
                         <Calendar
                           mode="single"
                           selected={dateRange.from}
@@ -350,8 +351,8 @@ export default function Favorites() {
                         <Button
                           variant="outline"
                           className={cn(
-                            "w-full justify-start text-left font-normal text-sm h-10 px-3",
-                            !dateRange.to && "text-muted-foreground"
+                            "w-full justify-start text-left font-normal text-sm h-10 px-3 border-gray-300 text-gray-700",
+                            !dateRange.to && "text-gray-400"
                           )}
                         >
                           <CalendarIcon className="mr-2 h-4 w-4" />
@@ -360,7 +361,7 @@ export default function Favorites() {
                           </span>
                         </Button>
                       </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
+                      <PopoverContent className="w-auto p-0 z-[60] bg-white border border-gray-200 shadow-xl" align="start">
                         <Calendar
                           mode="single"
                           selected={dateRange.to}

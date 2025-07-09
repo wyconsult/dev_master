@@ -138,6 +138,18 @@ button[role="gridcell"], button[aria-selected] {
   color: #374151 !important;
 }
 
+/* Fix calendar z-index and transparency issues */
+[data-radix-popper-content-wrapper] {
+  z-index: 60 !important;
+}
+
+.rdp {
+  background-color: white !important;
+  border: 1px solid #d1d5db !important;
+  border-radius: 6px !important;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1) !important;
+}
+
 /* Button styling */
 .btn, button {
   border-radius: 0.5rem !important;
