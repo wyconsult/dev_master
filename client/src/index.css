@@ -70,7 +70,7 @@ input[type="text"], input[type="email"], input[type="password"],
 input[type="search"], input[type="number"], input[type="tel"] {
   border: 1px solid #d1d5db;
   transition: border-color 0.2s ease;
-  color: #000000 !important;
+  color: #374151 !important;
 }
 
 input[type="text"]:focus, input[type="email"]:focus, input[type="password"]:focus,
@@ -78,7 +78,7 @@ input[type="search"]:focus, input[type="number"]:focus, input[type="tel"]:focus 
   border-color: #3b82f6;
   outline: none;
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-  color: #000000 !important;
+  color: #374151 !important;
 }
 
 /* Placeholder text should be gray */
@@ -114,11 +114,28 @@ button[role="gridcell"], button[aria-selected] {
 /* Fix search input styles in Command components */
 [cmdk-input] {
   border-color: #d1d5db !important;
-  color: #000000 !important;
+  color: #374151 !important;
+  height: 36px !important;
+  font-size: 14px !important;
 }
 
 [cmdk-input]::placeholder {
   color: #9ca3af !important;
+}
+
+/* Fix dropdown text colors - more gentle */
+[cmdk-item] {
+  color: #374151 !important;
+}
+
+/* Fix popover content styling */
+[data-radix-popper-content-wrapper] {
+  border-color: #d1d5db !important;
+}
+
+/* Make text colors more gentle throughout */
+.text-black {
+  color: #374151 !important;
 }
 
 /* Button styling */

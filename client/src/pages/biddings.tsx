@@ -167,7 +167,7 @@ export default function Biddings() {
                     placeholder="Ex. 13157470"
                     value={numeroControle}
                     onChange={(e) => setNumeroControle(e.target.value)}
-                    className="border-gray-300 text-black placeholder:text-gray-400"
+                    className="border-gray-300 text-gray-700 placeholder:text-gray-400 h-10"
                   />
                 </div>
               </div>
@@ -182,7 +182,7 @@ export default function Biddings() {
                     <Button
                       variant="outline"
                       role="combobox"
-                      className="w-full justify-between border-gray-300"
+                      className="w-full justify-between border-gray-300 text-gray-700 h-10"
                     >
                       {selectedOrgaos.length === 0
                         ? "Selecione um ou mais órgãos"
@@ -239,7 +239,7 @@ export default function Biddings() {
                     <Button
                       variant="outline"
                       role="combobox"
-                      className="w-full justify-between border-gray-300"
+                      className="w-full justify-between border-gray-300 text-gray-700 h-10"
                     >
                       {selectedUFs.length === 0
                         ? "Selecione um ou mais UFs"
