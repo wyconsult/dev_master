@@ -120,21 +120,32 @@ export function BiddingCard({ bidding, showFavoriteIcon = true }: BiddingCardPro
 
         {/* Status badge */}
         <div className="flex justify-end mb-3">
-          <span className={cn(
-            "inline-block rounded font-bold text-white",
-            getStatusColor(bidding.situacao || "")
-          )} style={{ 
-            padding: '4px 12px',
-            minWidth: '85px', 
-            width: 'fit-content',
-            textAlign: 'center', 
-            fontSize: '11px', 
-            whiteSpace: 'nowrap',
-            lineHeight: '1.3',
-            letterSpacing: '0.5px'
-          }}>
+          <div 
+            className={cn(
+              "rounded font-bold text-white",
+              bidding.situacao?.toLowerCase() === 'urgente' ? 'status-badge-urgente' : '',
+              getStatusColor(bidding.situacao || "")
+            )}
+            style={{
+              padding: '8px 20px',
+              minWidth: '100px',
+              width: 'auto',
+              textAlign: 'center',
+              fontSize: '13px',
+              whiteSpace: 'nowrap',
+              display: 'inline-block',
+              lineHeight: '1.1',
+              letterSpacing: '0.5px',
+              fontWeight: 'bold',
+              textTransform: 'uppercase',
+              boxSizing: 'border-box',
+              border: 'none',
+              outline: 'none',
+              overflow: 'visible'
+            }}
+          >
             {bidding.situacao?.toUpperCase()}
-          </span>
+          </div>
         </div>
 
         {/* Main info grid */}
