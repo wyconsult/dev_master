@@ -122,32 +122,23 @@ export function BiddingCard({ bidding, showFavoriteIcon = true }: BiddingCardPro
 
         {/* Status badge */}
         <div className="flex justify-end mb-3">
-          <div 
+          <span 
             className={cn(
-              "rounded font-bold text-white",
-              bidding.situacao?.toLowerCase() === 'urgente' ? 'status-badge-urgente' : '',
+              "inline-block rounded font-bold text-white text-sm px-3 py-1",
               getStatusColor(bidding.situacao || "")
             )}
             style={{
-              padding: '8px 20px',
-              minWidth: '100px',
-              width: 'auto',
-              textAlign: 'center',
-              fontSize: '13px',
+              minWidth: 'fit-content',
+              maxWidth: '100%',
               whiteSpace: 'nowrap',
-              display: 'inline-block',
-              lineHeight: '1.1',
-              letterSpacing: '0.5px',
+              overflow: 'visible',
+              textAlign: 'center',
               fontWeight: 'bold',
-              textTransform: 'uppercase',
-              boxSizing: 'border-box',
-              border: 'none',
-              outline: 'none',
-              overflow: 'visible'
+              textTransform: 'uppercase'
             }}
           >
             {bidding.situacao?.toUpperCase()}
-          </div>
+          </span>
         </div>
 
         {/* Main info grid */}
@@ -166,15 +157,19 @@ export function BiddingCard({ bidding, showFavoriteIcon = true }: BiddingCardPro
             <span className="text-gray-700"><strong>Status da Sessão:</strong> {bidding.situacao}</span>
           </div>
           
-          <div className="flex justify-between">
+          <div className="flex justify-between items-center">
             <span className="text-gray-700"><strong>Cidade:</strong> {bidding.orgao_cidade} - {bidding.orgao_uf}</span>
-            <span 
+            <a 
+              href="#"
               className="text-blue-600 hover:text-blue-800 underline text-sm cursor-pointer"
-              onClick={handleLinkClick}
+              onClick={(e) => {
+                e.preventDefault();
+                handleLinkClick();
+              }}
               style={{ userSelect: 'none' }}
             >
               <strong>Link:</strong> Acessar documento
-            </span>
+            </a>
           </div>
         </div>
       </CardContent>

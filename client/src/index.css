@@ -150,6 +150,21 @@ button[role="gridcell"], button[aria-selected] {
   box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1) !important;
 }
 
+/* Garantir que badges de status não sejam cortados */
+.status-badge, [data-status-badge] {
+  min-width: fit-content !important;
+  max-width: 100% !important;
+  overflow: visible !important;
+  white-space: nowrap !important;
+  padding: 4px 12px !important;
+  display: inline-block !important;
+}
+
+/* Especificamente para badge URGENTE */
+.bg-red-500 {
+  min-width: 80px !important;
+}
+
 /* Button styling */
 .btn, button {
   border-radius: 0.5rem !important;
