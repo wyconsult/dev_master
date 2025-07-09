@@ -16,10 +16,12 @@ export function BiddingCard({ bidding, showFavoriteIcon = true }: BiddingCardPro
   const { user } = useAuth();
   const { toggleFavorite, isLoading } = useFavorites();
 
-  const { data: favoriteStatus } = useQuery<{ isFavorite: boolean }>({
-    queryKey: [`/api/favorites/${user?.id}/${bidding.id}`],
-    enabled: !!user && showFavoriteIcon,
-  });
+  const { data: favoriteStatus } = useQuery<{ isFavorite: boolean }>(
+    {
+      queryKey: [`/api/favorites/${user?.id}/${bidding.id}`],
+      enabled: !!user && showFavoriteIcon,
+    }
+  );
 
   const isFavorite = favoriteStatus?.isFavorite || false;
 
@@ -118,7 +120,7 @@ export function BiddingCard({ bidding, showFavoriteIcon = true }: BiddingCardPro
         <div className="flex justify-end mb-3">
           <span
             className={cn(
-              "inline-block rounded font-bold text-white text-sm px-4 py-1 min-w-fit",
+              "inline-block rounded font-bold text-white text-sm px-4 py-1 min-w-fit whitespace-nowrap max-w-none",
               getStatusColor(bidding.situacao || "")
             )}
           >
