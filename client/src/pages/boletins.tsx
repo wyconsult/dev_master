@@ -222,10 +222,10 @@ export default function Boletins() {
                     {format(currentDate, "MMMM yyyy", { locale: ptBR })}
                   </CardTitle>
                   <div className="flex gap-2">
-                    <Button variant="outline" size="sm" onClick={previousMonth}>
+                    <Button variant="outline" size="sm" onClick={previousMonth} className="border-gray-300">
                       <ChevronLeft className="h-4 w-4" />
                     </Button>
-                    <Button variant="outline" size="sm" onClick={nextMonth}>
+                    <Button variant="outline" size="sm" onClick={nextMonth} className="border-gray-300">
                       <ChevronRight className="h-4 w-4" />
                     </Button>
                   </div>
@@ -254,12 +254,12 @@ export default function Boletins() {
                         <button
                           onClick={() => setSelectedDate(date)}
                           className={cn(
-                            "w-full p-2 text-sm rounded-md border transition-colors",
+                            "w-full p-2 text-sm rounded-md border border-gray-300 transition-colors",
                             {
-                              "bg-blue-500 text-white": isSelected,
+                              "bg-blue-500 text-white border-blue-500": isSelected,
                               "bg-blue-100 border-blue-300": isCurrentDay && !isSelected,
-                              "hover:bg-gray-100": !isSelected && !isCurrentDay,
-                              "text-gray-400": !isCurrentMonth,
+                              "hover:bg-gray-100 border-gray-300": !isSelected && !isCurrentDay,
+                              "text-gray-400 border-gray-200": !isCurrentMonth,
                             }
                           )}
                         >
@@ -330,7 +330,7 @@ export default function Boletins() {
                 {selectedDateBoletins.length > 0 && (
                   <div className="space-y-4">
                     {selectedDateBoletins.map((boletim) => (
-                      <Card key={boletim.id} className="border-l-4 border-l-blue-500">
+                      <Card key={boletim.id} className="border border-gray-300 border-l-4 border-l-blue-500">
                         <CardContent className="p-4">
                           <div className="flex items-start justify-between mb-2">
                             <div>
@@ -349,7 +349,7 @@ export default function Boletins() {
                           <Button 
                             variant="outline" 
                             size="sm" 
-                            className="w-full mt-3"
+                            className="w-full mt-3 border-gray-300"
                             onClick={() => handleBoletimClick(boletim.id)}
                             disabled={markAsViewedMutation.isPending}
                           >

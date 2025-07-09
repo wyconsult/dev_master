@@ -98,6 +98,19 @@ input::placeholder {
   border-color: #d1d5db !important;
 }
 
+/* Fix calendar and card borders */
+.rdp, .rdp-month, .rdp-table, .rdp-day, 
+[role="gridcell"], [role="grid"], [role="columnheader"],
+.calendar, .calendar *, 
+button[role="gridcell"], button[aria-selected] {
+  border-color: #d1d5db !important;
+}
+
+/* Fix boletim cards */
+.boletim-card, [data-boletim-card] {
+  border: 1px solid #d1d5db !important;
+}
+
 /* Button styling */
 .btn, button {
   border-radius: 0.5rem !important;
