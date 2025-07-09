@@ -81,6 +81,18 @@ input[type="search"]:focus, input[type="number"]:focus, input[type="tel"]:focus 
   color: #6b7280 !important;
 }
 
+/* Fix toast borders - remove black borders */
+[data-sonner-toast], [data-sonner-toaster], 
+[data-radix-toast-root], [role="status"], [role="alert"] {
+  border: 1px solid #d1d5db !important;
+  background: white !important;
+}
+
+/* Override any dark border classes for toasts */
+.toast {
+  border-color: #d1d5db !important;
+}
+
 /* Button styling */
 .btn, button {
   border-radius: 0.5rem !important;
