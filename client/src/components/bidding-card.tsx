@@ -123,14 +123,33 @@ export function BiddingCard({ bidding, showFavoriteIcon = true }: BiddingCardPro
 
         {/* Status badge */}
         <div className="flex justify-end mb-3">
-          <span
+          <div
             className={cn(
-              "badge-status rounded text-white font-bold text-xs px-3 py-1 inline-block text-center uppercase",
+              "rounded text-white",
               getStatusColor(bidding.situacao || "")
             )}
+            style={{
+              padding: "8px 16px",
+              minWidth: "100px",
+              width: "auto",
+              maxWidth: "none",
+              whiteSpace: "nowrap",
+              overflow: "visible",
+              textOverflow: "clip",
+              wordWrap: "normal",
+              wordBreak: "keep-all",
+              display: "inline-block",
+              boxSizing: "border-box",
+              fontSize: "12px",
+              fontWeight: "bold",
+              textAlign: "center",
+              lineHeight: "1.3",
+              textTransform: "uppercase",
+              letterSpacing: "0.5px"
+            }}
           >
             {bidding.situacao?.toUpperCase() || "NOVA"}
-          </span>
+          </div>
         </div>
 
         {/* Main info grid */}
