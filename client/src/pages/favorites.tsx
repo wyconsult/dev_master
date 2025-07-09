@@ -158,7 +158,7 @@ export default function Favorites() {
         </div>
 
         {/* Filters */}
-        <Card className="mb-6 border-0 shadow-xl bg-white/80 backdrop-blur-sm">
+        <Card className="mb-6 bg-white border border-gray-200 shadow-lg">
           <CardHeader>
             <CardTitle className="text-lg flex items-center justify-between">
               <div className="flex items-center gap-2">

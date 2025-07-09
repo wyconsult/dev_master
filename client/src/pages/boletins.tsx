@@ -214,7 +214,7 @@ export default function Boletins() {
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2">
-            <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm">
+            <Card className="bg-white border border-gray-200 shadow-lg">
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <CardTitle className="flex items-center gap-2">
@@ -306,7 +306,7 @@ export default function Boletins() {
           </div>
 
           <div>
-            <Card>
+            <Card className="bg-white border border-gray-200 shadow-lg">
               <CardHeader>
                 <CardTitle>
                   {selectedDate ? format(selectedDate, "dd 'de' MMMM", { locale: ptBR }) : "Selecione uma data"}

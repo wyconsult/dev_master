@@ -67,7 +67,7 @@
 
 /* Modern input styling */
 .input, input[type="text"], input[type="email"], input[type="password"], 
-[data-slot="input"], [role="combobox"] {
+[data-slot="input"], [role="combobox"], button[role="combobox"] {
   border: 1px solid #d1d5db !important;
   background: white !important;
   border-radius: 0.5rem !important;
@@ -78,15 +78,32 @@
 }
 
 .input:focus, input[type="text"]:focus, input[type="email"]:focus, input[type="password"]:focus, 
-[data-slot="input"]:focus, [role="combobox"]:focus {
+[data-slot="input"]:focus, [role="combobox"]:focus, button[role="combobox"]:focus {
   border-color: #3b82f6 !important;
   outline: none !important;
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1) !important;
 }
 
 .input:hover, input[type="text"]:hover, input[type="email"]:hover, input[type="password"]:hover,
-[data-slot="input"]:hover, [role="combobox"]:hover {
+[data-slot="input"]:hover, [role="combobox"]:hover, button[role="combobox"]:hover {
   border-color: #9ca3af !important;
+}
+
+/* Remove dark borders from all components */
+.border-black, .border-slate-900, .border-gray-900 {
+  border-color: #d1d5db !important;
+}
+
+/* Clean up card and component styling */
+[data-radix-collection-item], [data-state="open"], [data-state="closed"] {
+  border-color: #d1d5db !important;
+}
+
+/* Fix popover and dropdown borders */
+[data-side="bottom"], [data-side="top"], [data-side="left"], [data-side="right"] {
+  border: 1px solid #d1d5db !important;
+  background: white !important;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1) !important;
 }
 
 /* Button styling */
