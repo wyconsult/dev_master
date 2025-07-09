@@ -151,18 +151,27 @@ button[role="gridcell"], button[aria-selected] {
 }
 
 /* Garantir que badges de status não sejam cortados */
-.status-badge, [data-status-badge] {
-  min-width: fit-content !important;
-  max-width: 100% !important;
+.status-badge, [data-status-badge], .bg-red-500, .bg-green-500, .bg-blue-500, .bg-yellow-500, .bg-orange-500, .bg-purple-500, .bg-gray-500 {
+  min-width: 90px !important;
+  max-width: none !important;
   overflow: visible !important;
   white-space: nowrap !important;
-  padding: 4px 12px !important;
+  width: auto !important;
+  box-sizing: border-box !important;
   display: inline-block !important;
+  text-overflow: clip !important;
 }
 
-/* Especificamente para badge URGENTE */
-.bg-red-500 {
-  min-width: 80px !important;
+/* CSS para garantir que o badge URGENTE apareça completo */
+.bg-red-500, .bg-green-500, .bg-blue-500, .bg-yellow-500, .bg-orange-500, .bg-purple-500, .bg-gray-500 {
+  min-width: 90px !important;
+  width: auto !important;
+  max-width: none !important;
+  padding: 8px 16px !important;
+  white-space: nowrap !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
+  box-sizing: border-box !important;
 }
 
 /* Button styling */

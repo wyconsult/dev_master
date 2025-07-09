@@ -119,23 +119,27 @@ export function BiddingCard({ bidding, showFavoriteIcon = true }: BiddingCardPro
 
         {/* Status badge */}
         <div className="flex justify-end mb-3">
-          <span 
+          <div 
             className={cn(
-              "inline-block rounded font-bold text-white text-sm px-3 py-1",
+              "px-4 py-2 rounded text-white font-bold text-sm text-center",
               getStatusColor(bidding.situacao || "")
             )}
             style={{
-              minWidth: 'fit-content',
-              maxWidth: '100%',
+              minWidth: '90px',
+              width: 'auto',
+              maxWidth: 'none',
               whiteSpace: 'nowrap',
               overflow: 'visible',
-              textAlign: 'center',
+              display: 'inline-block',
+              boxSizing: 'border-box',
+              textTransform: 'uppercase',
+              fontSize: '12px',
               fontWeight: 'bold',
-              textTransform: 'uppercase'
+              lineHeight: '1.2'
             }}
           >
-            {bidding.situacao?.toUpperCase()}
-          </span>
+            {bidding.situacao || 'NOVA'}
+          </div>
         </div>
 
         {/* Main info grid */}
@@ -156,17 +160,13 @@ export function BiddingCard({ bidding, showFavoriteIcon = true }: BiddingCardPro
           
           <div className="flex justify-between items-center">
             <span className="text-gray-700"><strong>Cidade:</strong> {bidding.orgao_cidade} - {bidding.orgao_uf}</span>
-            <a 
-              href="#"
-              className="text-blue-600 hover:text-blue-800 underline text-sm cursor-pointer"
-              onClick={(e) => {
-                e.preventDefault();
-                handleLinkClick();
-              }}
-              style={{ userSelect: 'none' }}
+            <button 
+              className="text-blue-600 hover:text-blue-800 underline text-sm cursor-pointer bg-transparent border-none p-0"
+              onClick={handleLinkClick}
+              style={{ userSelect: 'none', font: 'inherit' }}
             >
               <strong>Link:</strong> Acessar documento
-            </a>
+            </button>
           </div>
         </div>
       </CardContent>
