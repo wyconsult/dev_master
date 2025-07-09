@@ -51,7 +51,7 @@ export function BiddingCard({ bidding, showFavoriteIcon = true }: BiddingCardPro
     if (!dateTime) return "-";
     try {
       const date = new Date(dateTime);
-      return date.toLocaleString('pt-BR');
+      return date.toLocaleString("pt-BR");
     } catch {
       return dateTime;
     }
@@ -64,28 +64,35 @@ export function BiddingCard({ bidding, showFavoriteIcon = true }: BiddingCardPro
   };
 
   const handleLinkClick = () => {
-    // Usar documento_url primeiro (vem do campo documento[0].url da API)
-    const documentLink = bidding.documento_url || bidding.link_edital;
-    
-    if (documentLink && documentLink.trim() !== '') {
-      // Link já está formatado corretamente no backend
-      window.open(documentLink, '_blank', 'noopener,noreferrer');
+    const baseUrl = "https://consultaonline.conlicitacao.com.br";
+    let documentLink = "";
+
+    if (bidding.documento_url) {
+      documentLink = bidding.documento_url.startsWith("http")
+        ? bidding.documento_url
+        : `${baseUrl}${bidding.documento_url}`;
+    } else if (bidding.link_edital) {
+      documentLink = bidding.link_edital;
+    }
+
+    if (documentLink && documentLink.trim() !== "") {
+      window.open(documentLink, "_blank", "noopener,noreferrer");
     } else if (bidding.conlicitacao_id) {
-      // URL correta para visualizar licitação no ConLicitação
-      const url = `https://consultaonline.conlicitacao.com.br/licitacao/visualizar/${bidding.conlicitacao_id}`;
-      window.open(url, '_blank', 'noopener,noreferrer');
+      const url = `${baseUrl}/licitacao/visualizar/${bidding.conlicitacao_id}`;
+      window.open(url, "_blank", "noopener,noreferrer");
     } else {
-      // Fallback para busca geral
-      const searchUrl = `https://consultaonline.conlicitacao.com.br/busca?q=${encodeURIComponent(bidding.edital || '')}`;
-      window.open(searchUrl, '_blank', 'noopener,noreferrer');
+      const searchUrl = `${baseUrl}/busca?q=${encodeURIComponent(bidding.edital || "")}`;
+      window.open(searchUrl, "_blank", "noopener,noreferrer");
     }
   };
 
   return (
-    <Card className={cn(
-      "hover:shadow-md transition-shadow border border-gray-200 bg-white",
-      showFavoriteIcon && isFavorite && "border-l-4 border-l-blue-500"
-    )}>
+    <Card
+      className={cn(
+        "hover:shadow-md transition-shadow border border-gray-200 bg-white",
+        showFavoriteIcon && isFavorite && "border-l-4 border-l-blue-500"
+      )}
+    >
       <CardContent className="p-4 relative overflow-visible">
         {/* Header with favorite */}
         <div className="flex justify-between items-start mb-3">
@@ -102,16 +109,13 @@ export function BiddingCard({ bidding, showFavoriteIcon = true }: BiddingCardPro
               disabled={isLoading}
               className={cn(
                 "transition-colors ml-2 flex-shrink-0",
-                isFavorite 
-                  ? "text-accent hover:text-accent/80" 
+                isFavorite
+                  ? "text-accent hover:text-accent/80"
                   : "text-gray-400 hover:text-accent"
               )}
             >
-              <Heart 
-                className={cn(
-                  "h-4 w-4",
-                  isFavorite && "fill-current"
-                )} 
+              <Heart
+                className={cn("h-4 w-4", isFavorite && "fill-current")}
               />
             </Button>
           )}
@@ -119,54 +123,66 @@ export function BiddingCard({ bidding, showFavoriteIcon = true }: BiddingCardPro
 
         {/* Status badge */}
         <div className="flex justify-end mb-3">
-          <div 
+          <span
             className={cn(
-              "px-4 py-2 rounded text-white font-bold text-sm text-center",
+              "inline-block rounded font-bold text-white text-sm px-3 py-1",
               getStatusColor(bidding.situacao || "")
             )}
             style={{
-              minWidth: '90px',
-              width: 'auto',
-              maxWidth: 'none',
-              whiteSpace: 'nowrap',
-              overflow: 'visible',
-              display: 'inline-block',
-              boxSizing: 'border-box',
-              textTransform: 'uppercase',
-              fontSize: '12px',
-              fontWeight: 'bold',
-              lineHeight: '1.2'
+              minWidth: "max-content",
+              maxWidth: "100%",
+              whiteSpace: "nowrap",
+              overflow: "visible",
+              textAlign: "center",
+              fontWeight: "bold",
+              textTransform: "uppercase",
             }}
           >
-            {bidding.situacao || 'NOVA'}
-          </div>
+            {bidding.situacao?.toUpperCase()}
+          </span>
         </div>
 
         {/* Main info grid */}
         <div className="space-y-2 text-sm">
           <div>
-            <span className="text-gray-700"><strong>Datas:</strong> {formatDateTime(bidding.datahora_abertura)}</span>
+            <span className="text-gray-700">
+              <strong>Datas:</strong> {formatDateTime(bidding.datahora_abertura)}
+            </span>
           </div>
-          
+
           <div className="flex justify-between">
-            <span className="text-gray-700"><strong>Edital:</strong> {bidding.edital}</span>
-            <span className="text-gray-700"><strong>Nº ConLicitação:</strong> {bidding.conlicitacao_id}</span>
+            <span className="text-gray-700">
+              <strong>Edital:</strong> {bidding.edital}
+            </span>
+            <span className="text-gray-700">
+              <strong>Nº ConLicitação:</strong> {bidding.conlicitacao_id}
+            </span>
           </div>
-          
+
           <div className="flex justify-between">
-            <span className="text-gray-700"><strong>Órgão:</strong> {bidding.orgao_nome}</span>
-            <span className="text-gray-700"><strong>Status da Sessão:</strong> {bidding.situacao}</span>
+            <span className="text-gray-700">
+              <strong>Órgão:</strong> {bidding.orgao_nome}
+            </span>
+            <span className="text-gray-700">
+              <strong>Status da Sessão:</strong> {bidding.situacao}
+            </span>
           </div>
-          
+
           <div className="flex justify-between items-center">
-            <span className="text-gray-700"><strong>Cidade:</strong> {bidding.orgao_cidade} - {bidding.orgao_uf}</span>
-            <button 
-              className="text-blue-600 hover:text-blue-800 underline text-sm cursor-pointer bg-transparent border-none p-0"
-              onClick={handleLinkClick}
-              style={{ userSelect: 'none', font: 'inherit' }}
+            <span className="text-gray-700">
+              <strong>Cidade:</strong> {bidding.orgao_cidade} - {bidding.orgao_uf}
+            </span>
+            <a
+              href="#"
+              className="text-blue-600 hover:text-blue-800 underline text-sm cursor-pointer"
+              onClick={(e) => {
+                e.preventDefault();
+                handleLinkClick();
+              }}
+              style={{ userSelect: "none" }}
             >
               <strong>Link:</strong> Acessar documento
-            </button>
+            </a>
           </div>
         </div>
       </CardContent>
