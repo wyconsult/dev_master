@@ -16,12 +16,10 @@ export function BiddingCard({ bidding, showFavoriteIcon = true }: BiddingCardPro
   const { user } = useAuth();
   const { toggleFavorite, isLoading } = useFavorites();
 
-  const { data: favoriteStatus } = useQuery<{ isFavorite: boolean }>(
-    {
-      queryKey: [`/api/favorites/${user?.id}/${bidding.id}`],
-      enabled: !!user && showFavoriteIcon,
-    }
-  );
+  const { data: favoriteStatus } = useQuery<{ isFavorite: boolean }>({
+    queryKey: [`/api/favorites/${user?.id}/${bidding.id}`],
+    enabled: !!user && showFavoriteIcon,
+  });
 
   const isFavorite = favoriteStatus?.isFavorite || false;
 
@@ -93,6 +91,7 @@ export function BiddingCard({ bidding, showFavoriteIcon = true }: BiddingCardPro
       showFavoriteIcon && isFavorite && "border-l-4 border-l-blue-500"
     )}>
       <CardContent className="p-4 relative overflow-visible">
+        {/* Header */}
         <div className="flex justify-between items-start mb-3">
           <div className="flex-1">
             <p className="text-sm text-gray-900 mb-1">
@@ -117,10 +116,11 @@ export function BiddingCard({ bidding, showFavoriteIcon = true }: BiddingCardPro
           )}
         </div>
 
+        {/* Status Badge */}
         <div className="flex justify-end mb-3">
           <span
             className={cn(
-              "inline-block rounded font-bold text-white text-sm px-4 py-1 min-w-fit whitespace-nowrap max-w-none",
+              "inline-block rounded font-bold text-white text-sm px-4 py-1 whitespace-nowrap min-w-max flex-shrink-0",
               getStatusColor(bidding.situacao || "")
             )}
           >
@@ -128,6 +128,7 @@ export function BiddingCard({ bidding, showFavoriteIcon = true }: BiddingCardPro
           </span>
         </div>
 
+        {/* Details */}
         <div className="space-y-2 text-sm">
           <div>
             <span className="text-gray-700">
@@ -138,9 +139,13 @@ export function BiddingCard({ bidding, showFavoriteIcon = true }: BiddingCardPro
             <span className="text-gray-700"><strong>Edital:</strong> {bidding.edital}</span>
             <span className="text-gray-700"><strong>Nº ConLicitação:</strong> {bidding.conlicitacao_id}</span>
           </div>
-          <div className="flex justify-between">
-            <span className="text-gray-700"><strong>Órgão:</strong> {bidding.orgao_nome}</span>
-            <span className="text-gray-700"><strong>Status da Sessão:</strong> {bidding.situacao}</span>
+          <div className="flex justify-between flex-wrap items-start">
+            <span className="text-gray-700 max-w-full">
+              <strong>Órgão:</strong> {bidding.orgao_nome}
+            </span>
+            <span className="text-gray-700 whitespace-nowrap flex-shrink-0">
+              <strong>Status da Sessão:</strong> {bidding.situacao?.toUpperCase()}
+            </span>
           </div>
           <div className="flex justify-between items-center">
             <span className="text-gray-700">
