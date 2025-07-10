@@ -18,42 +18,48 @@ import type { Bidding, Boletim, Filtro } from "@shared/schema";
 export default function Dashboard() {
   const { user } = useAuth();
 
-  // Buscar dados reais da API
+  // 1) filtros
   const { data: filtros = [], isLoading: isLoadingFiltros } = useQuery<Filtro[]>({
     queryKey: ["/api/filtros"],
   });
 
+  // 2) licitações
   const { data: biddings = [], isLoading: isLoadingBiddings } = useQuery<Bidding[]>({
     queryKey: ["/api/biddings"],
   });
 
+  // 3) boletins
   const { data: boletins = [], isLoading: isLoadingBoletins } = useQuery<Boletim[]>({
     queryKey: ["/api/boletins"],
   });
 
-  const { data: favorites = [], isLoading: isLoadingFavorites } = useQuery<Bidding[]>({
+  // 4) favoritos — **1 objeto** + **3 genéricos** <TQueryFnData, TError, TData>
+  const {
+    data: favorites = [],
+    isLoading: isLoadingFavorites
+  } = useQuery<
+    Bidding[],        // TQueryFnData
+    Error,            // TError
+    Bidding[]         // TData
+  >({
     queryKey: ["/api/favorites", user?.id],
+    queryFn: async () => {
+      const res = await fetch(`/api/favorites/${user!.id}`);
+      if (!res.ok) throw new Error("Falha ao buscar favoritos");
+      return res.json() as Promise<Bidding[]>;
+    },
     enabled: !!user?.id,
   });
 
-  // Cálculos baseados em dados reais
+  // 5) cálculos
   const totalLicitacoes = biddings.length;
   const licitacoesAtivas = biddings.filter(b => b.situacao === "NOVA" || b.situacao === "ATIVA").length;
   const editaisRecentes = biddings.filter(b => {
     if (!b.datahora_abertura) return false;
-    try {
-      const hoje = new Date();
-      const dataAbertura = new Date(b.datahora_abertura);
-      const diffTime = hoje.getTime() - dataAbertura.getTime();
-      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-      return diffDays <= 7; // Últimos 7 dias
-    } catch {
-      return false;
-    }
+    const diffMs = Date.now() - new Date(b.datahora_abertura).getTime();
+    return diffMs <= 7 * 24 * 60 * 60 * 1000;
   }).length;
-  
   const orgaosUnicos = new Set(biddings.map(b => b.orgao_nome)).size;
-  const totalBoletins = boletins.length;
   const boletinsNaoVisualizados = boletins.filter(b => !b.visualizado).length;
   const totalFavoritos = favorites.length;
 
@@ -90,12 +96,10 @@ export default function Dashboard() {
     }
   ];
 
-
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
       <Navbar />
-      
+
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="mb-12 text-center">
@@ -106,7 +110,7 @@ export default function Dashboard() {
             Bem-vindo ao LicitaTraker
           </h1>
           <p className="text-xl text-gray-600 mb-2">
-            Olá, {user?.email?.split('@')[0]}! 👋
+            Olá, {user?.email?.split("@")[0]}! 👋
           </p>
           <p className="text-gray-500">
             Gerencie suas licitações e boletins de forma inteligente
@@ -115,36 +119,24 @@ export default function Dashboard() {
 
         {/* Main Navigation Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {dashboardCards.map((card, index) => (
-            <Link key={index} href={card.link}>
+          {dashboardCards.map((card, i) => (
+            <Link key={i} href={card.link}>
               <Card className={`hover:shadow-2xl hover:-translate-y-2 transition-all duration-500 cursor-pointer group border-0 shadow-lg overflow-hidden ${card.bgPattern}/30 backdrop-blur-sm`}>
                 <CardContent className="p-8 text-center relative">
-                  {/* Background pattern */}
+                  {/* background */}
                   <div className="absolute inset-0 opacity-5">
-                    <div className="w-full h-full bg-gradient-to-br from-transparent to-black/10"></div>
+                    <div className="w-full h-full bg-gradient-to-br from-transparent to-black/10" />
                   </div>
-                  
                   <div className={`inline-flex items-center justify-center w-20 h-20 rounded-2xl ${card.gradient} ${card.hoverGradient} text-white mb-6 group-hover:scale-110 group-hover:rotate-3 transition-all duration-500 shadow-lg`}>
                     <card.icon className="h-10 w-10" />
                   </div>
-                  
-                  <h3 className="text-2xl font-bold text-gray-900 mb-3">
-                    {card.title}
-                  </h3>
-                  
-                  <p className="text-gray-600 mb-6 leading-relaxed">
-                    {card.description}
-                  </p>
-                  
+                  <h3 className="text-2xl font-bold text-gray-900 mb-3">{card.title}</h3>
+                  <p className="text-gray-600 mb-6 leading-relaxed">{card.description}</p>
                   <div className="inline-flex items-center justify-center px-4 py-2 rounded-full bg-white/80 backdrop-blur-sm text-sm font-semibold text-gray-700 shadow-md border border-gray-200/50">
                     {card.count}
                   </div>
-                  
                   <div className="mt-8">
-                    <Button 
-                      variant="ghost" 
-                      className="group-hover:bg-white/20 group-hover:backdrop-blur-sm transition-all duration-300 font-semibold"
-                    >
+                    <Button variant="ghost" className="group-hover:bg-white/20 group-hover:backdrop-blur-sm transition-all duration-300 font-semibold">
                       Acessar <span className="ml-2 group-hover:translate-x-1 transition-transform duration-300">→</span>
                     </Button>
                   </div>
@@ -153,8 +145,6 @@ export default function Dashboard() {
             </Link>
           ))}
         </div>
-
-
       </div>
     </div>
   );
