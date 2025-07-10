@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient, useQueries } from "@tanstack/react-query";
 import { Navbar } from "@/components/navbar";
 import { Button } from "@/components/ui/button";
 import {
@@ -45,7 +45,7 @@ export default function Boletins() {
     queryKey: ["/api/boletins"],
     queryFn: () =>
       apiRequest("GET", "/api/boletins").then(res =>
-        res.json() as Promise<Boletim[]>
+        (res.json() as Promise<Boletim[]>)
       ),
   });
 
@@ -58,16 +58,17 @@ export default function Boletins() {
     licitacoes: Bidding[];
     acompanhamentos: Acompanhamento[];
   }>({
-    queryKey: selectedBoletim ? [`/api/boletim/${selectedBoletim}`] : [],
+    queryKey: [`/api/boletim/${selectedBoletim}`],
     enabled: !!selectedBoletim,
     queryFn: () =>
-      apiRequest("GET", `/api/boletim/${selectedBoletim}`).then(res =>
-        res.json() as Promise<{
-          boletim: Boletim;
-          licitacoes: Bidding[];
-          acompanhamentos: Acompanhamento[];
-        }>
-      ),
+      apiRequest("GET", `/api/boletim/${selectedBoletim}`)
+        .then(res =>
+          (res.json() as Promise<{
+            boletim: Boletim;
+            licitacoes: Bidding[];
+            acompanhamentos: Acompanhamento[];
+          }>)
+        ),
   });
 
   // 3) mutation para marcar como visualizado
@@ -79,16 +80,14 @@ export default function Boletins() {
     },
   });
 
-  // Helpers de turno, status…
-  const getTurno = (datahora: string | null) => {
-    if (!datahora) return "M";
+  // Helpers de turno, status...
+  const getTurno = (datahora: string) => {
     const h = new Date(datahora).getHours();
     if (h >= 6 && h < 12) return "M";
     if (h >= 12 && h < 18) return "T";
     return "N";
   };
-  const getTurnoCompleto = (datahora: string | null) => {
-    if (!datahora) return "-";
+  const getTurnoCompleto = (datahora: string) => {
     const d = new Date(datahora);
     const h = d.getHours();
     const turno = h < 12 ? "Manhã" : h < 18 ? "Tarde" : "Noite";
@@ -108,19 +107,30 @@ export default function Boletins() {
 
   // Filtra boletins por data
   const getBoletinsForDate = (date: Date) =>
-    boletins.filter((b) =>
-      b.datahora_fechamento
-        ? isSameDay(new Date(b.datahora_fechamento), date)
-        : false
-    );
-  const selectedDateBoletins = selectedDate
-    ? getBoletinsForDate(selectedDate)
-    : [];
+    boletins.filter(b => isSameDay(new Date(b.datahora_fechamento), date));
+  const selectedDateBoletins = selectedDate ? getBoletinsForDate(selectedDate) : [];
+
+  // busca detalhes em paralelo para counts
+  const boletimDetails = useQueries({
+    queries: selectedDateBoletins.map(b => ({
+      queryKey: ["boletim-detail", b.id] as const,
+      queryFn: () =>
+        apiRequest("GET", `/api/boletim/${b.id}`)
+          .then(res =>
+            (res.json() as Promise<{
+              boletim: Boletim;
+              licitacoes: Bidding[];
+              acompanhamentos: Acompanhamento[];
+            }>)
+          ),
+      enabled: selectedDate !== null,
+      staleTime: 5 * 60_000,
+    })),
+  });
 
   // Navegação de mês
-  const previousMonth = () =>
-    setCurrentDate((d) => subMonths(d, 1));
-  const nextMonth = () => setCurrentDate((d) => addMonths(d, 1));
+  const previousMonth = () => setCurrentDate(subMonths(currentDate, 1));
+  const nextMonth = () => setCurrentDate(addMonths(currentDate, 1));
 
   const handleBoletimClick = (id: number) => {
     markAsViewedMutation.mutate(id);
@@ -143,7 +153,7 @@ export default function Boletins() {
     );
   }
 
-  // Página de detalhe (licitações & acompanhamentos)
+  // Página de detalhe
   if (selectedBoletim && boletimData) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
@@ -175,7 +185,7 @@ export default function Boletins() {
           ) : (
             <>
               <div className="grid gap-6">
-                {boletimData.licitacoes.map((l) => (
+                {boletimData.licitacoes.map(l => (
                   <BiddingCard key={l.id} bidding={l} showFavoriteIcon />
                 ))}
               </div>
@@ -185,33 +195,15 @@ export default function Boletins() {
                     Acompanhamentos
                   </h2>
                   <div className="space-y-4">
-                    {boletimData.acompanhamentos.map((a) => (
-                      <Card
-                        key={a.id}
-                        className="border-l-4 border-l-purple-500"
-                      >
+                    {boletimData.acompanhamentos.map(a => (
+                      <Card key={a.id} className="border-l-4 border-l-purple-500">
                         <CardContent className="p-4">
-                          <h3 className="font-medium text-gray-900">
-                            {a.objeto}
-                          </h3>
-                          <p className="text-sm text-gray-600 mt-1">
-                            {a.sintese}
-                          </p>
+                          <h3 className="font-medium text-gray-900">{a.objeto}</h3>
+                          <p className="text-sm text-gray-600 mt-1">{a.sintese}</p>
                           <div className="mt-2 text-xs text-gray-500">
-                            <p>
-                              <strong>Órgão:</strong> {a.orgao_nome}
-                            </p>
-                            <p>
-                              <strong>Processo:</strong> {a.processo}
-                            </p>
-                            <p>
-                              <strong>Data:</strong>{" "}
-                              {a.data_fonte
-                                ? new Date(a.data_fonte).toLocaleString(
-                                    "pt-BR"
-                                  )
-                                : "-"}
-                            </p>
+                            <p><strong>Órgão:</strong> {a.orgao_nome}</p>
+                            <p><strong>Processo:</strong> {a.processo}</p>
+                            <p><strong>Data:</strong> {new Date(a.data_fonte!).toLocaleString("pt-BR")}</p>
                           </div>
                         </CardContent>
                       </Card>
@@ -226,12 +218,11 @@ export default function Boletins() {
     );
   }
 
-  // Calendário + mini-cards de resumo
+  // Calendário + mini-cards
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
       <Navbar />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Cabeçalho */}
         <div className="mb-12 text-center">
           <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 text-white mb-6 shadow-lg">
             <Calendar className="h-10 w-10" />
@@ -240,13 +231,10 @@ export default function Boletins() {
             Boletins
           </h1>
           <p className="text-xl text-gray-600 mb-2">Calendário Inteligente 📅</p>
-          <p className="text-gray-500">
-            Visualize boletins de licitações organizados por data
-          </p>
+          <p className="text-gray-500">Visualize boletins de licitações organizados por data</p>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Calendário */}
           <div className="lg:col-span-2">
             <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm">
               <CardHeader>
@@ -256,11 +244,7 @@ export default function Boletins() {
                     {format(currentDate, "MMMM yyyy", { locale: ptBR })}
                   </CardTitle>
                   <div className="flex gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={previousMonth}
-                    >
+                    <Button variant="outline" size="sm" onClick={previousMonth}>
                       <ChevronLeft className="h-4 w-4" />
                     </Button>
                     <Button variant="outline" size="sm" onClick={nextMonth}>
@@ -270,46 +254,26 @@ export default function Boletins() {
                 </div>
               </CardHeader>
               <CardContent>
-                {/* Cabeçalhos dos dias */}
                 <div className="grid grid-cols-7 gap-1 mb-4">
-                  {["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"].map(
-                    (d) => (
-                      <div
-                        key={d}
-                        className="p-2 text-center text-sm font-medium text-gray-500"
-                      >
-                        {d}
-                      </div>
-                    )
-                  )}
-                  {/* Espaços antes do 1º dia */}
-                  {Array.from({ length: monthStart.getDay() }).map((_, i) => (
-                    <div key={i} className="p-2" />
+                  {['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'].map(d => (
+                    <div key={d} className="p-2 text-center text-sm font-medium text-gray-500">{d}</div>
                   ))}
-                  {/* Dias do mês */}
-                  {daysInMonth.map((date) => {
+                  {Array.from({ length: monthStart.getDay() }).map((_, i) => <div key={i} className="p-2"/>) }
+                  {daysInMonth.map(date => {
                     const dayBoletins = getBoletinsForDate(date);
-                    const isSelected =
-                      selectedDate !== null && isSameDay(date, selectedDate);
+                    const isSelected = selectedDate !== null && isSameDay(date, selectedDate);
                     const isCurrentDay = isToday(date);
                     return (
                       <div key={date.toISOString()} className="relative">
                         <button
-                          onClick={() => {
-                            setSelectedDate(date);
-                            setSelectedBoletim(null);
-                          }}
+                          onClick={() => { setSelectedDate(date); setSelectedBoletim(null) }}
                           className={cn(
                             "w-full p-2 text-sm rounded-md border transition-colors",
                             {
-                              "bg-blue-500 text-white border-blue-500":
-                                isSelected,
-                              "bg-blue-100 border-blue-300":
-                                isCurrentDay && !isSelected,
-                              "hover:bg-gray-100 border-gray-300":
-                                !isSelected && !isCurrentDay,
-                              "text-gray-400 border-gray-200":
-                                !isSameMonth(date, currentDate),
+                              "bg-blue-500 text-white border-blue-500": isSelected,
+                              "bg-blue-100 border-blue-300": isCurrentDay && !isSelected,
+                              "hover:bg-gray-100 border-gray-300": !isSelected && !isCurrentDay,
+                              "text-gray-400 border-gray-200": !isSameMonth(date, currentDate),
                             }
                           )}
                         >
@@ -317,23 +281,15 @@ export default function Boletins() {
                             <span>{date.getDate()}</span>
                             {dayBoletins.length > 0 && (
                               <div className="flex flex-wrap gap-0.5 justify-center">
-                                {dayBoletins.slice(0, 3).map((b) => (
-                                  <div
-                                    key={b.id}
-                                    className={cn(
-                                      "text-[9px] px-0.5 py-0.5 rounded text-white text-center",
-                                      getStatusColor(b.visualizado)
-                                    )}
-                                  >
-                                    {getTurno(b.datahora_fechamento)}{" "}
-                                    {b.numero_edicao}
+                                {dayBoletins.slice(0,3).map((b,i) => (
+                                  <div key={`${b.id}-${i}`} className={cn(
+                                    "text-[9px] px-0.5 py-0.5 rounded text-white text-center",
+                                    getStatusColor(b.visualizado)
+                                  )}>
+                                    {getTurno(b.datahora_fechamento!)} {b.numero_edicao}
                                   </div>
                                 ))}
-                                {dayBoletins.length > 3 && (
-                                  <div className="text-xs text-gray-500">
-                                    +{dayBoletins.length - 3}
-                                  </div>
-                                )}
+                                {dayBoletins.length > 3 && <div className="text-xs text-gray-500">+{dayBoletins.length - 3}</div>}
                               </div>
                             )}
                           </div>
@@ -342,22 +298,14 @@ export default function Boletins() {
                     );
                   })}
                 </div>
-                {/* Legenda */}
                 <div className="mt-4 flex flex-wrap gap-4 text-sm">
-                  <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 bg-green-500 rounded" />
-                    <span>Não visualizado</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 bg-gray-400 rounded" />
-                    <span>Visualizado</span>
-                  </div>
+                  <div className="flex items-center gap-2"><div className="w-3 h-3 bg-green-500 rounded"/><span>Não visualizado</span></div>
+                  <div className="flex items-center gap-2"><div className="w-3 h-3 bg-gray-400 rounded"/><span>Visualizado</span></div>
                 </div>
               </CardContent>
             </Card>
           </div>
 
-          {/* Mini-cards de resumo */}
           <div>
             <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm">
               <CardHeader>
@@ -374,60 +322,32 @@ export default function Boletins() {
               </CardHeader>
               <CardContent>
                 {selectedDate !== null && selectedDateBoletins.length === 0 && (
-                  <p className="text-gray-500 text-center py-8">
-                    Nenhum boletim encontrado para esta data.
-                  </p>
+                  <p className="text-gray-500 text-center py-8">Nenhum boletim encontrado para esta data.</p>
                 )}
-
                 {selectedDateBoletins.length > 0 && (
                   <div className="space-y-4">
-                    {selectedDateBoletins.map((bo) => {
-                      // já trazem as quantidades
-                      const licCount = bo.quantidade_licitacoes;
-                      const acompCount = bo.quantidade_acompanhamentos;
-
+                    {selectedDateBoletins.map((boletim, idx) => {
+                      const detail = boletimDetails[idx].data;
+                      const licCount = detail?.licitacoes.length ?? boletim.quantidade_licitacoes;
+                      const acompCount = detail?.acompanhamentos.length ?? boletim.quantidade_acompanhamentos;
                       return (
-                        <Card
-                          key={bo.id}
-                          className="border border-gray-300 border-l-4 border-l-blue-500"
-                        >
+                        <Card key={boletim.id} className="border border-gray-300 border-l-4 border-l-blue-500">
                           <CardContent className="p-4">
                             <div className="flex items-start justify-between mb-2">
                               <div>
-                                <h4 className="font-medium">
-                                  Boletim #{bo.numero_edicao}
-                                </h4>
-                                <p className="text-xs text-gray-500">
-                                  {getTurnoCompleto(bo.datahora_fechamento)}
-                                </p>
+                                <h4 className="font-medium">Boletim #{boletim.numero_edicao}</h4>
+                                <p className="text-xs text-gray-500">{getTurnoCompleto(boletim.datahora_fechamento!)}</p>
                               </div>
-                              <Badge className={getStatusColor(bo.visualizado)}>
-                                {getStatusText(bo.visualizado)}
-                              </Badge>
+                              <Badge className={getStatusColor(boletim.visualizado)}>{getStatusText(boletim.visualizado)}</Badge>
                             </div>
                             <div className="space-y-1 text-sm text-gray-600">
                               <p>Licitações: {licCount}</p>
                               <p>Acompanhamentos: {acompCount}</p>
-                              <p>
-                                Fechamento:{" "}
-                                {bo.datahora_fechamento
-                                  ? new Date(
-                                      bo.datahora_fechamento
-                                    ).toLocaleString("pt-BR")
-                                  : "-"}
-                              </p>
+                              <p>Fechamento: {new Date(boletim.datahora_fechamento!).toLocaleString("pt-BR")}</p>
                             </div>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="w-full mt-3 border-gray-300"
-                              onClick={() => handleBoletimClick(bo.id)}
-                              disabled={markAsViewedMutation.isPending}
-                            >
+                            <Button variant="outline" size="sm" className="w-full mt-3 border-gray-300" onClick={() => handleBoletimClick(boletim.id)} disabled={markAsViewedMutation.isPending}>
                               <Eye className="h-4 w-4 mr-2" />
-                              {markAsViewedMutation.isPending
-                                ? "Acessando..."
-                                : "Ver Licitações"}
+                              {markAsViewedMutation.isPending ? "Acessando..." : "Ver Licitações"}
                             </Button>
                           </CardContent>
                         </Card>
