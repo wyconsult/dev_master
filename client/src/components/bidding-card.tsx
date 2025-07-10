@@ -120,7 +120,7 @@ export function BiddingCard({ bidding, showFavoriteIcon = true }: BiddingCardPro
         <div className="flex justify-end mb-3">
           <span
             className={cn(
-              "inline-block rounded font-bold text-white text-sm px-4 py-1 whitespace-nowrap min-w-max flex-shrink-0",
+              "inline-block rounded font-bold text-white text-sm px-4 py-1 whitespace-nowrap",
               getStatusColor(bidding.situacao || "")
             )}
           >
