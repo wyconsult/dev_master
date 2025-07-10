@@ -86,10 +86,12 @@ export function BiddingCard({ bidding, showFavoriteIcon = true }: BiddingCardPro
   };
 
   return (
-    <Card className={cn(
-      "hover:shadow-md transition-shadow border border-gray-200 bg-white",
-      showFavoriteIcon && isFavorite && "border-l-4 border-l-blue-500"
-    )}>
+    <Card
+      className={cn(
+        "hover:shadow-md transition-shadow border border-gray-200 bg-white",
+        showFavoriteIcon && isFavorite && "border-l-4 border-l-blue-500"
+      )}
+    >
       <CardContent className="p-4 relative overflow-visible">
         {/* Header */}
         <div className="flex justify-between items-start mb-3">
@@ -120,7 +122,7 @@ export function BiddingCard({ bidding, showFavoriteIcon = true }: BiddingCardPro
         <div className="flex justify-end mb-3">
           <span
             className={cn(
-              "inline-block rounded font-bold text-white text-sm px-4 py-1 whitespace-nowrap",
+              "inline-block rounded font-bold text-white text-sm px-4 py-1 max-w-full truncate",
               getStatusColor(bidding.situacao || "")
             )}
           >
@@ -139,11 +141,11 @@ export function BiddingCard({ bidding, showFavoriteIcon = true }: BiddingCardPro
             <span className="text-gray-700"><strong>Edital:</strong> {bidding.edital}</span>
             <span className="text-gray-700"><strong>Nº ConLicitação:</strong> {bidding.conlicitacao_id}</span>
           </div>
-          <div className="flex justify-between flex-wrap items-start">
+          <div className="flex justify-between flex-wrap items-start gap-2">
             <span className="text-gray-700 max-w-full">
               <strong>Órgão:</strong> {bidding.orgao_nome}
             </span>
-            <span className="text-gray-700 whitespace-nowrap flex-shrink-0">
+            <span className="text-gray-700 break-words max-w-[140px] sm:max-w-none">
               <strong>Status da Sessão:</strong> {bidding.situacao?.toUpperCase()}
             </span>
           </div>
