@@ -34,6 +34,7 @@ export function BiddingCard({ bidding, showFavoriteIcon = true }: BiddingCardPro
       case "EM ANÁLISE":
         return "bg-yellow-500";
       case "URGENTE":
+      case "URGEN": // <- Adicionado para tratar status vindo incompleto
         return "bg-red-500";
       case "PRORROGADA":
         return "bg-orange-500";
