@@ -34,7 +34,6 @@ export function BiddingCard({ bidding, showFavoriteIcon = true }: BiddingCardPro
       case "EM ANÁLISE":
         return "bg-yellow-500";
       case "URGENTE":
-      case "URGEN": // <- Adicionado para tratar status vindo incompleto
         return "bg-red-500";
       case "PRORROGADA":
         return "bg-orange-500";
@@ -123,7 +122,7 @@ export function BiddingCard({ bidding, showFavoriteIcon = true }: BiddingCardPro
         <div className="flex justify-end mb-3">
           <span
             className={cn(
-              "inline-block rounded font-bold text-white text-sm px-4 py-1 max-w-full truncate",
+              "inline-block rounded font-semibold text-white text-xs px-3 py-0.5 max-w-[120px] truncate text-nowrap",
               getStatusColor(bidding.situacao || "")
             )}
           >
