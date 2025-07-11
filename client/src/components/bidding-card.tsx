@@ -138,7 +138,7 @@ export function BiddingCard({ bidding, showFavoriteIcon = true }: BiddingCardPro
               <strong>Edital:</strong> {bidding.edital}
             </span>
             <span className="text-gray-700">
-              <strong>Nº ConLicitação:</strong> {bidding.conlicitacao_id}
+              <strong>Nº Controle:</strong> {bidding.conlicitacao_id}
             </span>
           </div>
 
