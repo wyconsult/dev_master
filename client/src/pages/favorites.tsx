@@ -20,7 +20,31 @@ import { useAuth } from "@/hooks/use-auth";
 // Lista de UFs
 const UF_OPTIONS = [
   { code: "AC", name: "AC - Acre" },
-  /* ... restante das UFs ... */
+  { code: "AL", name: "AL - Alagoas" },
+  { code: "AP", name: "AP - Amapá" },
+  { code: "AM", name: "AM - Amazonas" },
+  { code: "BA", name: "BA - Bahia" },
+  { code: "CE", name: "CE - Ceará" },
+  { code: "DF", name: "DF - Distrito Federal" },
+  { code: "ES", name: "ES - Espírito Santo" },
+  { code: "GO", name: "GO - Goiás" },
+  { code: "MA", name: "MA - Maranhão" },
+  { code: "MT", name: "MT - Mato Grosso" },
+  { code: "MS", name: "MS - Mato Grosso do Sul" },
+  { code: "MG", name: "MG - Minas Gerais" },
+  { code: "PA", name: "PA - Pará" },
+  { code: "PB", name: "PB - Paraíba" },
+  { code: "PR", name: "PR - Paraná" },
+  { code: "PE", name: "PE - Pernambuco" },
+  { code: "PI", name: "PI - Piauí" },
+  { code: "RJ", name: "RJ - Rio de Janeiro" },
+  { code: "RN", name: "RN - Rio Grande do Norte" },
+  { code: "RS", name: "RS - Rio Grande do Sul" },
+  { code: "RO", name: "RO - Rondônia" },
+  { code: "RR", name: "RR - Roraima" },
+  { code: "SC", name: "SC - Santa Catarina" },
+  { code: "SP", name: "SP - São Paulo" },
+  { code: "SE", name: "SE - Sergipe" },
   { code: "TO", name: "TO - Tocantins" }
 ];
 
