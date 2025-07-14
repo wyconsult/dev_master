@@ -9,6 +9,7 @@ import { BiddingCard } from "@/components/bidding-card";
 import {
   Filter,
   Search,
+  X,
   Calendar as CalendarIcon,
   Heart,
   Eraser,
@@ -29,6 +30,7 @@ import { cn } from "@/lib/utils";
 import { type Bidding } from "@shared/schema";
 import { useAuth } from "@/hooks/use-auth";
 
+// Mesma lista de UFs do Biddings.tsx
 const UF_OPTIONS = [
   { code: "AC", name: "AC - Acre" },
   { code: "AL", name: "AL - Alagoas" },
@@ -73,55 +75,47 @@ export default function Favorites() {
     enabled: !!user,
   });
 
-  const uniqueOrgaos = Array.from(
-    new Set(favorites.map((b) => b.orgao_nome))
-  ).sort();
+  // extrai lista única de órgãos
+  const uniqueOrgaos = Array.from(new Set(favorites.map((b) => b.orgao_nome))).sort();
 
+  // aplica todos os filtros dinamicamente
   const filteredFavorites = favorites.filter((b) => {
-    const matchesNumeroControle =
-      !numeroControle ||
-      b.conlicitacao_id.toString().includes(numeroControle);
-
-    const matchesOrgao =
-      selectedOrgaos.length === 0 ||
-      selectedOrgaos.includes(b.orgao_nome);
-
-    const matchesUF =
-      selectedUFs.length === 0 ||
-      selectedUFs.includes(b.orgao_uf);
-
-    let matchesDateRange = true;
-    if (dateRange.from && dateRange.to) {
-      // se não tiver datahora_abertura, não bate no range
-      if (!b.datahora_abertura) {
-        matchesDateRange = false;
-      } else {
-        const bd = new Date(b.datahora_abertura);
-        const start = new Date(dateRange.from);
-        const end = new Date(dateRange.to);
-        start.setHours(0, 0, 0, 0);
-        end.setHours(23, 59, 59, 999);
-        bd.setHours(0, 0, 0, 0);
-        matchesDateRange = bd >= start && bd <= end;
-      }
+    // Número de Controle
+    if (numeroControle && !b.conlicitacao_id.toString().includes(numeroControle)) {
+      return false;
     }
-
-    return (
-      matchesNumeroControle &&
-      matchesOrgao &&
-      matchesUF &&
-      matchesDateRange
-    );
+    // Órgão
+    if (selectedOrgaos.length > 0 && !selectedOrgaos.includes(b.orgao_nome)) {
+      return false;
+    }
+    // UF
+    if (selectedUFs.length > 0 && !selectedUFs.includes(b.orgao_uf)) {
+      return false;
+    }
+    // Período (já estava ok)
+    if (dateRange.from && dateRange.to) {
+      if (!b.datahora_abertura) return false;
+      const bd = new Date(b.datahora_abertura);
+      const start = new Date(dateRange.from);
+      const end = new Date(dateRange.to);
+      start.setHours(0, 0, 0, 0);
+      end.setHours(23, 59, 59, 999);
+      bd.setHours(0, 0, 0, 0);
+      if (bd < start || bd > end) return false;
+    }
+    return true;
   });
 
-  const toggleOrgao = (orgao: string) =>
+  const toggleOrgao = (org: string) =>
     setSelectedOrgaos((prev) =>
-      prev.includes(orgao) ? prev.filter((o) => o !== orgao) : [...prev, orgao]
+      prev.includes(org) ? prev.filter((o) => o !== org) : [...prev, org]
     );
+
   const toggleUF = (uf: string) =>
     setSelectedUFs((prev) =>
       prev.includes(uf) ? prev.filter((u) => u !== uf) : [...prev, uf]
     );
+
   const clearFilters = () => {
     setNumeroControle("");
     setSelectedOrgaos([]);
@@ -134,8 +128,8 @@ export default function Favorites() {
       <div className="min-h-screen bg-gray-50">
         <Navbar />
         <div className="max-w-7xl mx-auto px-4 py-8">
-          <div className="animate-pulse space-y-4">
-            <div className="h-8 bg-gray-200 rounded w-1/3 mx-auto" />
+          <div className="animate-pulse space-y-6">
+            <div className="h-8 bg-gray-200 rounded w-1/4 mx-auto" />
             {[...Array(3)].map((_, i) => (
               <div key={i} className="h-48 bg-gray-200 rounded" />
             ))}
@@ -149,25 +143,23 @@ export default function Favorites() {
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
       <Navbar />
       <div className="max-w-7xl mx-auto px-4 py-8 space-y-8">
-        {/* Header */}
+        {/* HEADER */}
         <div className="text-center space-y-2">
-          <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-gradient-to-r from-red-500 to-pink-600 text-white mb-4 shadow-lg">
+          <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-gradient-to-r from-red-500 to-pink-600 text-white shadow-lg">
             <Heart className="h-10 w-10" />
           </div>
           <h1 className="text-4xl font-bold bg-gradient-to-r from-gray-900 to-red-700 bg-clip-text text-transparent">
             Favoritas
           </h1>
           <p className="text-xl text-gray-600">Suas Preferidas ❤️</p>
-          <p className="text-gray-500">
-            Suas licitações marcadas como favoritas
-          </p>
+          <p className="text-gray-500">Suas licitações marcadas como favoritas</p>
         </div>
 
-        {/* Filtros */}
-        <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm overflow-visible">
+        {/* FILTROS */}
+        <Card className="mb-6 border-0 shadow-xl bg-white/80 backdrop-blur-sm">
           <CardHeader>
-            <CardTitle className="flex justify-between items-center">
-              <div className="flex items-center gap-2 text-lg">
+            <CardTitle className="flex justify-between items-center text-lg">
+              <div className="flex items-center gap-2">
                 <Filter className="h-5 w-5" /> Filtros de Pesquisa
               </div>
               {(numeroControle ||
@@ -185,6 +177,7 @@ export default function Favorites() {
               )}
             </CardTitle>
           </CardHeader>
+
           <CardContent className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {/* Número de Controle */}
             <div>
@@ -198,7 +191,8 @@ export default function Favorites() {
                 className="h-10"
               />
             </div>
-            {/* Órgão */}
+
+            {/* ÓRGÃO */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Órgão
@@ -222,23 +216,23 @@ export default function Favorites() {
                   side="bottom"
                   align="start"
                   sideOffset={4}
-                  className="w-80 p-0 z-50 max-h-64 overflow-auto"
+                  className="w-80 p-0"
                 >
                   <Command>
                     <CommandInput placeholder="Buscar órgão..." />
                     <CommandEmpty>Nenhum órgão encontrado.</CommandEmpty>
-                    <CommandGroup>
-                      {uniqueOrgaos.map((o) => (
+                    <CommandGroup className="max-h-64 overflow-auto">
+                      {uniqueOrgaos.map((org) => (
                         <CommandItem
-                          key={o}
-                          onSelect={() => toggleOrgao(o)}
+                          key={org}
+                          onSelect={() => toggleOrgao(org)}
                           className="flex items-center gap-2"
                         >
                           <Checkbox
-                            checked={selectedOrgaos.includes(o)}
-                            onCheckedChange={() => toggleOrgao(o)}
+                            checked={selectedOrgaos.includes(org)}
+                            onCheckedChange={() => toggleOrgao(org)}
                           />
-                          <span className="flex-1 text-sm">{o}</span>
+                          <span className="flex-1 text-sm">{org}</span>
                         </CommandItem>
                       ))}
                     </CommandGroup>
@@ -246,19 +240,20 @@ export default function Favorites() {
                 </PopoverContent>
               </Popover>
               <div className="mt-2 flex flex-wrap gap-1">
-                {selectedOrgaos.map((o) => (
-                  <Badge key={o} variant="secondary" className="text-xs">
-                    {o.length > 20 ? `${o.slice(0, 20)}...` : o}
+                {selectedOrgaos.map((org) => (
+                  <Badge key={org} variant="secondary" className="text-xs">
+                    {org.length > 20 ? `${org.slice(0, 20)}…` : org}
                     <button
-                      onClick={() => toggleOrgao(o)}
+                      onClick={() => toggleOrgao(org)}
                       className="ml-1 hover:text-destructive"
                     >
-                      ×
+                      <X className="h-3 w-3" />
                     </button>
                   </Badge>
                 ))}
               </div>
             </div>
+
             {/* UF */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -280,12 +275,12 @@ export default function Favorites() {
                   side="bottom"
                   align="start"
                   sideOffset={4}
-                  className="w-64 p-0 z-50 max-h-64 overflow-auto"
+                  className="w-64 p-0"
                 >
                   <Command>
                     <CommandInput placeholder="Buscar UF..." />
                     <CommandEmpty>Nenhuma UF encontrada.</CommandEmpty>
-                    <CommandGroup>
+                    <CommandGroup className="max-h-64 overflow-auto">
                       {UF_OPTIONS.map((uf) => (
                         <CommandItem
                           key={uf.code}
@@ -311,13 +306,14 @@ export default function Favorites() {
                       onClick={() => toggleUF(uf)}
                       className="ml-1 hover:text-destructive"
                     >
-                      ×
+                      <X className="h-3 w-3" />
                     </button>
                   </Badge>
                 ))}
               </div>
             </div>
-            {/* Período */}
+
+            {/* PERÍODO já existente */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Selecionar período
@@ -342,20 +338,19 @@ export default function Favorites() {
                     side="bottom"
                     align="start"
                     sideOffset={4}
-                    className="p-0 z-50"
+                    className="p-0"
                   >
                     <Calendar
                       mode="single"
                       selected={dateRange.from}
-                      onSelect={(date) =>
-                        setDateRange((p) => ({ ...p, from: date }))
+                      onSelect={(d) =>
+                        setDateRange((p) => ({ ...p, from: d }))
                       }
-                      initialFocus
                       locale={ptBR}
+                      initialFocus
                     />
                   </PopoverContent>
                 </Popover>
-
                 <Popover>
                   <PopoverTrigger asChild>
                     <Button
@@ -366,30 +361,22 @@ export default function Favorites() {
                       )}
                     >
                       <CalendarIcon className="mr-2 h-4 w-4" />
-                      {dateRange.to
-                        ? format(dateRange.to, "dd/MM/yyyy")
-                        : "Fim"}
+                      {dateRange.to ? format(dateRange.to, "dd/MM/yyyy") : "Fim"}
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent
                     side="bottom"
                     align="start"
                     sideOffset={4}
-                    className="p-0 z-50"
+                    className="p-0"
                   >
                     <Calendar
                       mode="single"
                       selected={dateRange.to}
-                      onSelect={(date) =>
-                        setDateRange((p) =>
-                          ({ ...p, to: date })
-                        )
-                      }
-                      initialFocus
+                      onSelect={(d) => setDateRange((p) => ({ ...p, to: d }))}
                       locale={ptBR}
-                      disabled={(date) =>
-                        dateRange.from ? date < dateRange.from : false
-                      }
+                      initialFocus
+                      disabled={(d) => (dateRange.from ? d < dateRange.from : false)}
                     />
                   </PopoverContent>
                 </Popover>
@@ -398,7 +385,7 @@ export default function Favorites() {
           </CardContent>
         </Card>
 
-        {/* Resultados */}
+        {/* RESULTADOS */}
         <div>
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-lg font-semibold text-gray-900">
@@ -410,12 +397,9 @@ export default function Favorites() {
             </h2>
             {filteredFavorites.length > 0 &&
               filteredFavorites.length !== favorites.length && (
-                <span className="text-sm text-gray-500">
-                  {favorites.length} total
-                </span>
+                <span className="text-sm text-gray-500">{favorites.length} total</span>
               )}
           </div>
-
           <div className="space-y-4">
             {filteredFavorites.length === 0 ? (
               <Card>
@@ -433,11 +417,7 @@ export default function Favorites() {
               </Card>
             ) : (
               filteredFavorites.map((b) => (
-                <BiddingCard
-                  key={b.id}
-                  bidding={b}
-                  showFavoriteIcon={true}
-                />
+                <BiddingCard key={b.id} bidding={b} showFavoriteIcon={true} />
               ))
             )}
           </div>
