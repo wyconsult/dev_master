@@ -38,6 +38,7 @@ export default function Boletins() {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedBoletim, setSelectedBoletim] = useState<number | null>(null);
+  const [viewType, setViewType] = useState<"licitacoes" | "acompanhamentos">("licitacoes");
   const queryClient = useQueryClient();
 
   // 1) lista de boletins
@@ -45,7 +46,7 @@ export default function Boletins() {
     queryKey: ["/api/boletins"],
     queryFn: () =>
       apiRequest("GET", "/api/boletins").then(res =>
-        (res.json() as Promise<Boletim[]>)
+        res.json() as Promise<Boletim[]>
       ),
   });
 
@@ -61,14 +62,13 @@ export default function Boletins() {
     queryKey: [`/api/boletim/${selectedBoletim}`],
     enabled: !!selectedBoletim,
     queryFn: () =>
-      apiRequest("GET", `/api/boletim/${selectedBoletim}`)
-        .then(res =>
-          (res.json() as Promise<{
-            boletim: Boletim;
-            licitacoes: Bidding[];
-            acompanhamentos: Acompanhamento[];
-          }>)
-        ),
+      apiRequest("GET", `/api/boletim/${selectedBoletim}`).then(res =>
+        res.json() as Promise<{
+          boletim: Boletim;
+          licitacoes: Bidding[];
+          acompanhamentos: Acompanhamento[];
+        }>
+      ),
   });
 
   // 3) mutation para marcar como visualizado
@@ -115,14 +115,13 @@ export default function Boletins() {
     queries: selectedDateBoletins.map(b => ({
       queryKey: ["boletim-detail", b.id] as const,
       queryFn: () =>
-        apiRequest("GET", `/api/boletim/${b.id}`)
-          .then(res =>
-            (res.json() as Promise<{
-              boletim: Boletim;
-              licitacoes: Bidding[];
-              acompanhamentos: Acompanhamento[];
-            }>)
-          ),
+        apiRequest("GET", `/api/boletim/${b.id}`).then(res =>
+          res.json() as Promise<{
+            boletim: Boletim;
+            licitacoes: Bidding[];
+            acompanhamentos: Acompanhamento[];
+          }>
+        ),
       enabled: selectedDate !== null,
       staleTime: 5 * 60_000,
     })),
@@ -135,6 +134,7 @@ export default function Boletins() {
   const handleBoletimClick = (id: number) => {
     markAsViewedMutation.mutate(id);
     setSelectedBoletim(id);
+    setViewType("licitacoes");
   };
   const handleBackToCalendar = () => setSelectedBoletim(null);
 
@@ -178,19 +178,39 @@ export default function Boletins() {
             </div>
           </div>
 
+          {/* Botões de atalho */}
+          <div className="mb-6 flex space-x-2">
+            <Button
+              variant={viewType === "licitacoes" ? "default" : "outline"}
+              onClick={() => setViewType("licitacoes")}
+            >
+              Licitações
+            </Button>
+            <Button
+              variant={viewType === "acompanhamentos" ? "default" : "outline"}
+              onClick={() => setViewType("acompanhamentos")}
+            >
+              Acompanhamentos
+            </Button>
+          </div>
+
           {isLoadingBoletimData ? (
             <div className="flex justify-center py-8">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500" />
             </div>
+          ) : viewType === "licitacoes" ? (
+            <div className="grid gap-6">
+              {boletimData.licitacoes.map(l => (
+                <BiddingCard key={l.id} bidding={l} showFavoriteIcon />
+              ))}
+              {boletimData.licitacoes.length === 0 && (
+                <p className="text-gray-500 text-center">Nenhuma licitação para este boletim.</p>
+              )}
+            </div>
           ) : (
-            <>
-              <div className="grid gap-6">
-                {boletimData.licitacoes.map(l => (
-                  <BiddingCard key={l.id} bidding={l} showFavoriteIcon />
-                ))}
-              </div>
-              {boletimData.acompanhamentos.length > 0 && (
-                <div className="mt-8">
+            <div>
+              {boletimData.acompanhamentos.length > 0 ? (
+                <>
                   <h2 className="text-2xl font-bold text-gray-900 mb-4">
                     Acompanhamentos
                   </h2>
@@ -209,9 +229,11 @@ export default function Boletins() {
                       </Card>
                     ))}
                   </div>
-                </div>
+                </>
+              ) : (
+                <p className="text-gray-500 text-center">Nenhum acompanhamento para este boletim.</p>
               )}
-            </>
+            </div>
           )}
         </div>
       </div>
@@ -258,7 +280,7 @@ export default function Boletins() {
                   {['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'].map(d => (
                     <div key={d} className="p-2 text-center text-sm font-medium text-gray-500">{d}</div>
                   ))}
-                  {Array.from({ length: monthStart.getDay() }).map((_, i) => <div key={i} className="p-2"/>) }
+                  {Array.from({ length: monthStart.getDay() }).map((_, i) => <div key={i} className="p-2"/>)}
                   {daysInMonth.map(date => {
                     const dayBoletins = getBoletinsForDate(date);
                     const isSelected = selectedDate !== null && isSameDay(date, selectedDate);
@@ -266,7 +288,7 @@ export default function Boletins() {
                     return (
                       <div key={date.toISOString()} className="relative">
                         <button
-                          onClick={() => { setSelectedDate(date); setSelectedBoletim(null) }}
+                          onClick={() => { setSelectedDate(date); setSelectedBoletim(null); }}
                           className={cn(
                             "w-full p-2 text-sm rounded-md border transition-colors",
                             {
