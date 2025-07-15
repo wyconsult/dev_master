@@ -28,15 +28,23 @@ export function BiddingCard({ bidding, showFavoriteIcon = true }: BiddingCardPro
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case "NOVA": return "bg-green-500";
-      case "ABERTA": return "bg-blue-500";
+      case "NOVA":
+        return "bg-green-500";
+      case "ABERTA":
+        return "bg-blue-500";
       case "EM_ANALISE":
-      case "EM ANÁLISE": return "bg-yellow-500";
-      case "URGENTE": return "bg-red-500";
-      case "PRORROGADA": return "bg-orange-500";
-      case "ALTERADA": return "bg-purple-500";
-      case "FINALIZADA": return "bg-gray-500";
-      default: return "bg-gray-500";
+      case "EM ANÁLISE":
+        return "bg-yellow-500";
+      case "URGENTE":
+        return "bg-red-500";
+      case "PRORROGADA":
+        return "bg-orange-500";
+      case "ALTERADA":
+        return "bg-purple-500";
+      case "FINALIZADA":
+        return "bg-gray-500";
+      default:
+        return "bg-gray-500";
     }
   };
 
@@ -105,7 +113,9 @@ export function BiddingCard({ bidding, showFavoriteIcon = true }: BiddingCardPro
               onClick={handleFavoriteClick}
               className={cn(
                 "transition-colors ml-2 flex-shrink-0",
-                isFavorite ? "text-accent hover:text-accent/80" : "text-gray-400 hover:text-accent"
+                isFavorite
+                  ? "text-accent hover:text-accent/80"
+                  : "text-gray-400 hover:text-accent"
               )}
             >
               <Heart className={cn("h-4 w-4", isFavorite && "fill-current")} />
@@ -144,7 +154,10 @@ export function BiddingCard({ bidding, showFavoriteIcon = true }: BiddingCardPro
 
           <div className="flex justify-between flex-wrap items-start gap-2">
             <span className="text-gray-700 max-w-full">
-              <strong>Órgão:</strong> {bidding.orgao_nome}
+              <strong>Órgão:</strong>{" "}
+              {bidding.orgao_codigo
+                ? `${bidding.orgao_codigo} - ${bidding.orgao_nome}`
+                : bidding.orgao_nome}
             </span>
             <span className="text-gray-700 whitespace-nowrap flex-shrink-0">
               <strong>Status da Sessão:</strong> {displayStatus}
