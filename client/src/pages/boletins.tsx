@@ -1,3 +1,4 @@
+// src/pages/boletins.tsx
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient, useQueries } from "@tanstack/react-query";
 import { Navbar } from "@/components/navbar";
@@ -38,7 +39,7 @@ export default function Boletins() {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedBoletim, setSelectedBoletim] = useState<number | null>(null);
-  const [viewType, setViewType] = useState<"licitacoes" | "acompanhamentos">("licitacoes");
+  const [activeTab, setActiveTab] = useState<"licitacoes" | "acompanhamentos">("licitacoes");
   const queryClient = useQueryClient();
 
   // 1) lista de boletins
@@ -46,7 +47,7 @@ export default function Boletins() {
     queryKey: ["/api/boletins"],
     queryFn: () =>
       apiRequest("GET", "/api/boletins").then(res =>
-        res.json() as Promise<Boletim[]>
+        (res.json() as Promise<Boletim[]>)
       ),
   });
 
@@ -58,18 +59,21 @@ export default function Boletins() {
     boletim: Boletim;
     licitacoes: Bidding[];
     acompanhamentos: Acompanhamento[];
-  }>({
-    queryKey: [`/api/boletim/${selectedBoletim}`],
-    enabled: !!selectedBoletim,
-    queryFn: () =>
-      apiRequest("GET", `/api/boletim/${selectedBoletim}`).then(res =>
-        res.json() as Promise<{
-          boletim: Boletim;
-          licitacoes: Bidding[];
-          acompanhamentos: Acompanhamento[];
-        }>
-      ),
-  });
+  }>(
+    {
+      queryKey: [`/api/boletim/${selectedBoletim}`],
+      enabled: !!selectedBoletim,
+      queryFn: () =>
+        apiRequest("GET", `/api/boletim/${selectedBoletim}`)
+          .then(res =>
+            (res.json() as Promise<{
+              boletim: Boletim;
+              licitacoes: Bidding[];
+              acompanhamentos: Acompanhamento[];
+            }>)
+          ),
+    }
+  );
 
   // 3) mutation para marcar como visualizado
   const markAsViewedMutation = useMutation({
@@ -107,7 +111,7 @@ export default function Boletins() {
 
   // Filtra boletins por data
   const getBoletinsForDate = (date: Date) =>
-    boletins.filter(b => isSameDay(new Date(b.datahora_fechamento), date));
+    boletins.filter(b => isSameDay(new Date(b.datahora_fechamento!), date));
   const selectedDateBoletins = selectedDate ? getBoletinsForDate(selectedDate) : [];
 
   // busca detalhes em paralelo para counts
@@ -115,13 +119,14 @@ export default function Boletins() {
     queries: selectedDateBoletins.map(b => ({
       queryKey: ["boletim-detail", b.id] as const,
       queryFn: () =>
-        apiRequest("GET", `/api/boletim/${b.id}`).then(res =>
-          res.json() as Promise<{
-            boletim: Boletim;
-            licitacoes: Bidding[];
-            acompanhamentos: Acompanhamento[];
-          }>
-        ),
+        apiRequest("GET", `/api/boletim/${b.id}`)
+          .then(res =>
+            (res.json() as Promise<{
+              boletim: Boletim;
+              licitacoes: Bidding[];
+              acompanhamentos: Acompanhamento[];
+            }>)
+          ),
       enabled: selectedDate !== null,
       staleTime: 5 * 60_000,
     })),
@@ -134,7 +139,7 @@ export default function Boletins() {
   const handleBoletimClick = (id: number) => {
     markAsViewedMutation.mutate(id);
     setSelectedBoletim(id);
-    setViewType("licitacoes");
+    setActiveTab("licitacoes"); // reseta aba
   };
   const handleBackToCalendar = () => setSelectedBoletim(null);
 
@@ -159,6 +164,7 @@ export default function Boletins() {
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
         <Navbar />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          {/* Header e botão de voltar */}
           <div className="mb-8 flex items-center justify-between">
             <Button
               variant="outline"
@@ -178,39 +184,47 @@ export default function Boletins() {
             </div>
           </div>
 
-          {/* Botões de atalho */}
-          <div className="mb-6 flex space-x-2">
-            <Button
-              variant={viewType === "licitacoes" ? "default" : "outline"}
-              onClick={() => setViewType("licitacoes")}
-            >
-              Licitações
-            </Button>
-            <Button
-              variant={viewType === "acompanhamentos" ? "default" : "outline"}
-              onClick={() => setViewType("acompanhamentos")}
-            >
-              Acompanhamentos
-            </Button>
-          </div>
-
           {isLoadingBoletimData ? (
             <div className="flex justify-center py-8">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500" />
             </div>
-          ) : viewType === "licitacoes" ? (
-            <div className="grid gap-6">
-              {boletimData.licitacoes.map(l => (
-                <BiddingCard key={l.id} bidding={l} showFavoriteIcon />
-              ))}
-              {boletimData.licitacoes.length === 0 && (
-                <p className="text-gray-500 text-center">Nenhuma licitação para este boletim.</p>
-              )}
-            </div>
           ) : (
-            <div>
-              {boletimData.acompanhamentos.length > 0 ? (
-                <>
+            <>
+              {/* Abas estilizadas */}
+              <div className="flex space-x-2 mb-6">
+                <button
+                  onClick={() => setActiveTab("licitacoes")}
+                  className={cn(
+                    "px-4 py-2 rounded-md font-medium transition",
+                    activeTab === "licitacoes"
+                      ? "bg-gradient-to-r from-green-500 to-emerald-600 text-white shadow"
+                      : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50"
+                  )}
+                >
+                  Licitações {boletimData.licitacoes.length}
+                </button>
+                <button
+                  onClick={() => setActiveTab("acompanhamentos")}
+                  className={cn(
+                    "px-4 py-2 rounded-md font-medium transition",
+                    activeTab === "acompanhamentos"
+                      ? "bg-gradient-to-r from-purple-500 to-pink-600 text-white shadow"
+                      : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50"
+                  )}
+                >
+                  Acompanhamentos {boletimData.acompanhamentos.length}
+                </button>
+              </div>
+
+              {/* Conteúdo das abas */}
+              {activeTab === "licitacoes" ? (
+                <div className="grid gap-6">
+                  {boletimData.licitacoes.map(l => (
+                    <BiddingCard key={l.id} bidding={l} showFavoriteIcon />
+                  ))}
+                </div>
+              ) : (
+                <div className="mt-8">
                   <h2 className="text-2xl font-bold text-gray-900 mb-4">
                     Acompanhamentos
                   </h2>
@@ -220,7 +234,7 @@ export default function Boletins() {
                         <CardContent className="p-4">
                           <h3 className="font-medium text-gray-900">{a.objeto}</h3>
                           <p className="text-sm text-gray-600 mt-1">{a.sintese}</p>
-                          <div className="mt-2 text-xs text-gray-500">
+                          <div className="mt-2 text-xs text-gray-500 space-y-1">
                             <p><strong>Órgão:</strong> {a.orgao_nome}</p>
                             <p><strong>Processo:</strong> {a.processo}</p>
                             <p><strong>Data:</strong> {new Date(a.data_fonte!).toLocaleString("pt-BR")}</p>
@@ -229,11 +243,9 @@ export default function Boletins() {
                       </Card>
                     ))}
                   </div>
-                </>
-              ) : (
-                <p className="text-gray-500 text-center">Nenhum acompanhamento para este boletim.</p>
+                </div>
               )}
-            </div>
+            </>
           )}
         </div>
       </div>
@@ -258,6 +270,7 @@ export default function Boletins() {
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2">
+            {/* calendário */}
             <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm">
               <CardHeader>
                 <div className="flex items-center justify-between">
@@ -276,11 +289,14 @@ export default function Boletins() {
                 </div>
               </CardHeader>
               <CardContent>
+                {/* dias da semana */}
                 <div className="grid grid-cols-7 gap-1 mb-4">
-                  {['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'].map(d => (
+                  {["Dom","Seg","Ter","Qua","Qui","Sex","Sáb"].map(d => (
                     <div key={d} className="p-2 text-center text-sm font-medium text-gray-500">{d}</div>
                   ))}
-                  {Array.from({ length: monthStart.getDay() }).map((_, i) => <div key={i} className="p-2"/>)}
+                  {Array.from({ length: monthStart.getDay() }).map((_, i) => (
+                    <div key={i} className="p-2" />
+                  ))}
                   {daysInMonth.map(date => {
                     const dayBoletins = getBoletinsForDate(date);
                     const isSelected = selectedDate !== null && isSameDay(date, selectedDate);
@@ -306,7 +322,7 @@ export default function Boletins() {
                                 {dayBoletins.slice(0,3).map((b,i) => (
                                   <div key={`${b.id}-${i}`} className={cn(
                                     "text-[9px] px-0.5 py-0.5 rounded text-white text-center",
-                                    getStatusColor(b.visualizado)
+                                    getStatusColor(b.visualizado!)
                                   )}>
                                     {getTurno(b.datahora_fechamento!)} {b.numero_edicao}
                                   </div>
@@ -321,14 +337,21 @@ export default function Boletins() {
                   })}
                 </div>
                 <div className="mt-4 flex flex-wrap gap-4 text-sm">
-                  <div className="flex items-center gap-2"><div className="w-3 h-3 bg-green-500 rounded"/><span>Não visualizado</span></div>
-                  <div className="flex items-center gap-2"><div className="w-3 h-3 bg-gray-400 rounded"/><span>Visualizado</span></div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 bg-green-500 rounded" />
+                    <span>Não visualizado</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 bg-gray-400 rounded" />
+                    <span>Visualizado</span>
+                  </div>
                 </div>
               </CardContent>
             </Card>
           </div>
 
           <div>
+            {/* lista de boletins do dia */}
             <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm">
               <CardHeader>
                 <CardTitle>
@@ -344,7 +367,9 @@ export default function Boletins() {
               </CardHeader>
               <CardContent>
                 {selectedDate !== null && selectedDateBoletins.length === 0 && (
-                  <p className="text-gray-500 text-center py-8">Nenhum boletim encontrado para esta data.</p>
+                  <p className="text-gray-500 text-center py-8">
+                    Nenhum boletim encontrado para esta data.
+                  </p>
                 )}
                 {selectedDateBoletins.length > 0 && (
                   <div className="space-y-4">
@@ -353,21 +378,39 @@ export default function Boletins() {
                       const licCount = detail?.licitacoes.length ?? boletim.quantidade_licitacoes;
                       const acompCount = detail?.acompanhamentos.length ?? boletim.quantidade_acompanhamentos;
                       return (
-                        <Card key={boletim.id} className="border border-gray-300 border-l-4 border-l-blue-500">
+                        <Card
+                          key={boletim.id}
+                          className="border border-gray-300 border-l-4 border-l-blue-500"
+                        >
                           <CardContent className="p-4">
                             <div className="flex items-start justify-between mb-2">
                               <div>
                                 <h4 className="font-medium">Boletim #{boletim.numero_edicao}</h4>
-                                <p className="text-xs text-gray-500">{getTurnoCompleto(boletim.datahora_fechamento!)}</p>
+                                <p className="text-xs text-gray-500">
+                                  {getTurnoCompleto(boletim.datahora_fechamento!)}
+                                </p>
                               </div>
-                              <Badge className={getStatusColor(boletim.visualizado)}>{getStatusText(boletim.visualizado)}</Badge>
+                              <Badge className={getStatusColor(boletim.visualizado!)}>
+                                {getStatusText(boletim.visualizado!)}
+                              </Badge>
                             </div>
                             <div className="space-y-1 text-sm text-gray-600">
                               <p>Licitações: {licCount}</p>
                               <p>Acompanhamentos: {acompCount}</p>
-                              <p>Fechamento: {new Date(boletim.datahora_fechamento!).toLocaleString("pt-BR")}</p>
+                              <p>
+                                Fechamento:{" "}
+                                {new Date(
+                                  boletim.datahora_fechamento!
+                                ).toLocaleString("pt-BR")}
+                              </p>
                             </div>
-                            <Button variant="outline" size="sm" className="w-full mt-3 border-gray-300" onClick={() => handleBoletimClick(boletim.id)} disabled={markAsViewedMutation.isPending}>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="w-full mt-3 border-gray-300"
+                              onClick={() => handleBoletimClick(boletim.id)}
+                              disabled={markAsViewedMutation.isPending}
+                            >
                               <Eye className="h-4 w-4 mr-2" />
                               {markAsViewedMutation.isPending ? "Acessando..." : "Ver Licitações"}
                             </Button>
