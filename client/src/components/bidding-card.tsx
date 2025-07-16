@@ -12,7 +12,10 @@ interface BiddingCardProps {
   showFavoriteIcon?: boolean;
 }
 
-export function BiddingCard({ bidding, showFavoriteIcon = true }: BiddingCardProps) {
+export function BiddingCard({
+  bidding,
+  showFavoriteIcon = true,
+}: BiddingCardProps) {
   const { user } = useAuth();
   const { toggleFavorite, isLoading } = useFavorites();
 
@@ -57,10 +60,25 @@ export function BiddingCard({ bidding, showFavoriteIcon = true }: BiddingCardPro
     }
   };
 
+  // 1) Mapeamento dinâmico dos campos de datahora
+  const dateFields: { key: keyof Bidding; label: string }[] = [
+    { key: "datahora_abertura", label: "Abertura" },
+    { key: "datahora_documento", label: "Documento" },
+    { key: "datahora_retirada", label: "Retirada" },
+    { key: "datahora_visita", label: "Visita" },
+    { key: "datahora_prazo", label: "Prazo" },
+  ];
+
+  // 2) Filtra apenas os que vierem preenchidos
+  const dateEntries = dateFields
+    .map(({ key, label }) => ({
+      label,
+      date: bidding[key] as string | null,
+    }))
+    .filter((entry) => entry.date);
+
   const handleFavoriteClick = () => {
-    if (user) {
-      toggleFavorite(bidding.id, isFavorite);
-    }
+    if (user) toggleFavorite(bidding.id, isFavorite);
   };
 
   const handleLinkClick = () => {
@@ -99,12 +117,23 @@ export function BiddingCard({ bidding, showFavoriteIcon = true }: BiddingCardPro
         showFavoriteIcon && isFavorite && "border-l-4 border-l-blue-500"
       )}
     >
-      <CardContent className="p-4 relative overflow-visible">
-        {/* Header */}
-        <div className="flex justify-between items-start mb-3">
-          <p className="text-sm text-gray-900 mb-1 flex-1">
-            <span className="font-semibold">Objeto:</span> {bidding.objeto}
-          </p>
+      <CardContent className="p-0 relative overflow-visible">
+        {/* ——— Cabeçalho com gradiente, status e favorito ——— */}
+        <div
+          className={cn(
+            "w-full h-10 flex justify-between items-center px-4 rounded-t-lg",
+            "bg-gradient-to-r from-green-400 to-green-200"
+          )}
+        >
+          <span
+            className={cn(
+              "inline-block rounded font-semibold text-white text-xs sm:text-sm px-3 py-1",
+              getStatusColor(displayStatus)
+            )}
+          >
+            {displayStatus}
+          </span>
+
           {showFavoriteIcon && (
             <Button
               variant="ghost"
@@ -112,37 +141,45 @@ export function BiddingCard({ bidding, showFavoriteIcon = true }: BiddingCardPro
               disabled={isLoading}
               onClick={handleFavoriteClick}
               className={cn(
-                "transition-colors ml-2 flex-shrink-0",
+                "transition-colors flex-shrink-0",
                 isFavorite
-                  ? "text-accent hover:text-accent/80"
-                  : "text-gray-400 hover:text-accent"
+                  ? "text-white fill-current hover:text-white/80"
+                  : "text-white/80 hover:text-white"
               )}
             >
-              <Heart className={cn("h-4 w-4", isFavorite && "fill-current")} />
+              <Heart className="h-4 w-4" />
             </Button>
           )}
         </div>
 
-        {/* Status Badge */}
-        <div className="flex justify-end mb-3">
-          <span
-            className={cn(
-              "inline-block rounded font-semibold text-white text-xs sm:text-sm px-3 py-1 whitespace-nowrap",
-              getStatusColor(displayStatus)
-            )}
-          >
-            {displayStatus}
-          </span>
-        </div>
+        {/* Conteúdo principal */}
+        <div className="p-4 pt-6 space-y-3 text-sm">
+          {/* Objeto */}
+          <p className="text-gray-900">
+            <span className="font-semibold">Objeto:</span> {bidding.objeto}
+          </p>
 
-        {/* Details */}
-        <div className="space-y-2 text-sm">
+          {/* Datas dinâmicas */}
           <div>
-            <span className="text-gray-700">
-              <strong>Datas:</strong> {formatDateTime(bidding.datahora_abertura)}
-            </span>
+            <span className="font-semibold text-gray-900">Datas:</span>
+            <div className="mt-1 space-y-1">
+              {dateEntries.length > 0 ? (
+                dateEntries.map(({ label, date }) => (
+                  <div key={label}>
+                    <span className="text-gray-700">
+                      <strong>Data {label}:</strong> {formatDateTime(date!)}
+                    </span>
+                  </div>
+                ))
+              ) : (
+                <div>
+                  <span className="text-gray-700">-</span>
+                </div>
+              )}
+            </div>
           </div>
 
+          {/* Edital e Nº Controle */}
           <div className="flex justify-between">
             <span className="text-gray-700">
               <strong>Edital:</strong> {bidding.edital}
@@ -152,6 +189,7 @@ export function BiddingCard({ bidding, showFavoriteIcon = true }: BiddingCardPro
             </span>
           </div>
 
+          {/* Órgão e Status da Sessão */}
           <div className="flex justify-between flex-wrap items-start gap-2">
             <span className="text-gray-700 max-w-full">
               <strong>Órgão:</strong>{" "}
@@ -164,9 +202,11 @@ export function BiddingCard({ bidding, showFavoriteIcon = true }: BiddingCardPro
             </span>
           </div>
 
+          {/* Cidade e Link */}
           <div className="flex justify-between items-center">
             <span className="text-gray-700">
-              <strong>Cidade:</strong> {bidding.orgao_cidade} - {bidding.orgao_uf}
+              <strong>Cidade:</strong> {bidding.orgao_cidade} -{" "}
+              {bidding.orgao_uf}
             </span>
             <a
               href="#"
