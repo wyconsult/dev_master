@@ -123,7 +123,7 @@ export function BiddingCard({
           className={cn(
             "w-full h-10 flex justify-between items-center px-4 rounded-t-lg",
             // gradiente mais escuro em dois tons de verde
-            "bg-gradient-to-r from-green-700 to-green-500"
+            "bg-gradient-to-r from-green-800 to-green-600"
           )}
         >
           <span
@@ -144,11 +144,11 @@ export function BiddingCard({
               className={cn(
                 "transition-colors flex-shrink-0",
                 isFavorite
-                  ? "text-white fill-current hover:text-white/80"
+                  ? "text-red-500 hover:text-red-400"
                   : "text-white/80 hover:text-white"
               )}
             >
-              <Heart className="h-4 w-4" />
+              <Heart className="h-4 w-4 fill-current" />
             </Button>
           )}
         </div>
@@ -160,7 +160,7 @@ export function BiddingCard({
             <span className="font-semibold">Objeto:</span> {bidding.objeto}
           </p>
 
-          {/* Datas dinâmicas, sem título fixo */}
+          {/* Datas dinâmicas */}
           <div className="space-y-1">
             {dateEntries.length > 0 ? (
               dateEntries.map(({ label, date }) => (
