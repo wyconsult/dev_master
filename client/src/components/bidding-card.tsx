@@ -60,7 +60,7 @@ export function BiddingCard({
     }
   };
 
-  // 1) Mapeamento dinâmico dos campos de datahora
+  // Mapeamento dinâmico dos campos de datahora
   const dateFields: { key: keyof Bidding; label: string }[] = [
     { key: "datahora_abertura", label: "Abertura" },
     { key: "datahora_documento", label: "Documento" },
@@ -69,7 +69,7 @@ export function BiddingCard({
     { key: "datahora_prazo",    label: "Prazo" },
   ];
 
-  // 2) Filtra apenas os que vierem preenchidos
+  // Filtra apenas os que vierem preenchidos
   const dateEntries = dateFields
     .map(({ key, label }) => ({
       label,
@@ -118,12 +118,12 @@ export function BiddingCard({
       )}
     >
       <CardContent className="p-0 relative overflow-visible">
-        {/* ——— Cabeçalho com gradiente, status e favorito ——— */}
+        {/* Cabeçalho com gradiente, status e favorito */}
         <div
           className={cn(
             "w-full h-10 flex justify-between items-center px-4 rounded-t-lg",
-            // gradiente mais suave parecido com o exemplo
-            "bg-gradient-to-r from-green-200 to-green-50"
+            // gradiente mais escuro em dois tons de verde
+            "bg-gradient-to-r from-green-700 to-green-500"
           )}
         >
           <span
@@ -160,13 +160,13 @@ export function BiddingCard({
             <span className="font-semibold">Objeto:</span> {bidding.objeto}
           </p>
 
-          {/* Datas dinâmicas (sem rótulo "Datas:") */}
+          {/* Datas dinâmicas, sem título fixo */}
           <div className="space-y-1">
             {dateEntries.length > 0 ? (
               dateEntries.map(({ label, date }) => (
                 <div key={label}>
                   <span className="text-gray-700">
-                    <strong>{label}:</strong> {formatDateTime(date!)}
+                    <strong>Data {label}:</strong> {formatDateTime(date!)}
                   </span>
                 </div>
               ))
