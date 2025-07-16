@@ -65,8 +65,8 @@ export function BiddingCard({
     { key: "datahora_abertura", label: "Abertura" },
     { key: "datahora_documento", label: "Documento" },
     { key: "datahora_retirada", label: "Retirada" },
-    { key: "datahora_visita", label: "Visita" },
-    { key: "datahora_prazo", label: "Prazo" },
+    { key: "datahora_visita",   label: "Visita" },
+    { key: "datahora_prazo",    label: "Prazo" },
   ];
 
   // 2) Filtra apenas os que vierem preenchidos
@@ -122,7 +122,8 @@ export function BiddingCard({
         <div
           className={cn(
             "w-full h-10 flex justify-between items-center px-4 rounded-t-lg",
-            "bg-gradient-to-r from-green-400 to-green-200"
+            // gradiente mais suave parecido com o exemplo
+            "bg-gradient-to-r from-green-200 to-green-50"
           )}
         >
           <span
@@ -159,24 +160,21 @@ export function BiddingCard({
             <span className="font-semibold">Objeto:</span> {bidding.objeto}
           </p>
 
-          {/* Datas dinâmicas */}
-          <div>
-            <span className="font-semibold text-gray-900">Datas:</span>
-            <div className="mt-1 space-y-1">
-              {dateEntries.length > 0 ? (
-                dateEntries.map(({ label, date }) => (
-                  <div key={label}>
-                    <span className="text-gray-700">
-                      <strong>Data {label}:</strong> {formatDateTime(date!)}
-                    </span>
-                  </div>
-                ))
-              ) : (
-                <div>
-                  <span className="text-gray-700">-</span>
+          {/* Datas dinâmicas (sem rótulo "Datas:") */}
+          <div className="space-y-1">
+            {dateEntries.length > 0 ? (
+              dateEntries.map(({ label, date }) => (
+                <div key={label}>
+                  <span className="text-gray-700">
+                    <strong>{label}:</strong> {formatDateTime(date!)}
+                  </span>
                 </div>
-              )}
-            </div>
+              ))
+            ) : (
+              <div>
+                <span className="text-gray-700">-</span>
+              </div>
+            )}
           </div>
 
           {/* Edital e Nº Controle */}
