@@ -10,7 +10,7 @@ export const users = pgTable("users", {
 
 export const biddings = pgTable("biddings", {
   id: serial("id").primaryKey(),
-  conlicitacao_id: integer("conlicitacao_id").notNull(), // ID da ConLicitação
+  conlicitacao_id: integer("conlicitacao_id").notNull(),
   orgao_nome: text("orgao_nome").notNull(),
   orgao_codigo: text("orgao_codigo"),
   orgao_cidade: text("orgao_cidade").notNull(),
@@ -33,7 +33,7 @@ export const biddings = pgTable("biddings", {
   item: text("item"),
   preco_edital: real("preco_edital"),
   valor_estimado: real("valor_estimado"),
-  boletim_id: integer("boletim_id"), // ID do boletim que contém esta licitação
+  boletim_id: integer("boletim_id"),
 });
 
 export const favorites = pgTable("favorites", {
@@ -43,9 +43,8 @@ export const favorites = pgTable("favorites", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
-// Tabela de filtros da ConLicitação
 export const filtros = pgTable("filtros", {
-  id: integer("id").primaryKey(), // ID do filtro da ConLicitação
+  id: integer("id").primaryKey(),
   descricao: text("descricao").notNull(),
   cliente_id: integer("cliente_id"),
   cliente_razao_social: text("cliente_razao_social"),
@@ -55,20 +54,24 @@ export const filtros = pgTable("filtros", {
 });
 
 export const boletins = pgTable("boletins", {
-  id: integer("id").primaryKey(), // ID do boletim da ConLicitação
+  id: integer("id").primaryKey(),
   numero_edicao: integer("numero_edicao").notNull(),
   datahora_fechamento: text("datahora_fechamento").notNull(),
   filtro_id: integer("filtro_id").notNull(),
   quantidade_licitacoes: integer("quantidade_licitacoes").notNull(),
   quantidade_acompanhamentos: integer("quantidade_acompanhamentos").notNull(),
   visualizado: boolean("visualizado").default(false).notNull(),
+
+  // ✅ Campos opcionais adicionados
+  cliente_id: integer("cliente_id"),
+  cliente_razao_social: text("cliente_razao_social"),
+  filtro_descricao: text("filtro_descricao"),
 });
 
-// Tabela de acompanhamentos
 export const acompanhamentos = pgTable("acompanhamentos", {
   id: serial("id").primaryKey(),
   conlicitacao_id: integer("conlicitacao_id").notNull(),
-  licitacao_id: integer("licitacao_id"), // Referência à licitação original
+  licitacao_id: integer("licitacao_id"),
   orgao_nome: text("orgao_nome").notNull(),
   orgao_cidade: text("orgao_cidade"),
   orgao_uf: text("orgao_uf"),
@@ -80,6 +83,7 @@ export const acompanhamentos = pgTable("acompanhamentos", {
   boletim_id: integer("boletim_id"),
 });
 
+// Schemas para validação com Zod
 export const insertUserSchema = createInsertSchema(users).pick({
   email: true,
   password: true,
@@ -105,6 +109,7 @@ export const loginSchema = z.object({
   password: z.string().min(1, "Senha é obrigatória"),
 });
 
+// Tipagens inferidas
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
 export type InsertBidding = z.infer<typeof insertBiddingSchema>;

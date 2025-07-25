@@ -1,30 +1,40 @@
 import { conLicitacaoAPI } from './conlicitacao-api';
-import { Bidding, Boletim, Filtro, Acompanhamento, User, InsertUser, Favorite, InsertFavorite } from '../shared/schema';
+import {
+  Bidding,
+  Boletim,
+  Filtro,
+  Acompanhamento,
+  User,
+  InsertUser,
+  Favorite,
+  InsertFavorite
+} from '../shared/schema';
 
 export interface IConLicitacaoStorage {
-  // Users (mantemos localmente)
   getUser(id: number): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
-  
-  // Filtros - vem da API real
+
   getFiltros(): Promise<Filtro[]>;
-  
-  // Boletins - vem da API real
-  getBoletins(filtroId: number, page?: number, perPage?: number): Promise<{ boletins: Boletim[], total: number }>;
-  getBoletim(id: number): Promise<{ boletim: Boletim, licitacoes: Bidding[], acompanhamentos: Acompanhamento[] } | undefined>;
+
+  getBoletins(
+    filtroId: number,
+    page?: number,
+    perPage?: number
+  ): Promise<{ boletins: Boletim[]; total: number }>;
+  getBoletim(
+    id: number
+  ): Promise<{ boletim: Boletim; licitacoes: Bidding[]; acompanhamentos: Acompanhamento[] } | undefined>;
   markBoletimAsViewed(id: number): Promise<void>;
-  
-  // Biddings - transformados da API real
-  getBiddings(filters?: { 
-    conlicitacao_id?: string; 
-    orgao?: string[]; 
+
+  getBiddings(filters?: {
+    conlicitacao_id?: string;
+    orgao?: string[];
     uf?: string[];
     numero_controle?: string;
   }): Promise<Bidding[]>;
   getBidding(id: number): Promise<Bidding | undefined>;
-  
-  // Favorites (mantemos localmente)
+
   getFavorites(userId: number, date?: string, dateFrom?: string, dateTo?: string): Promise<Bidding[]>;
   addFavorite(favorite: InsertFavorite): Promise<Favorite>;
   removeFavorite(userId: number, biddingId: number): Promise<void>;
@@ -32,88 +42,55 @@ export interface IConLicitacaoStorage {
 }
 
 export class ConLicitacaoStorage implements IConLicitacaoStorage {
-  private users: Map<number, User>;
-  private favorites: Map<number, Favorite>;
-  private viewedBoletins: Set<number>; // Armazena IDs dos boletins visualizados
-  private currentUserId: number;
-  private currentFavoriteId: number;
-  private cachedBiddings: Map<number, Bidding>; // Cache das licitações
-  private lastCacheUpdate: number;
+  private users = new Map<number, User>();
+  private favorites = new Map<number, Favorite>();
+  private viewedBoletins = new Set<number>();
+  private cachedBiddings = new Map<number, Bidding>();
+  private currentUserId = 1;
+  private currentFavoriteId = 1;
+  private lastCacheUpdate = 0;
   private readonly CACHE_DURATION = 5 * 60 * 1000; // 5 minutos
 
   constructor() {
-    this.users = new Map();
-    this.favorites = new Map();
-    this.viewedBoletins = new Set();
-    this.cachedBiddings = new Map();
-    this.currentUserId = 1;
-    this.currentFavoriteId = 1;
-    this.lastCacheUpdate = 0;
-    
     this.initializeMockData();
   }
 
   private initializeMockData() {
-    // Criar usuário de teste
-    const testUser: User = {
-      id: 1,
-      email: "admin@test.com",
-      password: "admin123"
-    };
+    const testUser: User = { id: 1, email: "admin@test.com", password: "admin123" };
     this.users.set(1, testUser);
     this.currentUserId = 2;
-
-    // Sistema configurado para usar apenas dados reais da API ConLicitação
-    // Cache será populado quando IP estiver autorizado
   }
 
-  // Métodos de usuário (mantemos localmente)
-  async getUser(id: number): Promise<User | undefined> {
-    return this.users.get(id);
+  // --- Usuários ---
+  async getUser(id: number) { return this.users.get(id); }
+  async getUserByEmail(email: string) {
+    return Array.from(this.users.values()).find(u => u.email === email);
   }
-
-  async getUserByEmail(email: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(user => user.email === email);
-  }
-
-  async createUser(insertUser: InsertUser): Promise<User> {
+  async createUser(insertUser: InsertUser) {
     const id = this.currentUserId++;
-    const user: User = { ...insertUser, id };
+    const user = { ...insertUser, id };
     this.users.set(id, user);
     return user;
   }
 
-  // Métodos da API ConLicitação
+  // --- Filtros ---
   async getFiltros(): Promise<Filtro[]> {
     try {
-      const response = await conLicitacaoAPI.getFiltros();
-      
-      // Transformar resposta da API para nosso formato
-      const filtros: Filtro[] = response.filtros.map((filtro: any) => ({
-        id: filtro.id,
-        descricao: filtro.descricao,
-        cliente_id: response.cliente.id,
-        cliente_razao_social: response.cliente.razao_social,
-        manha: filtro.periodos?.manha || true,
-        tarde: filtro.periodos?.tarde || true,
-        noite: filtro.periodos?.noite || true,
+      const resp = await conLicitacaoAPI.getFiltros();
+      return resp.filtros.map((f: any) => ({
+        id: f.id,
+        descricao: f.descricao,
+        cliente_id: resp.cliente.id,
+        cliente_razao_social: resp.cliente.razao_social,
+        manha: f.periodos?.manha ?? true,
+        tarde: f.periodos?.tarde ?? true,
+        noite: f.periodos?.noite ?? true,
       }));
-
-      return filtros;
-    } catch (error: any) {
-      if (error.message === 'IP_NOT_AUTHORIZED') {
-        console.log('🚫 API ConLicitação: IP não autorizado.');
-        console.log('💡 Para acesso aos dados reais, execute em ambiente com IP autorizado:');
-        console.log('   - Desenvolvimento (Replit): 35.227.80.200');
-        console.log('   - Produção: 31.97.26.138');
-      } else {
-        console.error('Erro ao buscar filtros da API:', error);
-      }
-      
-      // Dados de teste para desenvolvimento enquanto IP não está autorizado
+    } catch (e: any) {
+      console.error("Erro ao buscar filtros:", e);
       return [{
         id: 1,
-        descricao: "Filtro teste - aguardando autorização IP",
+        descricao: "Filtro teste - aguardando IP",
         cliente_id: 1,
         cliente_razao_social: "Cliente Teste",
         manha: true,
@@ -123,212 +100,208 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
     }
   }
 
-
-
-  async getBoletins(filtroId: number, page: number = 1, perPage: number = 100): Promise<{ boletins: Boletim[], total: number }> {
+  // --- Boletins ---
+  async getBoletins(filtroId: number, page = 1, perPage = 100) {
     try {
-      const response = await conLicitacaoAPI.getBoletins(filtroId, page, perPage);
-      
-      const boletins: Boletim[] = response.boletins.map((boletim: any) => ({
-        id: boletim.id,
-        numero_edicao: boletim.numero_edicao,
-        datahora_fechamento: boletim.datahora_fechamento,
-        filtro_id: boletim.filtro_id,
-        quantidade_licitacoes: 0, // Será preenchido quando buscarmos os dados do boletim
-        quantidade_acompanhamentos: 0,
-        visualizado: this.viewedBoletins.has(boletim.id),
+      const resp = await conLicitacaoAPI.getBoletins(filtroId, page, perPage);
+      const boletins: Boletim[] = resp.boletins.map((b: any) => ({
+        id: b.id,
+        cliente_id: resp.filtro.cliente.id,
+        cliente_razao_social: resp.filtro.cliente.razao_social,
+        filtro_descricao: resp.filtro.descricao,
+        numero_edicao: b.numero_edicao,
+        datahora_fechamento: b.datahora_fechamento,
+        filtro_id: b.filtro_id,
+        quantidade_licitacoes: b.quantidade_licitacoes ?? 0,
+        quantidade_acompanhamentos: b.quantidade_acompanhamentos ?? 0,
+        visualizado: this.viewedBoletins.has(b.id),
       }));
-
-      return {
-        boletins,
-        total: response.filtro.total_boletins
-      };
-    } catch (error: any) {
-      if (error.message === 'IP_NOT_AUTHORIZED') {
-        console.log('🚫 API ConLicitação: IP não autorizado.');
-        console.log('💡 Para acesso aos dados reais, execute em ambiente com IP autorizado:');
-        console.log('   - Desenvolvimento (Replit): 35.227.80.200');
-        console.log('   - Produção: 31.97.26.138');
-      } else {
-        console.error('Erro ao buscar boletins da API:', error);
-      }
-      
-      // Dados de teste para desenvolvimento enquanto IP não está autorizado
-      const boletimTeste: Boletim = {
+      return { boletins, total: resp.filtro.total_boletins };
+    } catch (e) {
+      console.error("Erro ao buscar boletins:", e);
+      const teste: Boletim = {
         id: 1,
-        datahora_fechamento: new Date().toISOString(),
         cliente_id: 1,
-        cliente_razao_social: "Cliente Teste", 
+        cliente_razao_social: "Cliente Teste",
+        filtro_descricao: "Teste",
+        numero_edicao: 0,
+        datahora_fechamento: new Date().toISOString(),
         filtro_id: filtroId,
-        filtro_descricao: "Filtro teste",
-        quantidade_licitacoes: 2,
+        quantidade_licitacoes: 0,
         quantidade_acompanhamentos: 0,
-        viewed: false
+        visualizado: false,
       };
-
-      return { boletins: [boletimTeste], total: 1 };
+      return { boletins: [teste], total: 1 };
     }
   }
 
-
-
-  async getBoletim(id: number): Promise<{ boletim: Boletim, licitacoes: Bidding[], acompanhamentos: Acompanhamento[] } | undefined> {
+  async getBoletim(id: number) {
     try {
-      const response = await conLicitacaoAPI.getBoletimData(id);
-      
+      const resp = await conLicitacaoAPI.getBoletimData(id);
       const boletim: Boletim = {
-        id: response.boletim.id,
-        numero_edicao: response.boletim.numero_edicao,
-        datahora_fechamento: response.boletim.datahora_fechamento,
-        filtro_id: response.boletim.cliente.filtro.id,
-        quantidade_licitacoes: response.boletim.quantidade_licitacoes,
-        quantidade_acompanhamentos: response.boletim.quantidade_acompanhamentos,
+        id: resp.boletim.id,
+        cliente_id: resp.boletim.cliente.id,
+        cliente_razao_social: resp.boletim.cliente.razao_social,
+        filtro_descricao: resp.boletim.cliente.filtro.descricao,
+        numero_edicao: resp.boletim.numero_edicao,
+        datahora_fechamento: resp.boletim.datahora_fechamento,
+        filtro_id: resp.boletim.cliente.filtro.id,
+        quantidade_licitacoes: resp.boletim.quantidade_licitacoes,
+        quantidade_acompanhamentos: resp.boletim.quantidade_acompanhamentos,
         visualizado: this.viewedBoletins.has(id),
       };
 
-      // Transformar licitações
-      const licitacoes: Bidding[] = (response.licitacoes || []).map((licitacao: any) => this.transformLicitacao(licitacao, id));
-      
-      // Transformar acompanhamentos
-      const acompanhamentos: Acompanhamento[] = (response.acompanhamentos || []).map((acomp: any) => ({
-        id: acomp.id,
-        conlicitacao_id: acomp.id,
-        licitacao_id: acomp.licitacao_id,
-        orgao_nome: acomp.orgao.nome,
-        orgao_cidade: acomp.orgao.cidade,
-        orgao_uf: acomp.orgao.uf,
-        objeto: acomp.objeto,
-        sintese: acomp.sintese,
-        data_fonte: acomp.data_fonte,
-        edital: acomp.edital,
-        processo: acomp.processo,
+      const licitacoes = (resp.licitacoes || []).map((l: any) =>
+        this.transformLicitacao(l, id)
+      );
+      const acompanhamentos: Acompanhamento[] = (resp.acompanhamentos || []).map((a: any) => ({
+        id: a.id,
+        conlicitacao_id: a.id,
+        licitacao_id: a.licitacao_id,
+        orgao_nome: a.orgao.nome,
+        orgao_cidade: a.orgao.cidade,
+        orgao_uf: a.orgao.uf,
+        objeto: a.objeto,
+        sintese: a.sintese,
+        data_fonte: a.data_fonte,
+        edital: a.edital,
+        processo: a.processo,
         boletim_id: id,
       }));
 
-      // Atualizar cache das licitações
-      licitacoes.forEach(licitacao => {
-        this.cachedBiddings.set(licitacao.id, licitacao);
-      });
+      licitacoes.forEach(l => this.cachedBiddings.set(l.id, l));
       this.lastCacheUpdate = Date.now();
 
       return { boletim, licitacoes, acompanhamentos };
-    } catch (error: any) {
-      if (error.message === 'IP_NOT_AUTHORIZED') {
-        console.log('🚫 API ConLicitação: IP não autorizado.');
-        console.log('💡 Para acesso aos dados reais, execute em ambiente com IP autorizado:');
-        console.log('   - Desenvolvimento (Replit): 35.227.80.200');
-        console.log('   - Produção: 31.97.26.138');
-      } else {
-        console.error('Erro ao buscar boletim da API:', error);
-      }
-      
-      // Dados de teste para verificar badge URGENTE e links
-      const boletimTeste: Boletim = {
-        id: id,
-        datahora_fechamento: new Date().toISOString(),
-        cliente_id: 1,
-        cliente_razao_social: "Cliente Teste",
-        filtro_id: 1,
-        filtro_descricao: "Filtro teste",
-        quantidade_licitacoes: 2,
-        quantidade_acompanhamentos: 0,
-        viewed: this.viewedBoletins.has(id)
-      };
-
-      const licitacoesTeste: Bidding[] = [
-        {
-          id: 1,
-          conlicitacao_id: 17942339,
-          orgao_nome: "Fundação de Apoio ao Ensino, Pesquisa, Extensão e Interiorização do IFAM- FAEPI",
-          orgao_codigo: "UASG123",
-          orgao_cidade: "Manaus",
-          orgao_uf: "AM",
-          orgao_endereco: "Endereço teste",
-          orgao_telefone: "(92) 1234-5678",
-          orgao_site: "www.teste.gov.br",
-          objeto: "Produto/Serviço Quant. Unidade Produto/Serviço: Serviço de apoio logístico para evento",
-          situacao: "URGENTE",
-          datahora_abertura: "15/07/2025",
-          datahora_documento: null,
-          datahora_retirada: null,
-          datahora_visita: null,
-          datahora_prazo: "15/07/2025",
-          edital: "SM/715/2025",
-          link_edital: "https://consultaonline.conlicitacao.com.br/boletim_web/public/api/download?auth=teste1",
-          documento_url: "https://consultaonline.conlicitacao.com.br/boletim_web/public/api/download?auth=teste1",
-          processo: "23456.789012/2025-01",
-          observacao: "Observação teste",
-          item: "Item teste",
-          preco_edital: 50000.00,
-          valor_estimado: 50000.00,
-          boletim_id: id,
-        },
-        {
-          id: 2,
-          conlicitacao_id: 17942355,
-          orgao_nome: "Fundação de Apoio ao Ensino, Pesquisa, Extensão e Interiorização do IFAM- FAEPI",
-          orgao_codigo: "UASG456",
-          orgao_cidade: "Manaus",
-          orgao_uf: "AM",
-          orgao_endereco: "Endereço teste 2",
-          orgao_telefone: "(92) 9876-5432",
-          orgao_site: "www.teste2.gov.br",
-          objeto: "Produto/Serviço Quant. Unidade Produto/Serviço: Iogurte zero açúcar",
-          situacao: "URGENTE",
-          datahora_abertura: "11/07/2025",
-          datahora_documento: null,
-          datahora_retirada: null,
-          datahora_visita: null,
-          datahora_prazo: "11/07/2025",
-          edital: "SM/711/2025",
-          link_edital: "https://consultaonline.conlicitacao.com.br/boletim_web/public/api/download?auth=teste2",
-          documento_url: "https://consultaonline.conlicitacao.com.br/boletim_web/public/api/download?auth=teste2",
-          processo: "98765.432109/2025-02",
-          observacao: "Observação teste 2",
-          item: "Item teste 2",
-          preco_edital: 25000.00,
-          valor_estimado: 25000.00,
-          boletim_id: id,
-        }
-      ];
-
-      // Adicionar ao cache
-      licitacoesTeste.forEach(licitacao => {
-        this.cachedBiddings.set(licitacao.id, licitacao);
-      });
-      this.lastCacheUpdate = Date.now();
-
-      return { 
-        boletim: boletimTeste, 
-        licitacoes: licitacoesTeste, 
-        acompanhamentos: [] 
-      };
+    } catch (e) {
+      console.error("Erro ao buscar boletim:", e);
+      return undefined;
     }
   }
 
+  async markBoletimAsViewed(id: number) {
+    this.viewedBoletins.add(id);
+  }
 
-
-  private transformLicitacao(licitacao: any, boletimId: number): Bidding {
-    const telefones = licitacao.orgao.telefone?.map((tel: any) => 
-      `${tel.ddd ? '(' + tel.ddd + ')' : ''} ${tel.numero}${tel.ramal ? ' ramal ' + tel.ramal : ''}`
-    ).join(', ') || '';
-
-    // Extrair link do edital da API real (campo documento[0].url)
-    const documentoItem = licitacao.documento?.[0];
-    let documentoUrl = '';
-    
-    if (documentoItem) {
-      const baseUrl = 'https://consultaonline.conlicitacao.com.br';
-      if (typeof documentoItem === 'string') {
-        documentoUrl = documentoItem.startsWith('http') ? documentoItem : baseUrl + documentoItem;
-      } else if (documentoItem.url) {
-        documentoUrl = documentoItem.url.startsWith('http') ? documentoItem.url : baseUrl + documentoItem.url;
-      }
+  // --- Biddings ---
+  async getBiddings(filters?: {
+    conlicitacao_id?: string;
+    orgao?: string[];
+    uf?: string[];
+    numero_controle?: string;
+  }) {
+    if (
+      this.cachedBiddings.size === 0 ||
+      Date.now() - this.lastCacheUpdate > this.CACHE_DURATION
+    ) {
+      await this.refreshBiddingsCache();
     }
 
-    // Normalizar situação para compatibilidade com UI
-    const situacao = licitacao.situacao || 'NOVA';
-    const situacaoNormalizada = situacao.toString().toUpperCase();
+    let all = Array.from(this.cachedBiddings.values());
+
+    if (filters?.conlicitacao_id) {
+      all = all.filter(b =>
+        b.conlicitacao_id.toString().includes(filters.conlicitacao_id!)
+      );
+    }
+
+    if (filters?.numero_controle) {
+      const term = filters.numero_controle.toLowerCase();
+      all = all.filter(b =>
+        b.conlicitacao_id.toString().includes(filters.numero_controle!) ||
+        (b.orgao_codigo ?? '').toLowerCase().includes(term) ||
+        (b.processo ?? '').toLowerCase().includes(term)
+      );
+    }
+
+    if (filters?.orgao?.length) {
+      all = all.filter(b =>
+        filters.orgao!.some(o =>
+          b.orgao_nome.toLowerCase().includes(o.toLowerCase())
+        )
+      );
+    }
+
+    if (filters?.uf?.length) {
+      all = all.filter(b => filters.uf!.includes(b.orgao_uf));
+    }
+
+    return all;
+  }
+
+  async getBidding(id: number) {
+    return this.cachedBiddings.get(id);
+  }
+
+  // --- Favoritos ---
+  async getFavorites(userId: number, date?: string, dateFrom?: string, dateTo?: string) {
+    let favs = Array.from(this.favorites.values()).filter(f => f.userId === userId);
+
+    if (date) {
+      favs = favs.filter(f => f.createdAt.toISOString().startsWith(date));
+    }
+    if (dateFrom || dateTo) {
+      favs = favs.filter(f => {
+        const d = f.createdAt.toISOString().split('T')[0];
+        return (!dateFrom || d >= dateFrom) && (!dateTo || d <= dateTo);
+      });
+    }
+
+    return favs
+      .map(f => this.cachedBiddings.get(f.biddingId))
+      .filter(Boolean) as Bidding[];
+  }
+
+  async addFavorite(ins: InsertFavorite) {
+    const id = this.currentFavoriteId++;
+    const fav: Favorite = { ...ins, id, createdAt: new Date() };
+    this.favorites.set(id, fav);
+    return fav;
+  }
+
+  async removeFavorite(userId: number, biddingId: number) {
+    for (const [key, f] of this.favorites) {
+      if (f.userId === userId && f.biddingId === biddingId) {
+        this.favorites.delete(key);
+        break;
+      }
+    }
+  }
+
+  async isFavorite(userId: number, biddingId: number) {
+    return Array.from(this.favorites.values()).some(
+      f => f.userId === userId && f.biddingId === biddingId
+    );
+  }
+
+  private async refreshBiddingsCache() {
+    try {
+      const filtros = await this.getFiltros();
+      if (filtros.length) {
+        const { boletins } = await this.getBoletins(filtros[0].id, 1, 10);
+        for (const b of boletins.slice(0, 3)) {
+          await this.getBoletim(b.id);
+        }
+      }
+    } catch {
+      // noop
+    }
+  }
+
+  private transformLicitacao(licitacao: any, boletimId: number): Bidding {
+    const telefones = licitacao.orgao.telefone
+      ?.map((t: any) =>
+        `${t.ddd ? `(${t.ddd}) ` : ''}${t.numero}${t.ramal ? ` ramal ${t.ramal}` : ''}`
+      )
+      .join(', ') || '';
+    const doc = licitacao.documento?.[0];
+    const base = 'https://consultaonline.conlicitacao.com.br';
+    const documento_url =
+      typeof doc === 'string'
+        ? doc.startsWith('http') ? doc : base + doc
+        : doc?.url.startsWith('http')
+        ? doc.url
+        : base + doc.url;
 
     return {
       id: licitacao.id,
@@ -341,15 +314,15 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
       orgao_telefone: telefones,
       orgao_site: licitacao.orgao.site || '',
       objeto: licitacao.objeto || '',
-      situacao: situacaoNormalizada,
+      situacao: (licitacao.situacao || 'NOVA').toUpperCase(),
       datahora_abertura: licitacao.datahora_abertura || '',
       datahora_documento: licitacao.datahora_documento || null,
       datahora_retirada: licitacao.datahora_retirada || null,
       datahora_visita: licitacao.datahora_visita || null,
       datahora_prazo: licitacao.datahora_prazo || '',
       edital: licitacao.edital || '',
-      link_edital: documentoUrl,
-      documento_url: documentoUrl,
+      link_edital: documento_url,
+      documento_url,
       processo: licitacao.processo || '',
       observacao: licitacao.observacao || '',
       item: licitacao.item || '',
@@ -357,155 +330,6 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
       valor_estimado: licitacao.valor_estimado || 0,
       boletim_id: boletimId,
     };
-  }
-
-  async markBoletimAsViewed(id: number): Promise<void> {
-    this.viewedBoletins.add(id);
-  }
-
-  async getBiddings(filters?: { 
-    conlicitacao_id?: string; 
-    orgao?: string[]; 
-    uf?: string[];
-    numero_controle?: string;
-  }): Promise<Bidding[]> {
-    // Se o cache está vazio ou expirado, buscar dados dos últimos boletins
-    if (this.cachedBiddings.size === 0 || Date.now() - this.lastCacheUpdate > this.CACHE_DURATION) {
-      await this.refreshBiddingsCache();
-    }
-
-    let biddings = Array.from(this.cachedBiddings.values());
-    
-    if (filters?.conlicitacao_id) {
-      biddings = biddings.filter(b => 
-        b.conlicitacao_id.toString().includes(filters.conlicitacao_id!)
-      );
-    }
-    
-    if (filters?.numero_controle) {
-      biddings = biddings.filter(b => 
-        b.conlicitacao_id?.toString().includes(filters.numero_controle!) ||
-        b.orgao_codigo?.toLowerCase().includes(filters.numero_controle!.toLowerCase()) ||
-        b.processo?.toLowerCase().includes(filters.numero_controle!.toLowerCase())
-      );
-    }
-    
-    if (filters?.orgao && filters.orgao.length > 0) {
-      biddings = biddings.filter(b => 
-        filters.orgao!.some(orgao => 
-          b.orgao_nome.toLowerCase().includes(orgao.toLowerCase())
-        )
-      );
-    }
-
-    if (filters?.uf && filters.uf.length > 0) {
-      biddings = biddings.filter(b => 
-        filters.uf!.includes(b.orgao_uf)
-      );
-    }
-    
-    return biddings;
-  }
-
-  private async refreshBiddingsCache(): Promise<void> {
-    try {
-      // Buscar filtros disponíveis
-      const filtros = await this.getFiltros();
-      
-      if (filtros.length > 0) {
-        // Buscar os últimos boletins do primeiro filtro
-        const { boletins } = await this.getBoletins(filtros[0].id, 1, 10);
-        
-        // Buscar licitações de alguns dos boletins mais recentes
-        for (const boletim of boletins.slice(0, 3)) {
-          await this.getBoletim(boletim.id);
-        }
-      }
-    } catch (error: any) {
-      if (error.message === 'IP_NOT_AUTHORIZED') {
-        console.log('🚫 API ConLicitação: IP não autorizado.');
-        console.log('💡 Para acesso aos dados reais, execute em ambiente com IP autorizado:');
-        console.log('   - Desenvolvimento (Replit): 35.227.80.200');
-        console.log('   - Produção: 31.97.26.138');
-      } else {
-        console.error('Erro ao atualizar cache de licitações:', error);
-      }
-    }
-  }
-
-  async getBidding(id: number): Promise<Bidding | undefined> {
-    return this.cachedBiddings.get(id);
-  }
-
-  // Métodos de favoritos (mantemos localmente)
-  async getFavorites(userId: number, date?: string, dateFrom?: string, dateTo?: string): Promise<Bidding[]> {
-    let userFavorites = Array.from(this.favorites.values())
-      .filter(fav => fav.userId === userId);
-
-    if (date) {
-      userFavorites = userFavorites.filter(fav => {
-        const favDate = fav.createdAt?.toISOString().split('T')[0];
-        return favDate === date;
-      });
-    }
-    
-    if (dateFrom || dateTo) {
-      userFavorites = userFavorites.filter(fav => {
-        const favDate = fav.createdAt?.toISOString().split('T')[0];
-        if (!favDate) return false;
-        
-        let isInRange = true;
-        
-        if (dateFrom) {
-          isInRange = isInRange && favDate >= dateFrom;
-        }
-        
-        if (dateTo) {
-          isInRange = isInRange && favDate <= dateTo;
-        }
-        
-        return isInRange;
-      });
-    }
-    
-    const favoriteBiddings: Bidding[] = [];
-    for (const fav of userFavorites) {
-      const bidding = this.cachedBiddings.get(fav.biddingId);
-      if (bidding) {
-        favoriteBiddings.push(bidding);
-      }
-    }
-    
-    return favoriteBiddings;
-  }
-
-  async addFavorite(insertFavorite: InsertFavorite): Promise<Favorite> {
-    const id = this.currentFavoriteId++;
-    const favorite: Favorite = { ...insertFavorite, id, createdAt: new Date() };
-    this.favorites.set(id, favorite);
-    return favorite;
-  }
-
-  async removeFavorite(userId: number, biddingId: number): Promise<void> {
-    let keyToDelete: number | undefined;
-    this.favorites.forEach((favorite, id) => {
-      if (favorite.userId === userId && favorite.biddingId === biddingId) {
-        keyToDelete = id;
-      }
-    });
-    if (keyToDelete !== undefined) {
-      this.favorites.delete(keyToDelete);
-    }
-  }
-
-  async isFavorite(userId: number, biddingId: number): Promise<boolean> {
-    let found = false;
-    this.favorites.forEach(favorite => {
-      if (favorite.userId === userId && favorite.biddingId === biddingId) {
-        found = true;
-      }
-    });
-    return found;
   }
 }
 
