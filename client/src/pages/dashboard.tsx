@@ -34,6 +34,8 @@ export default function Dashboard() {
   const { data: favorites = [], isLoading: isLoadingFavorites } = useQuery<Bidding[]>({
     queryKey: ["/api/favorites", user?.id],
     enabled: !!user?.id,
+    refetchOnWindowFocus: true,
+    staleTime: 0,
   });
 
   // Cálculos baseados em dados reais da API

@@ -67,6 +67,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = parseInt(req.params.userId);
       const { date, dateFrom, dateTo } = req.query;
       const favorites = await conLicitacaoStorage.getFavorites(userId, date as string, dateFrom as string, dateTo as string);
+      
+      // Adicionar headers para evitar cache
+      res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+      res.set('Pragma', 'no-cache');
+      res.set('Expires', '0');
+      
       res.json(favorites);
     } catch (error) {
       res.status(500).json({ message: "Erro interno do servidor" });

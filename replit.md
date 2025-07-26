@@ -147,6 +147,7 @@ Application runs on `http://localhost:5000` with full API access when IP is auth
 
 ```
 Changelog:
+- January 9, 2025. Corrigido contador de favoritos no dashboard e removidos todos arquivos desnecessários
 - January 9, 2025. Dashboard atualizado com quantidades precisas e arquivos desnecessários removidos
 - January 9, 2025. Aplicado correção robusta com estilos inline para badge URGENTE e calendário
 - January 9, 2025. Corrigido links documentos para usar documento[0].url da API real e badge URGENTE completo

@@ -22,6 +22,7 @@ export function useFavorites() {
       if (user) {
         client.invalidateQueries({ queryKey: [`/api/favorites/${user.id}`] });
         client.invalidateQueries({ queryKey: [`/api/favorites/${user.id}/${biddingId}`] });
+        client.invalidateQueries({ queryKey: ["/api/favorites", user.id] });
       }
       toast({
         title: "Sucesso",
@@ -46,6 +47,7 @@ export function useFavorites() {
       if (user) {
         client.invalidateQueries({ queryKey: [`/api/favorites/${user.id}`] });
         client.invalidateQueries({ queryKey: [`/api/favorites/${user.id}/${biddingId}`] });
+        client.invalidateQueries({ queryKey: ["/api/favorites", user.id] });
       }
       toast({
         title: "Sucesso",
