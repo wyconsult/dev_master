@@ -161,7 +161,7 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
         filtro_id: filtroId,
         quantidade_licitacoes: 2,
         quantidade_acompanhamentos: 0,
-        visualizado: false
+        visualizado: this.viewedBoletins.has(1)
       };
 
       return { boletins: [boletimTeste], total: 1 };

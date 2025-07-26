@@ -178,21 +178,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/boletim/:id", async (req, res) => {
-    try {
-      const id = parseInt(req.params.id);
-      const result = await conLicitacaoStorage.getBoletim(id);
-      
-      if (!result) {
-        return res.status(404).json({ message: "Boletim não encontrado" });
-      }
-      
-      res.json(result);
-    } catch (error) {
-      console.error('Erro ao buscar dados do boletim:', error);
-      res.status(500).json({ message: "Erro interno do servidor" });
-    }
-  });
+
 
   app.post("/api/boletins/:id/mark-viewed", async (req, res) => {
     try {

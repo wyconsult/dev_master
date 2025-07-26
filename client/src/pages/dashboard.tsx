@@ -36,7 +36,8 @@ export default function Dashboard() {
     enabled: !!user?.id,
     refetchOnWindowFocus: true,
     staleTime: 0,
-    refetchInterval: 3000, // Atualizar a cada 3 segundos
+    refetchInterval: 2000, // Atualizar a cada 2 segundos
+    refetchOnMount: true,
   });
 
   // Cálculos baseados em dados reais da API  
@@ -78,7 +79,7 @@ export default function Dashboard() {
       link: "/favorites",
       gradient: "bg-gradient-to-br from-red-500 to-pink-700",
       hoverGradient: "hover:from-red-600 hover:to-pink-800",
-      count: isLoadingFavorites ? "..." : `${totalFavoritos} salvos`,
+      count: isLoadingFavorites ? "..." : `${totalFavoritos} ${totalFavoritos === 1 ? 'salvo' : 'salvos'}`,
       bgPattern: "bg-red-50"
     }
   ];

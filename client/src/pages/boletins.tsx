@@ -57,8 +57,10 @@ export default function Boletins() {
 
   const handleBackToCalendar = () => {
     setSelectedBoletim(null);
-    // Revalidar dados para garantir que o estado seja atualizado
-    queryClient.refetchQueries({ queryKey: ["/api/boletins"] });
+    // Invalidar todas as queries relacionadas para forçar atualização
+    queryClient.invalidateQueries({ queryKey: ["/api/boletins"] });
+    queryClient.invalidateQueries({ queryKey: ["/api/biddings"] });
+    queryClient.invalidateQueries({ queryKey: ["/api/favorites"] });
   };
 
   const monthStart = startOfMonth(currentDate);
