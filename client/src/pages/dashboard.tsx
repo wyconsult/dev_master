@@ -32,11 +32,10 @@ export default function Dashboard() {
   });
 
   const { data: favorites = [], isLoading: isLoadingFavorites } = useQuery<Bidding[]>({
-    queryKey: ["/api/favorites", user?.id],
-    enabled: !!user?.id,
+    queryKey: ["/api/favorites"],
     refetchOnWindowFocus: true,
     staleTime: 0,
-    refetchInterval: 2000, // Atualizar a cada 2 segundos
+    refetchInterval: 1000, // Atualizar a cada 1 segundo
     refetchOnMount: true,
   });
 

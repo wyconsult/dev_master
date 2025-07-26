@@ -62,6 +62,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Favorites routes
+  // Endpoint geral para dashboard (sem userId específico)
+  app.get("/api/favorites", async (req, res) => {
+    try {
+      // Para o dashboard, usar usuário padrão (1) se não especificado
+      const userId = 1; // Usuário padrão para desenvolvimento
+      const favorites = await conLicitacaoStorage.getFavorites(userId);
+      
+      // Adicionar headers para evitar cache
+      res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+      res.set('Pragma', 'no-cache');
+      res.set('Expires', '0');
+      
+      res.json(favorites);
+    } catch (error) {
+      console.error('Erro ao buscar favoritos:', error);
+      res.status(500).json({ message: "Erro interno do servidor" });
+    }
+  });
+
   app.get("/api/favorites/:userId", async (req, res) => {
     try {
       const userId = parseInt(req.params.userId);
