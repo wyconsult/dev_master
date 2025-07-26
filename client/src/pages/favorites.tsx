@@ -333,25 +333,34 @@ export default function Favorites() {
                 </label>
                 
                 {/* Seletor de tipo de data */}
-                <div className="mb-3 p-2 bg-gray-50 rounded-lg border">
-                  <div className="text-xs font-medium text-gray-600 mb-2">Filtrar por:</div>
-                  <div className="flex flex-col gap-2">
+                <div className="mb-4 p-3 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200">
+                  <div className="text-sm font-semibold text-blue-800 mb-3 flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+                    Filtrar por:
+                  </div>
+                  <div className="grid grid-cols-1 gap-3">
                     {DATE_FILTER_OPTIONS.map((option) => (
-                      <label key={option.value} className="flex items-center gap-2 cursor-pointer">
+                      <label 
+                        key={option.value} 
+                        className="flex items-center gap-3 cursor-pointer hover:bg-white/60 p-2 rounded-lg transition-colors"
+                        onClick={() => setDateFilterType(option.value as "favorito" | "realizacao")}
+                      >
                         <div className={cn(
-                          "w-4 h-4 rounded-full border-2 flex items-center justify-center",
+                          "w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all",
                           dateFilterType === option.value 
-                            ? "border-blue-500 bg-blue-500" 
-                            : "border-gray-300"
+                            ? "border-blue-600 bg-blue-600 shadow-md" 
+                            : "border-gray-400 hover:border-blue-400"
                         )}>
                           {dateFilterType === option.value && (
-                            <div className="w-2 h-2 rounded-full bg-white"></div>
+                            <div className="w-2.5 h-2.5 rounded-full bg-white"></div>
                           )}
                         </div>
-                        <span 
-                          className="text-sm text-gray-700"
-                          onClick={() => setDateFilterType(option.value as "favorito" | "realizacao")}
-                        >
+                        <span className={cn(
+                          "text-sm font-medium transition-colors",
+                          dateFilterType === option.value 
+                            ? "text-blue-800" 
+                            : "text-gray-700 hover:text-blue-700"
+                        )}>
                           {option.label}
                         </span>
                       </label>
