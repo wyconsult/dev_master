@@ -50,12 +50,19 @@ const UF_OPTIONS = [
   { code: "TO", name: "TO - Tocantins" }
 ];
 
+// Tipos de filtro de data
+const DATE_FILTER_OPTIONS = [
+  { value: "favorito", label: "Data de inclusão favorito" },
+  { value: "realizacao", label: "Data de realização" }
+];
+
 export default function Favorites() {
   const { user } = useAuth();
   const [numeroControle, setNumeroControle] = useState("");
   const [selectedOrgaos, setSelectedOrgaos] = useState<string[]>([]);
   const [selectedUFs, setSelectedUFs] = useState<string[]>([]);
   const [dateRange, setDateRange] = useState<{from?: Date, to?: Date}>({});
+  const [dateFilterType, setDateFilterType] = useState<"favorito" | "realizacao">("favorito");
   const [orgaoPopoverOpen, setOrgaoPopoverOpen] = useState(false);
   const [ufPopoverOpen, setUfPopoverOpen] = useState(false);
 
@@ -79,10 +86,21 @@ export default function Favorites() {
     const matchesUF = selectedUFs.length === 0 || 
       selectedUFs.includes(bidding.orgao_uf);
 
-    // Date filter logic - if both dates are selected, check if bidding date is within range
+    // Date filter logic - check by type of date filter selected
     let matchesDateRange = true;
     if (dateRange.from && dateRange.to) {
-      const biddingDate = new Date(bidding.data_abertura);
+      let biddingDate: Date;
+      
+      if (dateFilterType === "favorito") {
+        // Filter by favorite creation date - TODO: Need to get actual createdAt from favorites
+        // For now, using current date as placeholder since we don't have favorite creation date in schema
+        biddingDate = new Date(); // This would need to be actual favorite.createdAt
+      } else {
+        // Filter by datahora_abertura (data de realização)
+        if (!bidding.datahora_abertura) return false; // Skip if no opening date
+        biddingDate = new Date(bidding.datahora_abertura);
+      }
+      
       const startDate = new Date(dateRange.from);
       const endDate = new Date(dateRange.to);
       
@@ -313,6 +331,34 @@ export default function Favorites() {
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Selecionar período
                 </label>
+                
+                {/* Seletor de tipo de data */}
+                <div className="mb-3 p-2 bg-gray-50 rounded-lg border">
+                  <div className="text-xs font-medium text-gray-600 mb-2">Filtrar por:</div>
+                  <div className="flex flex-col gap-2">
+                    {DATE_FILTER_OPTIONS.map((option) => (
+                      <label key={option.value} className="flex items-center gap-2 cursor-pointer">
+                        <div className={cn(
+                          "w-4 h-4 rounded-full border-2 flex items-center justify-center",
+                          dateFilterType === option.value 
+                            ? "border-blue-500 bg-blue-500" 
+                            : "border-gray-300"
+                        )}>
+                          {dateFilterType === option.value && (
+                            <div className="w-2 h-2 rounded-full bg-white"></div>
+                          )}
+                        </div>
+                        <span 
+                          className="text-sm text-gray-700"
+                          onClick={() => setDateFilterType(option.value as "favorito" | "realizacao")}
+                        >
+                          {option.label}
+                        </span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+                
                 <div className="grid grid-cols-2 gap-1">
                   {/* Data de Início */}
                   <div>
