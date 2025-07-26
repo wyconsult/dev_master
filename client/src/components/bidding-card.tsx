@@ -171,7 +171,7 @@ export function BiddingCard({ bidding, showFavoriteIcon = true }: BiddingCardPro
 
           <div className="flex justify-between">
             <span className="text-gray-700">
-              <strong>Órgão:</strong> {bidding.orgao_nome}
+              <strong>Órgão:</strong> {bidding.orgao_codigo ? `${bidding.orgao_codigo} - ${bidding.orgao_nome}` : bidding.orgao_nome}
             </span>
             <span className="text-gray-700">
               <strong>Status da Sessão:</strong> {bidding.situacao}
