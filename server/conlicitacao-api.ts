@@ -18,7 +18,7 @@ export class ConLicitacaoAPI {
         },
       });
       
-      const responseData = await response.json();
+      const responseData = await response.json() as any;
       
       // Verifica se há erro de autenticação/IP
       if (responseData.errors && Array.isArray(responseData.errors)) {
@@ -48,16 +48,28 @@ export class ConLicitacaoAPI {
     }
   }
 
+  // Endpoint: GET /api/filtros - Listagem dos filtros do cliente
   async getFiltros() {
     return this.makeRequest('/filtros');
   }
 
+  // Endpoint: GET /api/filtro/{filtro_id}/boletins - Lista boletins de um filtro
   async getBoletins(filtroId: number, page: number = 1, perPage: number = 100, order: string = 'desc') {
     return this.makeRequest(`/filtro/${filtroId}/boletins?page=${page}&per_page=${perPage}&order=${order}`);
   }
 
+  // Endpoint: GET /api/boletim/{boletim_id} - Dados completos de um boletim
   async getBoletimData(boletimId: number) {
     return this.makeRequest(`/boletim/${boletimId}`);
+  }
+
+  // Método para buscar dados de licitações diretamente de um boletim
+  async getLicitacoesFromBoletim(boletimId: number): Promise<{licitacoes: any[], acompanhamentos: any[]}> {
+    const boletimData = await this.getBoletimData(boletimId);
+    return {
+      licitacoes: boletimData.licitacoes || [],
+      acompanhamentos: boletimData.acompanhamentos || []
+    };
   }
 }
 

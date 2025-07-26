@@ -147,6 +147,7 @@ Application runs on `http://localhost:5000` with full API access when IP is auth
 
 ```
 Changelog:
+- January 9, 2025. Contador favoritos corrigido e API ConLicitação preparada conforme documentação oficial
 - January 9, 2025. Contador licitações mostra total correto e boletins ficam cinza após visualização
 - January 9, 2025. Corrigido contador de favoritos no dashboard e removidos todos arquivos desnecessários
 - January 9, 2025. Dashboard atualizado com quantidades precisas e arquivos desnecessários removidos

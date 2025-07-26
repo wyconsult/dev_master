@@ -36,6 +36,7 @@ export default function Dashboard() {
     enabled: !!user?.id,
     refetchOnWindowFocus: true,
     staleTime: 0,
+    refetchInterval: 3000, // Atualizar a cada 3 segundos
   });
 
   // Cálculos baseados em dados reais da API  

@@ -184,8 +184,8 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
         visualizado: this.viewedBoletins.has(id),
       };
 
-      // Transformar licitações
-      const licitacoes: Bidding[] = (response.licitacoes || []).map((licitacao: any) => this.transformLicitacao(licitacao, id));
+      // Transformar licitações seguindo estrutura da documentação da API
+      const licitacoes: Bidding[] = (response.licitacoes || []).map((licitacao: any) => this.transformLicitacaoFromAPI(licitacao, id));
       
       // Transformar acompanhamentos
       const acompanhamentos: Acompanhamento[] = (response.acompanhamentos || []).map((acomp: any) => ({
@@ -304,12 +304,14 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
 
 
 
-  private transformLicitacao(licitacao: any, boletimId: number): Bidding {
-    const telefones = licitacao.orgao.telefone?.map((tel: any) => 
+  // Transformar licitação conforme estrutura da documentação da API ConLicitação
+  private transformLicitacaoFromAPI(licitacao: any, boletimId: number): Bidding {
+    // Processar telefones conforme estrutura da API: orgao.telefone[].ddd, numero, ramal
+    const telefones = licitacao.orgao?.telefone?.map((tel: any) => 
       `${tel.ddd ? '(' + tel.ddd + ')' : ''} ${tel.numero}${tel.ramal ? ' ramal ' + tel.ramal : ''}`
     ).join(', ') || '';
 
-    // Extrair link do edital da API real (campo documento[0].url)
+    // Extrair URL do documento conforme documentação: documento[] array
     const documentoItem = licitacao.documento?.[0];
     let documentoUrl = '';
     
@@ -322,35 +324,35 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
       }
     }
 
-    // Normalizar situação para compatibilidade com UI
+    // Normalizar situação (campo 'situacao' da API)
     const situacao = licitacao.situacao || 'NOVA';
     const situacaoNormalizada = situacao.toString().toUpperCase();
 
     return {
-      id: licitacao.id,
+      id: licitacao.id, // Número ConLicitação
       conlicitacao_id: licitacao.id,
-      orgao_nome: licitacao.orgao.nome || '',
-      orgao_codigo: licitacao.orgao.codigo || '',
-      orgao_cidade: licitacao.orgao.cidade || '',
-      orgao_uf: licitacao.orgao.uf || '',
-      orgao_endereco: licitacao.orgao.endereco || '',
-      orgao_telefone: telefones,
-      orgao_site: licitacao.orgao.site || '',
-      objeto: licitacao.objeto || '',
-      situacao: situacaoNormalizada,
-      datahora_abertura: licitacao.datahora_abertura || '',
-      datahora_documento: licitacao.datahora_documento || null,
-      datahora_retirada: licitacao.datahora_retirada || null,
-      datahora_visita: licitacao.datahora_visita || null,
-      datahora_prazo: licitacao.datahora_prazo || '',
-      edital: licitacao.edital || '',
-      link_edital: documentoUrl,
-      documento_url: documentoUrl,
-      processo: licitacao.processo || '',
-      observacao: licitacao.observacao || '',
-      item: licitacao.item || '',
-      preco_edital: licitacao.preco_edital || 0,
-      valor_estimado: licitacao.valor_estimado || 0,
+      orgao_nome: licitacao.orgao?.nome || '', // Unidade licitante
+      orgao_codigo: licitacao.orgao?.codigo || '', // Código UASG
+      orgao_cidade: licitacao.orgao?.cidade || '', // Cidade
+      orgao_uf: licitacao.orgao?.uf || '', // UF
+      orgao_endereco: licitacao.orgao?.endereco || '', // Endereço
+      orgao_telefone: telefones, // Telefone processado
+      orgao_site: licitacao.orgao?.site || '', // Site
+      objeto: licitacao.objeto || '', // Objeto
+      situacao: situacaoNormalizada, // Situação
+      datahora_abertura: licitacao.datahora_abertura || '', // Data/Hora abertura
+      datahora_documento: licitacao.datahora_documento || null, // Data/Hora documento
+      datahora_retirada: licitacao.datahora_retirada || null, // Data/Hora retirada
+      datahora_visita: licitacao.datahora_visita || null, // Data/Hora visita
+      datahora_prazo: licitacao.datahora_prazo || '', // Data/Hora prazo
+      edital: licitacao.edital || '', // Edital
+      link_edital: documentoUrl, // Link edital
+      documento_url: documentoUrl, // URL do documento
+      processo: licitacao.processo || '', // Processo
+      observacao: licitacao.observacao || '', // Observações
+      item: licitacao.item || '', // Itens
+      preco_edital: licitacao.preco_edital || 0, // Valor do edital
+      valor_estimado: licitacao.valor_estimado || 0, // Valor estimado
       boletim_id: boletimId,
     };
   }
