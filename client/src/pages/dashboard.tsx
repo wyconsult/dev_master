@@ -38,11 +38,11 @@ export default function Dashboard() {
     staleTime: 0,
   });
 
-  // Cálculos baseados em dados reais da API
+  // Cálculos baseados em dados reais da API  
   const totalLicitacoes = biddings.length;
   const licitacoesAtivas = biddings.filter(b => {
     const situacao = b.situacao?.toUpperCase();
-    return situacao === "NOVA" || situacao === "ABERTA" || situacao === "ATIVA";
+    return situacao === "NOVA" || situacao === "ABERTA" || situacao === "ATIVA" || situacao === "URGENTE";
   }).length;
   
   const totalBoletins = boletins.length;
@@ -67,7 +67,7 @@ export default function Dashboard() {
       link: "/biddings",
       gradient: "bg-gradient-to-br from-green-500 to-emerald-700",
       hoverGradient: "hover:from-green-600 hover:to-emerald-800",
-      count: isLoadingBiddings ? "..." : `${licitacoesAtivas} ativas`,
+      count: isLoadingBiddings ? "..." : `${totalLicitacoes} total`,
       bgPattern: "bg-green-50"
     },
     {

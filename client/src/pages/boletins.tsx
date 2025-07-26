@@ -43,12 +43,22 @@ export default function Boletins() {
   });
 
   const handleBoletimClick = (boletimId: number) => {
-    markAsViewedMutation.mutate(boletimId);
-    setSelectedBoletim(boletimId);
+    // Marcar como visualizado e depois selecionar o boletim
+    markAsViewedMutation.mutate(boletimId, {
+      onSuccess: () => {
+        setSelectedBoletim(boletimId);
+        // Invalidar queries para atualizar dashboard
+        queryClient.invalidateQueries({ queryKey: ["/api/boletins"] });
+        queryClient.invalidateQueries({ queryKey: ["/api/biddings"] });
+        queryClient.invalidateQueries({ queryKey: ["/api/favorites"] });
+      }
+    });
   };
 
   const handleBackToCalendar = () => {
     setSelectedBoletim(null);
+    // Revalidar dados para garantir que o estado seja atualizado
+    queryClient.refetchQueries({ queryKey: ["/api/boletins"] });
   };
 
   const monthStart = startOfMonth(currentDate);
