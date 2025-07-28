@@ -29,6 +29,14 @@ export function BiddingCard({ bidding, showFavoriteIcon = true }: BiddingCardPro
     
     const truncatedMappings: { [key: string]: string } = {
       "URGEN": "URGENTE",
+      "RET": "RETIFICAÇÃO", 
+      "ADIA": "ADIADA",
+      "PRO": "PRORROGADA",
+      "ALTER": "ALTERADA",
+      "REAB": "REABERTA",
+      "CANCE": "CANCELADA",
+      "SUS": "SUSPENSA",
+      "REVO": "REVOGADA",
       "ABERTA": "ABERTA", 
       "NOVA": "NOVA",
       "EM_ANAL": "EM ANÁLISE",
@@ -37,7 +45,6 @@ export function BiddingCard({ bidding, showFavoriteIcon = true }: BiddingCardPro
       "FINALI": "FINALIZADA",
       "SUSP": "SUSPENSA",
       "CANCEL": "CANCELADA",
-      "REVO": "REVOGADA",
       "DESERTA": "DESERTA",
       "FRACAS": "FRACASSADA"
     };
@@ -66,14 +73,17 @@ export function BiddingCard({ bidding, showFavoriteIcon = true }: BiddingCardPro
       case "NOVA":
         return "bg-green-500";
       case "ABERTA":
+      case "REABERTA":
         return "bg-blue-500";
       case "EM ANÁLISE":
         return "bg-yellow-500";
       case "URGENTE":
         return "bg-red-500";
       case "PRORROGADA":
+      case "ADIADA":
         return "bg-orange-500";
       case "ALTERADA":
+      case "RETIFICAÇÃO":
         return "bg-purple-500";
       case "FINALIZADA":
       case "SUSPENSA":
