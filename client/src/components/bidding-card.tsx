@@ -71,30 +71,37 @@ export function BiddingCard({ bidding, showFavoriteIcon = true }: BiddingCardPro
     
     switch (expandedStatus) {
       case "NOVA":
-        return "bg-green-500";
+        return "bg-green-500";           // Verde
       case "ABERTA":
+        return "bg-blue-500";            // Azul
       case "REABERTA":
-        return "bg-blue-500";
+        return "bg-cyan-500";            // Ciano
       case "EM ANÁLISE":
-        return "bg-yellow-500";
+        return "bg-yellow-500";          // Amarelo
       case "URGENTE":
-        return "bg-red-500";
+        return "bg-red-500";             // Vermelho
       case "PRORROGADA":
+        return "bg-orange-500";          // Laranja
       case "ADIADA":
-        return "bg-orange-500";
+        return "bg-amber-500";           // Âmbar
       case "ALTERADA":
+        return "bg-purple-500";          // Roxo
       case "RETIFICAÇÃO":
-        return "bg-purple-500";
-      case "FINALIZADA":
+        return "bg-violet-500";          // Violeta
       case "SUSPENSA":
+        return "bg-gray-500";            // Cinza
       case "CANCELADA":
+        return "bg-slate-600";           // Cinza escuro
       case "REVOGADA":
-        return "bg-gray-500";
+        return "bg-stone-600";           // Pedra
+      case "FINALIZADA":
+        return "bg-zinc-500";            // Zinco
       case "DESERTA":
+        return "bg-red-600";             // Vermelho escuro
       case "FRACASSADA":
-        return "bg-red-600";
+        return "bg-rose-600";            // Rosa escuro
       default:
-        return "bg-gray-500";
+        return "bg-gray-400";            // Cinza claro padrão
     }
   };
 
