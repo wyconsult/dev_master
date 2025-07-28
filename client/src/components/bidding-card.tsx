@@ -23,15 +23,50 @@ export function BiddingCard({ bidding, showFavoriteIcon = true }: BiddingCardPro
 
   const isFavorite = favoriteStatus?.isFavorite || false;
 
-  const getStatusColor = (status: string) => {
-    const normalizedStatus = status.toString().toUpperCase();
+  // Função para expandir status truncados da API
+  const expandTruncatedStatus = (status: string) => {
+    if (!status) return "NOVA";
     
-    switch (normalizedStatus) {
+    const truncatedMappings: { [key: string]: string } = {
+      "URGEN": "URGENTE",
+      "ABERTA": "ABERTA", 
+      "NOVA": "NOVA",
+      "EM_ANAL": "EM ANÁLISE",
+      "PRORROG": "PRORROGADA",
+      "ALTERA": "ALTERADA",
+      "FINALI": "FINALIZADA",
+      "SUSP": "SUSPENSA",
+      "CANCEL": "CANCELADA",
+      "REVO": "REVOGADA",
+      "DESERTA": "DESERTA",
+      "FRACAS": "FRACASSADA"
+    };
+
+    const upperStatus = status.toString().toUpperCase().trim();
+    
+    // Procura por correspondência exata primeiro
+    if (truncatedMappings[upperStatus]) {
+      return truncatedMappings[upperStatus];
+    }
+    
+    // Procura por correspondência parcial (status truncado)
+    for (const [truncated, full] of Object.entries(truncatedMappings)) {
+      if (truncated.startsWith(upperStatus) || upperStatus.startsWith(truncated)) {
+        return full;
+      }
+    }
+    
+    return upperStatus;
+  };
+
+  const getStatusColor = (status: string) => {
+    const expandedStatus = expandTruncatedStatus(status);
+    
+    switch (expandedStatus) {
       case "NOVA":
         return "bg-green-500";
       case "ABERTA":
         return "bg-blue-500";
-      case "EM_ANALISE":
       case "EM ANÁLISE":
         return "bg-yellow-500";
       case "URGENTE":
@@ -41,7 +76,13 @@ export function BiddingCard({ bidding, showFavoriteIcon = true }: BiddingCardPro
       case "ALTERADA":
         return "bg-purple-500";
       case "FINALIZADA":
+      case "SUSPENSA":
+      case "CANCELADA":
+      case "REVOGADA":
         return "bg-gray-500";
+      case "DESERTA":
+      case "FRACASSADA":
+        return "bg-red-600";
       default:
         return "bg-gray-500";
     }
@@ -140,7 +181,7 @@ export function BiddingCard({ bidding, showFavoriteIcon = true }: BiddingCardPro
                 letterSpacing: "0.5px"
               }}
             >
-              {bidding.situacao?.toUpperCase() || "NOVA"}
+              {expandTruncatedStatus(bidding.situacao || "")}
             </div>
             {/* Favorite icon */}
             {showFavoriteIcon && (
@@ -164,6 +205,21 @@ export function BiddingCard({ bidding, showFavoriteIcon = true }: BiddingCardPro
       </div>
 
       <CardContent className="p-4">
+        {/* Status - linha separada */}
+        <div className="mb-4 p-2 bg-blue-50 rounded-lg border border-blue-200">
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-semibold text-blue-800">Status:</span>
+            <span 
+              className={cn(
+                "text-xs font-bold px-2 py-1 rounded text-white",
+                getStatusColor(bidding.situacao || "")
+              )}
+            >
+              {expandTruncatedStatus(bidding.situacao || "")}
+            </span>
+          </div>
+        </div>
+
         {/* Datas - seção destacada */}
         {datesInfo.length > 0 && (
           <div className="mb-4 p-3 bg-gray-50 rounded-lg border">

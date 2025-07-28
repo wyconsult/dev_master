@@ -147,6 +147,7 @@ Application runs on `http://localhost:5000` with full API access when IP is auth
 
 ```
 Changelog:
+- January 28, 2025. Corrigido tratamento de status truncados nos cards com mapeamento completo e linha de status separada
 - January 9, 2025. Implementado filtro duplo de datas na página favoritos (inclusão favorito vs realização)
 - January 9, 2025. Reestruturação completa dos cards com cabeçalho verde e múltiplas datas
 - January 9, 2025. Implementado código do órgão nos cards (formato: código - nome)
