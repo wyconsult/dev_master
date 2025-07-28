@@ -233,18 +233,9 @@ export function BiddingCard({ bidding, showFavoriteIcon = true }: BiddingCardPro
 
           <div className="grid grid-cols-1 gap-2">
             <span className="text-gray-700">
-              <strong>Status:</strong> 
-              <span 
-                className={cn(
-                  "ml-2 text-xs font-bold px-2 py-1 rounded text-white",
-                  getStatusColor(bidding.situacao || "")
-                )}
-              >
-                {expandTruncatedStatus(bidding.situacao || "")}
-              </span>
-            </span>
-            <span className="text-gray-700">
               <strong>Órgão:</strong> {bidding.orgao_codigo ? `${bidding.orgao_codigo} - ${bidding.orgao_nome}` : bidding.orgao_nome}
+              {" | "}
+              <strong>Status:</strong> {expandTruncatedStatus(bidding.situacao || "")}
             </span>
             <div className="flex justify-between items-center">
               <span className="text-gray-700">
