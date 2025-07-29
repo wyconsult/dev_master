@@ -134,7 +134,7 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
         numero_edicao: boletim.numero_edicao,
         datahora_fechamento: boletim.datahora_fechamento,
         filtro_id: boletim.filtro_id,
-        quantidade_licitacoes: 0, // Será preenchido quando buscarmos os dados do boletim
+        quantidade_licitacoes: 0, // Contagem real será calculada quando boletim for acessado
         quantidade_acompanhamentos: 0,
         visualizado: this.viewedBoletins.has(boletim.id),
       }));
@@ -174,20 +174,8 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
     try {
       const response = await conLicitacaoAPI.getBoletimData(id);
       
-      const boletim: Boletim = {
-        id: response.boletim.id,
-        numero_edicao: response.boletim.numero_edicao,
-        datahora_fechamento: response.boletim.datahora_fechamento,
-        filtro_id: response.boletim.cliente.filtro.id,
-        quantidade_licitacoes: response.boletim.quantidade_licitacoes,
-        quantidade_acompanhamentos: response.boletim.quantidade_acompanhamentos,
-        visualizado: this.viewedBoletins.has(id),
-      };
-
-      // Transformar licitações seguindo estrutura da documentação da API
+      // Transformar licitações e acompanhamentos primeiro para contar corretamente
       const licitacoes: Bidding[] = (response.licitacoes || []).map((licitacao: any) => this.transformLicitacaoFromAPI(licitacao, id));
-      
-      // Transformar acompanhamentos
       const acompanhamentos: Acompanhamento[] = (response.acompanhamentos || []).map((acomp: any) => ({
         id: acomp.id,
         conlicitacao_id: acomp.id,
@@ -202,6 +190,18 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
         processo: acomp.processo,
         boletim_id: id,
       }));
+
+      const boletim: Boletim = {
+        id: response.boletim.id,
+        numero_edicao: response.boletim.numero_edicao,
+        datahora_fechamento: response.boletim.datahora_fechamento,
+        filtro_id: response.boletim.cliente.filtro.id,
+        quantidade_licitacoes: licitacoes.length, // Contar dados reais
+        quantidade_acompanhamentos: acompanhamentos.length, // Contar dados reais
+        visualizado: this.viewedBoletins.has(id),
+      };
+
+
 
       // Atualizar cache das licitações
       licitacoes.forEach(licitacao => {
@@ -220,17 +220,6 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
         console.error('Erro ao buscar boletim da API:', error);
       }
       
-      // Dados de teste para verificar badge URGENTE e links
-      const boletimTeste: Boletim = {
-        id: id,
-        numero_edicao: 341,
-        datahora_fechamento: new Date().toISOString(),
-        filtro_id: 1,
-        quantidade_licitacoes: 2,
-        quantidade_acompanhamentos: 0,
-        visualizado: this.viewedBoletins.has(id)
-      };
-
       const licitacoesTeste: Bidding[] = [
         {
           id: 1,
@@ -294,10 +283,23 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
       });
       this.lastCacheUpdate = Date.now();
 
+      // Dados de teste para verificar badge URGENTE e links - calcular contagem correta
+      const acompanhamentosTeste: Acompanhamento[] = []; // Vazio para teste
+      
+      const boletimTeste: Boletim = {
+        id: id,
+        numero_edicao: 341,
+        datahora_fechamento: new Date().toISOString(),
+        filtro_id: 1,
+        quantidade_licitacoes: licitacoesTeste.length, // Contar dados reais de teste
+        quantidade_acompanhamentos: acompanhamentosTeste.length, // Contar dados reais de teste
+        visualizado: this.viewedBoletins.has(id)
+      };
+
       return { 
         boletim: boletimTeste, 
         licitacoes: licitacoesTeste, 
-        acompanhamentos: [] 
+        acompanhamentos: acompanhamentosTeste 
       };
     }
   }
