@@ -129,43 +129,18 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
     try {
       const response = await conLicitacaoAPI.getBoletins(filtroId, page, perPage);
       
-      // Para cada boletim, buscar detalhes para obter contagem correta
-      const boletinsComContagem: Boletim[] = [];
-      
-      for (const boletim of response.boletins) {
-        try {
-          // Tentar buscar dados detalhados do boletim para contar licitações e acompanhamentos
-          const boletimDetalhado = await this.getBoletim(boletim.id);
-          if (boletimDetalhado) {
-            boletinsComContagem.push(boletimDetalhado.boletim);
-          } else {
-            // Se não conseguir buscar detalhes, usar dados básicos com contagem zero
-            boletinsComContagem.push({
-              id: boletim.id,
-              numero_edicao: boletim.numero_edicao,
-              datahora_fechamento: boletim.datahora_fechamento,
-              filtro_id: boletim.filtro_id,
-              quantidade_licitacoes: 0,
-              quantidade_acompanhamentos: 0,
-              visualizado: this.viewedBoletins.has(boletim.id),
-            });
-          }
-        } catch (error) {
-          // Em caso de erro, usar dados básicos
-          boletinsComContagem.push({
-            id: boletim.id,
-            numero_edicao: boletim.numero_edicao,
-            datahora_fechamento: boletim.datahora_fechamento,
-            filtro_id: boletim.filtro_id,
-            quantidade_licitacoes: 0,
-            quantidade_acompanhamentos: 0,
-            visualizado: this.viewedBoletins.has(boletim.id),
-          });
-        }
-      }
+      const boletins: Boletim[] = response.boletins.map((boletim: any) => ({
+        id: boletim.id,
+        numero_edicao: boletim.numero_edicao,
+        datahora_fechamento: boletim.datahora_fechamento,
+        filtro_id: boletim.filtro_id,
+        quantidade_licitacoes: boletim.quantidade_licitacoes || 0, // Usar dados da API quando disponível
+        quantidade_acompanhamentos: boletim.quantidade_acompanhamentos || 0,
+        visualizado: this.viewedBoletins.has(boletim.id),
+      }));
 
       return {
-        boletins: boletinsComContagem,
+        boletins,
         total: response.filtro.total_boletins
       };
     } catch (error: any) {
@@ -179,20 +154,11 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
       }
       
       // Dados de teste para desenvolvimento enquanto IP não está autorizado
-      // Buscar dados detalhados do boletim teste para calcular contagens corretas
-      try {
-        const boletimDetalhado = await this.getBoletim(1);
-        if (boletimDetalhado) {
-          return { boletins: [boletimDetalhado.boletim], total: 1 };
-        }
-      } catch (error) {
-        // Se falhar, usar valores padrão
-      }
       
       const boletimTeste: Boletim = {
         id: 1,
         numero_edicao: 341,
-        datahora_fechamento: new Date().toISOString(),
+        datahora_fechamento: "2025-07-29T12:00:00.000Z", // Data fixa para hoje ser encontrada no calendário
         filtro_id: filtroId,
         quantidade_licitacoes: 2, // Valor fixo para desenvolvimento
         quantidade_acompanhamentos: 0,
@@ -312,9 +278,11 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
         }
       ];
 
-      // Adicionar ao cache
+      // Adicionar ao cache somente se não existir (evitar duplicação)
       licitacoesTeste.forEach(licitacao => {
-        this.cachedBiddings.set(licitacao.id, licitacao);
+        if (!this.cachedBiddings.has(licitacao.id)) {
+          this.cachedBiddings.set(licitacao.id, licitacao);
+        }
       });
       this.lastCacheUpdate = Date.now();
 
@@ -324,7 +292,7 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
       const boletimTeste: Boletim = {
         id: id,
         numero_edicao: 341,
-        datahora_fechamento: new Date().toISOString(),
+        datahora_fechamento: "2025-07-29T12:00:00.000Z", // Data fixa para hoje ser encontrada no calendário
         filtro_id: 1,
         quantidade_licitacoes: licitacoesTeste.length, // Contar dados reais de teste
         quantidade_acompanhamentos: acompanhamentosTeste.length, // Contar dados reais de teste
