@@ -131,13 +131,16 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
       
       // Para cada boletim, buscar dados detalhados para calcular contagem correta
       const boletinsComContagem: Boletim[] = [];
+      console.log(`📊 Processando ${response.boletins.length} boletins da API ConLicitação para contagem dinâmica...`);
       
       for (const boletim of response.boletins) {
         try {
           // Buscar dados completos do boletim para contar licitações e acompanhamentos
+          console.log(`🔍 Buscando detalhes do boletim ${boletim.id}...`);
           const boletimCompleto = await conLicitacaoAPI.getBoletimData(boletim.id);
           const licitacoesCount = (boletimCompleto.licitacoes || []).length;
           const acompanhamentosCount = (boletimCompleto.acompanhamentos || []).length;
+          console.log(`✅ Boletim ${boletim.id}: ${licitacoesCount} licitações, ${acompanhamentosCount} acompanhamentos`);
           
           boletinsComContagem.push({
             id: boletim.id,
