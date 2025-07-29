@@ -135,19 +135,25 @@ The system is configured for production use with real data only:
 
 ## Local Development
 
-The application is configured for local development via VS Code terminal. User executes locally with authorized IP for ConLicitação API access.
+The application is configured for local development with proper TypeScript support. See `LOCAL_SETUP.md` for detailed setup instructions.
 
 ### Local Execution:
 ```bash
 npm install
-npx tsx server/index.ts
+npm run dev
 ```
 Application runs on `http://localhost:5000` with full API access when IP is authorized.
+
+### TypeScript Configuration:
+- `env.d.ts` - Type definitions for Vite and Node.js environments
+- `tsconfig.json` - Optimized configuration for both Replit and local development
+- Resolves common TypeScript errors when running locally
 
 ## Changelog
 
 ```
 Changelog:
+- January 28, 2025. Corrigidos erros TypeScript para execução local - criado env.d.ts com definições de tipos e LOCAL_SETUP.md com instruções completas
 - January 28, 2025. Implementada contagem dinâmica de licitações e acompanhamentos nos boletins baseada nos dados reais da API - sistema agora calcula quantidade_licitacoes e quantidade_acompanhamentos através do tamanho real dos arrays retornados pela ConLicitação API
 - January 28, 2025. Expandido mapeamento de status truncados: RET→RETIFICAÇÃO, ADIA→ADIADA, PRO→PRORROGADA, ALTER→ALTERADA, REAB→REABERTA, CANCE→CANCELADA, SUS→SUSPENSA, REVO→REVOGADA
 - January 28, 2025. Corrigido tratamento de status truncados nos cards com mapeamento completo e linha de status separada
