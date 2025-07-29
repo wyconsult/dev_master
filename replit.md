@@ -147,6 +147,7 @@ Application runs on `http://localhost:5000` with full API access when IP is auth
 
 ```
 Changelog:
+- January 28, 2025. Implementada contagem dinâmica de licitações e acompanhamentos nos boletins baseada nos dados reais da API
 - January 28, 2025. Expandido mapeamento de status truncados: RET→RETIFICAÇÃO, ADIA→ADIADA, PRO→PRORROGADA, ALTER→ALTERADA, REAB→REABERTA, CANCE→CANCELADA, SUS→SUSPENSA, REVO→REVOGADA
 - January 28, 2025. Corrigido tratamento de status truncados nos cards com mapeamento completo e linha de status separada
 - January 9, 2025. Implementado filtro duplo de datas na página favoritos (inclusão favorito vs realização)
