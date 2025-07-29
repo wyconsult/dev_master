@@ -120,10 +120,11 @@ The system integrates with the official ConLicitação API to provide real-time 
 
 ### Production-Ready Configuration
 The system is configured for production use with real data only:
-- **No fallback data**: When API access is restricted, system returns empty results gracefully
 - **Real API integration**: All data comes from ConLicitação API when IP is authorized
-- **Enhanced error detection**: System detects IP authorization and compares with authorized IP
-- **Authorized IPs**: 35.227.80.200 (development - Replit atual), 31.97.26.138 (production)
+- **Enhanced error detection**: System detects IP authorization and compares with authorized IP  
+- **Authorized IPs**: 35.227.80.200 (development - Replit), 31.97.26.138 (production)
+- **Dynamic counting**: quantidade_licitacoes and quantidade_acompanhamentos calculated from real API data arrays
+- **Fallback handling**: When IP unauthorized, maintains system functionality with test data
 - **Production deployment**: Ready for deployment with IP authorization workflow documented
 - **IP Management**: Automatic detection and comparison with authorized IPs list
 
@@ -147,7 +148,7 @@ Application runs on `http://localhost:5000` with full API access when IP is auth
 
 ```
 Changelog:
-- January 28, 2025. Implementada contagem dinâmica de licitações e acompanhamentos nos boletins baseada nos dados reais da API
+- January 28, 2025. Implementada contagem dinâmica de licitações e acompanhamentos nos boletins baseada nos dados reais da API - sistema agora calcula quantidade_licitacoes e quantidade_acompanhamentos através do tamanho real dos arrays retornados pela ConLicitação API
 - January 28, 2025. Expandido mapeamento de status truncados: RET→RETIFICAÇÃO, ADIA→ADIADA, PRO→PRORROGADA, ALTER→ALTERADA, REAB→REABERTA, CANCE→CANCELADA, SUS→SUSPENSA, REVO→REVOGADA
 - January 28, 2025. Corrigido tratamento de status truncados nos cards com mapeamento completo e linha de status separada
 - January 9, 2025. Implementado filtro duplo de datas na página favoritos (inclusão favorito vs realização)
