@@ -129,56 +129,39 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
     try {
       const response = await conLicitacaoAPI.getBoletins(filtroId, page, perPage);
       
-      // Para cada boletim, buscar dados detalhados para calcular contagem correta
-      const boletinsComContagem: Boletim[] = [];
-      console.log(`📊 Processando ${response.boletins.length} boletins da API ConLicitação para contagem dinâmica...`);
-      
-      for (const boletim of response.boletins) {
-        try {
-          // Buscar dados completos do boletim para contar licitações e acompanhamentos
-          console.log(`🔍 Buscando detalhes do boletim ${boletim.id}...`);
-          const boletimCompleto = await conLicitacaoAPI.getBoletimData(boletim.id);
-          const licitacoesCount = (boletimCompleto.licitacoes || []).length;
-          const acompanhamentosCount = (boletimCompleto.acompanhamentos || []).length;
-          console.log(`✅ Boletim ${boletim.id}: ${licitacoesCount} licitações, ${acompanhamentosCount} acompanhamentos`);
-          
-          boletinsComContagem.push({
-            id: boletim.id,
-            numero_edicao: boletim.numero_edicao,
-            datahora_fechamento: boletim.datahora_fechamento,
-            filtro_id: boletim.filtro_id,
-            quantidade_licitacoes: licitacoesCount, // Contagem real dos arrays
-            quantidade_acompanhamentos: acompanhamentosCount, // Contagem real dos arrays
-            visualizado: this.viewedBoletins.has(boletim.id),
-          });
-          
-          // Opcional: adicionar licitações ao cache para melhor performance
-          if (boletimCompleto.licitacoes) {
-            boletimCompleto.licitacoes.forEach((licitacao: any) => {
-              const transformedLicitacao = this.transformLicitacaoFromAPI(licitacao, boletim.id);
-              if (!this.cachedBiddings.has(transformedLicitacao.id)) {
-                this.cachedBiddings.set(transformedLicitacao.id, transformedLicitacao);
-              }
-            });
-            this.lastCacheUpdate = Date.now();
+      // Implementação simplificada: usar dados da API quando disponível
+      // Para contagem dinâmica em produção, será necessário fazer chamadas adicionais
+      const boletins: Boletim[] = await Promise.all(
+        response.boletins.map(async (boletim: any) => {
+          try {
+            // Tentar buscar contagem real apenas quando necessário
+            const boletimDetalhado = await conLicitacaoAPI.getBoletimData(boletim.id);
+            return {
+              id: boletim.id,
+              numero_edicao: boletim.numero_edicao,
+              datahora_fechamento: boletim.datahora_fechamento,
+              filtro_id: boletim.filtro_id,
+              quantidade_licitacoes: (boletimDetalhado.licitacoes || []).length,
+              quantidade_acompanhamentos: (boletimDetalhado.acompanhamentos || []).length,
+              visualizado: this.viewedBoletins.has(boletim.id),
+            };
+          } catch (error) {
+            // Em caso de erro, usar dados básicos
+            return {
+              id: boletim.id,
+              numero_edicao: boletim.numero_edicao,
+              datahora_fechamento: boletim.datahora_fechamento,
+              filtro_id: boletim.filtro_id,
+              quantidade_licitacoes: boletim.quantidade_licitacoes || 0,
+              quantidade_acompanhamentos: boletim.quantidade_acompanhamentos || 0,
+              visualizado: this.viewedBoletins.has(boletim.id),
+            };
           }
-        } catch (error) {
-          console.error(`Erro ao buscar detalhes do boletim ${boletim.id}:`, error);
-          // Em caso de erro, usar contagem da API original ou zero
-          boletinsComContagem.push({
-            id: boletim.id,
-            numero_edicao: boletim.numero_edicao,
-            datahora_fechamento: boletim.datahora_fechamento,
-            filtro_id: boletim.filtro_id,
-            quantidade_licitacoes: boletim.quantidade_licitacoes || 0,
-            quantidade_acompanhamentos: boletim.quantidade_acompanhamentos || 0,
-            visualizado: this.viewedBoletins.has(boletim.id),
-          });
-        }
-      }
+        })
+      );
 
       return {
-        boletins: boletinsComContagem,
+        boletins,
         total: response.filtro.total_boletins
       };
     } catch (error: any) {
@@ -242,7 +225,7 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
 
 
 
-      // Atualizar cache das licitações (evitar duplicação)
+      // Atualizar cache das licitações somente se não existir (evitar duplicação)
       licitacoes.forEach(licitacao => {
         if (!this.cachedBiddings.has(licitacao.id)) {
           this.cachedBiddings.set(licitacao.id, licitacao);
