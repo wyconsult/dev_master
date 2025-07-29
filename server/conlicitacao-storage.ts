@@ -129,18 +129,53 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
     try {
       const response = await conLicitacaoAPI.getBoletins(filtroId, page, perPage);
       
-      const boletins: Boletim[] = response.boletins.map((boletim: any) => ({
-        id: boletim.id,
-        numero_edicao: boletim.numero_edicao,
-        datahora_fechamento: boletim.datahora_fechamento,
-        filtro_id: boletim.filtro_id,
-        quantidade_licitacoes: boletim.quantidade_licitacoes || 0, // Usar dados da API quando disponível
-        quantidade_acompanhamentos: boletim.quantidade_acompanhamentos || 0,
-        visualizado: this.viewedBoletins.has(boletim.id),
-      }));
+      // Para cada boletim, buscar dados detalhados para calcular contagem correta
+      const boletinsComContagem: Boletim[] = [];
+      
+      for (const boletim of response.boletins) {
+        try {
+          // Buscar dados completos do boletim para contar licitações e acompanhamentos
+          const boletimCompleto = await conLicitacaoAPI.getBoletimData(boletim.id);
+          const licitacoesCount = (boletimCompleto.licitacoes || []).length;
+          const acompanhamentosCount = (boletimCompleto.acompanhamentos || []).length;
+          
+          boletinsComContagem.push({
+            id: boletim.id,
+            numero_edicao: boletim.numero_edicao,
+            datahora_fechamento: boletim.datahora_fechamento,
+            filtro_id: boletim.filtro_id,
+            quantidade_licitacoes: licitacoesCount, // Contagem real dos arrays
+            quantidade_acompanhamentos: acompanhamentosCount, // Contagem real dos arrays
+            visualizado: this.viewedBoletins.has(boletim.id),
+          });
+          
+          // Opcional: adicionar licitações ao cache para melhor performance
+          if (boletimCompleto.licitacoes) {
+            boletimCompleto.licitacoes.forEach((licitacao: any) => {
+              const transformedLicitacao = this.transformLicitacaoFromAPI(licitacao, boletim.id);
+              if (!this.cachedBiddings.has(transformedLicitacao.id)) {
+                this.cachedBiddings.set(transformedLicitacao.id, transformedLicitacao);
+              }
+            });
+            this.lastCacheUpdate = Date.now();
+          }
+        } catch (error) {
+          console.error(`Erro ao buscar detalhes do boletim ${boletim.id}:`, error);
+          // Em caso de erro, usar contagem da API original ou zero
+          boletinsComContagem.push({
+            id: boletim.id,
+            numero_edicao: boletim.numero_edicao,
+            datahora_fechamento: boletim.datahora_fechamento,
+            filtro_id: boletim.filtro_id,
+            quantidade_licitacoes: boletim.quantidade_licitacoes || 0,
+            quantidade_acompanhamentos: boletim.quantidade_acompanhamentos || 0,
+            visualizado: this.viewedBoletins.has(boletim.id),
+          });
+        }
+      }
 
       return {
-        boletins,
+        boletins: boletinsComContagem,
         total: response.filtro.total_boletins
       };
     } catch (error: any) {
@@ -204,9 +239,11 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
 
 
 
-      // Atualizar cache das licitações
+      // Atualizar cache das licitações (evitar duplicação)
       licitacoes.forEach(licitacao => {
-        this.cachedBiddings.set(licitacao.id, licitacao);
+        if (!this.cachedBiddings.has(licitacao.id)) {
+          this.cachedBiddings.set(licitacao.id, licitacao);
+        }
       });
       this.lastCacheUpdate = Date.now();
 
