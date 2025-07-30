@@ -153,6 +153,7 @@ Application runs on `http://localhost:5000` with full API access when IP is auth
 
 ```
 Changelog:
+- January 28, 2025. Corrigido problema crítico: licitações agora são pré-carregadas automaticamente, permitindo busca sem visualizar boletins
 - January 28, 2025. Sistema testado e validado para deploy - todas as funcionalidades funcionando corretamente
 - January 28, 2025. Corrigidos problemas de duplicação de licitações e boletins vazios - fixada data para calendário e cache otimizado
 - January 28, 2025. Corrigidos erros TypeScript para execução local - criado env.d.ts com definições de tipos e LOCAL_SETUP.md com instruções completas
