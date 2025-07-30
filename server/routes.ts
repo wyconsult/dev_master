@@ -61,11 +61,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Favorites routes (versão simplificada)
+  // Favorites routes
+  // Endpoint geral para dashboard (sem userId específico)
   app.get("/api/favorites", async (req, res) => {
     try {
+      // Para o dashboard, usar usuário padrão (1) se não especificado
       const userId = 1; // Usuário padrão para desenvolvimento
       const favorites = await conLicitacaoStorage.getFavorites(userId);
+      
+      // Adicionar headers para evitar cache
+      res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+      res.set('Pragma', 'no-cache');
+      res.set('Expires', '0');
+      
       res.json(favorites);
     } catch (error) {
       console.error('Erro ao buscar favoritos:', error);
@@ -73,19 +81,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/favorites/:userId", async (req, res) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      const { date, dateFrom, dateTo } = req.query;
+      const favorites = await conLicitacaoStorage.getFavorites(userId, date as string, dateFrom as string, dateTo as string);
+      
+      // Adicionar headers para evitar cache
+      res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+      res.set('Pragma', 'no-cache');
+      res.set('Expires', '0');
+      
+      res.json(favorites);
+    } catch (error) {
+      res.status(500).json({ message: "Erro interno do servidor" });
+    }
+  });
+
   app.post("/api/favorites", async (req, res) => {
     try {
-      const { biddingId } = req.body;
-      const userId = 1; // Usuário padrão para desenvolvimento
+      const { userId, biddingId } = req.body;
       
-      if (!biddingId) {
-        return res.status(400).json({ message: "biddingId é obrigatório" });
+      if (!userId || !biddingId) {
+        return res.status(400).json({ message: "userId e biddingId são obrigatórios" });
       }
       
-      const favorite = await conLicitacaoStorage.addFavorite(userId, biddingId);
+      const favorite = await conLicitacaoStorage.addFavorite({ userId, biddingId });
       res.status(201).json(favorite);
     } catch (error) {
-      console.error("Erro ao adicionar favorito:", error);
       res.status(500).json({ message: "Erro interno do servidor" });
     }
   });
@@ -94,10 +117,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = parseInt(req.params.userId);
       const biddingId = parseInt(req.params.biddingId);
+      
       await conLicitacaoStorage.removeFavorite(userId, biddingId);
-      res.json({ success: true });
+      res.status(204).send();
     } catch (error) {
-      console.error("Erro ao remover favorito:", error);
       res.status(500).json({ message: "Erro interno do servidor" });
     }
   });

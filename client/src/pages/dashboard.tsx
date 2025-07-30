@@ -6,7 +6,7 @@ import { Link } from "wouter";
 import { 
   FileText, 
   Gavel, 
-  Heart,
+  Heart, 
   TrendingUp, 
   Clock, 
   Building,
@@ -31,7 +31,13 @@ export default function Dashboard() {
     queryKey: ["/api/boletins"],
   });
 
-
+  const { data: favorites = [], isLoading: isLoadingFavorites } = useQuery<Bidding[]>({
+    queryKey: ["/api/favorites"],
+    refetchOnWindowFocus: true,
+    staleTime: 0,
+    refetchInterval: 1000, // Atualizar a cada 1 segundo
+    refetchOnMount: true,
+  });
 
   // Cálculos baseados em dados reais da API  
   const totalLicitacoes = biddings.length;
@@ -42,7 +48,7 @@ export default function Dashboard() {
   
   const totalBoletins = boletins.length;
   const boletinsNaoVisualizados = boletins.filter(b => !b.visualizado).length;
-
+  const totalFavoritos = favorites.length;
 
   const dashboardCards = [
     {
@@ -72,7 +78,7 @@ export default function Dashboard() {
       link: "/favorites",
       gradient: "bg-gradient-to-br from-red-500 to-pink-700",
       hoverGradient: "hover:from-red-600 hover:to-pink-800",
-      count: "Seus salvos",
+      count: isLoadingFavorites ? "..." : `${totalFavoritos} ${totalFavoritos === 1 ? 'salvo' : 'salvos'}`,
       bgPattern: "bg-red-50"
     }
   ];

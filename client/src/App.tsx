@@ -71,7 +71,6 @@ function Router() {
           <Favorites />
         </ProtectedRoute>
       </Route>
-
       <Route component={NotFound} />
     </Switch>
   );
