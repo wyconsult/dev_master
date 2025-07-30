@@ -10,7 +10,7 @@ import ForgotPassword from "@/pages/forgot-password";
 import Dashboard from "@/pages/dashboard";
 import Boletins from "@/pages/boletins";
 import Biddings from "@/pages/biddings";
-import Favorites from "@/pages/favorites";
+
 import NotFound from "@/pages/not-found";
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -66,11 +66,7 @@ function Router() {
           <Biddings />
         </ProtectedRoute>
       </Route>
-      <Route path="/favorites">
-        <ProtectedRoute>
-          <Favorites />
-        </ProtectedRoute>
-      </Route>
+
       <Route component={NotFound} />
     </Switch>
   );

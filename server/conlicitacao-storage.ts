@@ -25,8 +25,8 @@ export interface IConLicitacaoStorage {
   getBidding(id: number): Promise<Bidding | undefined>;
   
   // Favorites (mantemos localmente)
-  getFavorites(userId: number, date?: string, dateFrom?: string, dateTo?: string): Promise<Bidding[]>;
-  addFavorite(favorite: InsertFavorite): Promise<Favorite>;
+  getFavorites(userId: number): Promise<Bidding[]>;
+  addFavorite(userId: number, biddingId: number): Promise<Favorite>;
   removeFavorite(userId: number, biddingId: number): Promise<void>;
   isFavorite(userId: number, biddingId: number): Promise<boolean>;
 }
@@ -464,37 +464,10 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
   }
 
   // Métodos de favoritos (mantemos localmente)
-  async getFavorites(userId: number, date?: string, dateFrom?: string, dateTo?: string): Promise<Bidding[]> {
-    let userFavorites = Array.from(this.favorites.values())
-      .filter(fav => fav.userId === userId);
-
-    if (date) {
-      userFavorites = userFavorites.filter(fav => {
-        const favDate = fav.createdAt?.toISOString().split('T')[0];
-        return favDate === date;
-      });
-    }
-    
-    if (dateFrom || dateTo) {
-      userFavorites = userFavorites.filter(fav => {
-        const favDate = fav.createdAt?.toISOString().split('T')[0];
-        if (!favDate) return false;
-        
-        let isInRange = true;
-        
-        if (dateFrom) {
-          isInRange = isInRange && favDate >= dateFrom;
-        }
-        
-        if (dateTo) {
-          isInRange = isInRange && favDate <= dateTo;
-        }
-        
-        return isInRange;
-      });
-    }
-    
+  async getFavorites(userId: number): Promise<Bidding[]> {
+    const userFavorites = Array.from(this.favorites.values()).filter(fav => fav.userId === userId);
     const favoriteBiddings: Bidding[] = [];
+    
     for (const fav of userFavorites) {
       const bidding = this.cachedBiddings.get(fav.biddingId);
       if (bidding) {
@@ -505,33 +478,28 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
     return favoriteBiddings;
   }
 
-  async addFavorite(favoriteData: {
-    userId: number;
-    biddingId: number;
-    tipoObjeto?: string;
-    objeto?: string;
-    site?: string;
-    siteType?: string;
-    licitacaoData?: string;
-  }): Promise<Favorite> {
-    const id = this.currentFavoriteId++;
+  async addFavorite(userId: number, biddingId: number): Promise<Favorite> {
     const favorite: Favorite = {
-      id,
-      userId: favoriteData.userId,
-      biddingId: favoriteData.biddingId,
-      tipoObjeto: favoriteData.tipoObjeto || null,
-      objeto: favoriteData.objeto || null,
-      site: favoriteData.site || null,
-      siteType: favoriteData.siteType || null,
-      licitacaoData: favoriteData.licitacaoData || null,
+      id: this.favorites.size + 1,
+      userId,
+      biddingId,
       createdAt: new Date(),
     };
-    this.favorites.set(id, favorite);
+    
+    this.favorites.set(favorite.id, favorite);
     return favorite;
   }
 
-  async removeFavorite(favoriteId: number): Promise<void> {
-    this.favorites.delete(favoriteId);
+  async removeFavorite(userId: number, biddingId: number): Promise<void> {
+    let keyToDelete: number | undefined;
+    this.favorites.forEach((favorite, id) => {
+      if (favorite.userId === userId && favorite.biddingId === biddingId) {
+        keyToDelete = id;
+      }
+    });
+    if (keyToDelete !== undefined) {
+      this.favorites.delete(keyToDelete);
+    }
   }
 
   async isFavorite(userId: number, biddingId: number): Promise<boolean> {

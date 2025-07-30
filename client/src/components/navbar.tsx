@@ -62,19 +62,7 @@ export function Navbar() {
                 Licitações
               </Button>
             </Link>
-            <Link href="/favorites">
-              <Button 
-                variant="ghost" 
-                className={`px-6 py-3 text-sm font-semibold rounded-xl transition-all duration-300 ${
-                  location === "/favorites" 
-                    ? "bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg" 
-                    : "text-gray-700 hover:bg-red-50 hover:text-red-700 hover:shadow-md hover:-translate-y-0.5"
-                }`}
-              >
-                <Heart className="mr-2 h-4 w-4" />
-                Meus Favoritos
-              </Button>
-            </Link>
+
             <Button 
               variant="ghost" 
               onClick={handleLogout}
