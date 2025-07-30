@@ -261,33 +261,33 @@ export default function Boletins() {
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6 lg:gap-8">
           <div className="lg:col-span-2">
-            <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm">
-              <CardHeader className="pb-4">
+            <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm mx-2 md:mx-0">
+              <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
-                  <CardTitle className="flex items-center gap-2 text-lg md:text-xl">
+                  <CardTitle className="flex items-center gap-2 text-base md:text-xl">
                     <Calendar className="h-4 w-4 md:h-5 md:w-5" />
-                    <span className="capitalize">{format(currentDate, "MMMM yyyy", { locale: ptBR })}</span>
+                    <span className="capitalize text-sm md:text-base">{format(currentDate, "MMMM yyyy", { locale: ptBR })}</span>
                   </CardTitle>
-                  <div className="flex gap-1 md:gap-2">
-                    <Button variant="outline" size="sm" onClick={previousMonth} className="border-gray-300 h-8 w-8 p-0">
-                      <ChevronLeft className="h-3 w-3 md:h-4 md:w-4" />
+                  <div className="flex gap-1">
+                    <Button variant="outline" size="sm" onClick={previousMonth} className="border-gray-300 h-7 w-7 p-0">
+                      <ChevronLeft className="h-3 w-3" />
                     </Button>
-                    <Button variant="outline" size="sm" onClick={nextMonth} className="border-gray-300 h-8 w-8 p-0">
-                      <ChevronRight className="h-3 w-3 md:h-4 md:w-4" />
+                    <Button variant="outline" size="sm" onClick={nextMonth} className="border-gray-300 h-7 w-7 p-0">
+                      <ChevronRight className="h-3 w-3" />
                     </Button>
                   </div>
                 </div>
               </CardHeader>
-              <CardContent className="px-3 md:px-6">
-                <div className="grid grid-cols-7 gap-0.5 md:gap-1 mb-4">
+              <CardContent className="px-2 md:px-6 pb-4">
+                <div className="grid grid-cols-7 gap-1 mb-4">
                   {['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].map(day => (
-                    <div key={day} className="p-1 md:p-2 text-center text-xs md:text-sm font-medium text-gray-500">
+                    <div key={day} className="p-1 text-center text-xs font-medium text-gray-500">
                       {isMobile ? day.slice(0, 1) : day}
                     </div>
                   ))}
                   
                   {Array.from({ length: monthStart.getDay() }).map((_, index) => (
-                    <div key={`empty-${index}`} className="p-1 md:p-2"></div>
+                    <div key={`empty-${index}`} className="p-1"></div>
                   ))}
                   
                   {daysInMonth.map((date, index) => {
@@ -297,11 +297,11 @@ export default function Boletins() {
                     const isCurrentDay = isToday(date);
 
                     return (
-                      <div key={index} className="relative">
+                      <div key={index} className="relative aspect-square">
                         <button
                           onClick={() => setSelectedDate(date)}
                           className={cn(
-                            "w-full h-12 md:h-16 p-1 md:p-2 text-xs md:text-sm rounded-md border border-gray-300 transition-colors flex flex-col items-center justify-start overflow-hidden",
+                            "w-full h-full min-h-[44px] p-1 text-xs rounded border transition-colors flex flex-col items-center justify-start overflow-hidden",
                             {
                               "bg-blue-500 text-white border-blue-500": isSelected,
                               "bg-blue-100 border-blue-300": isCurrentDay && !isSelected,
@@ -310,28 +310,28 @@ export default function Boletins() {
                             }
                           )}
                         >
-                          <span className="font-medium">{date.getDate()}</span>
+                          <span className="font-medium text-xs leading-tight">{date.getDate()}</span>
                           {dayBoletins.length > 0 && (
-                            <div className="flex flex-wrap gap-0.5 justify-center max-w-full mt-0.5">
-                              {dayBoletins.slice(0, isMobile ? 2 : 3).map((boletim, idx) => (
+                            <div className="flex flex-wrap gap-0.5 justify-center w-full mt-1">
+                              {dayBoletins.slice(0, isMobile ? 1 : 2).map((boletim, idx) => (
                                 <div
                                   key={`${boletim.id}-${idx}`}
                                   className={cn(
-                                    "text-xs px-0.5 py-0.5 rounded text-white text-center flex-shrink-0 leading-none",
+                                    "px-1 py-0.5 rounded text-white text-center flex-shrink-0",
                                     getStatusColor(boletim.visualizado)
                                   )}
                                   style={{ 
-                                    fontSize: isMobile ? '7px' : '9px', 
-                                    minHeight: isMobile ? '12px' : '14px', 
-                                    lineHeight: isMobile ? '12px' : '14px' 
+                                    fontSize: '6px', 
+                                    lineHeight: '8px',
+                                    minWidth: '12px'
                                   }}
                                 >
                                   {getTurno(boletim.datahora_fechamento)}
                                 </div>
                               ))}
-                              {dayBoletins.length > (isMobile ? 2 : 3) && (
-                                <div className="text-xs text-gray-500" style={{ fontSize: '7px' }}>
-                                  +{dayBoletins.length - (isMobile ? 2 : 3)}
+                              {dayBoletins.length > (isMobile ? 1 : 2) && (
+                                <div className="text-gray-500" style={{ fontSize: '6px', lineHeight: '8px' }}>
+                                  +{dayBoletins.length - (isMobile ? 1 : 2)}
                                 </div>
                               )}
                             </div>
@@ -356,13 +356,13 @@ export default function Boletins() {
             </Card>
           </div>
 
-          <div className="mt-6 lg:mt-0">
-            <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm">
-              <CardHeader className="pb-4">
-                <CardTitle className="text-lg md:text-xl">
+          <div className="mt-4 lg:mt-0">
+            <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm mx-2 md:mx-0">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base md:text-xl">
                   {selectedDate ? format(selectedDate, "dd 'de' MMMM", { locale: ptBR }) : "Selecione uma data"}
                 </CardTitle>
-                <CardDescription className="text-sm">
+                <CardDescription className="text-xs md:text-sm">
                   {selectedDate && selectedDateBoletins.length > 0 
                     ? `${selectedDateBoletins.length} boletim(s) encontrado(s)`
                     : selectedDate 
@@ -371,7 +371,7 @@ export default function Boletins() {
                   }
                 </CardDescription>
               </CardHeader>
-              <CardContent className="px-3 md:px-6">
+              <CardContent className="px-2 md:px-6">
                 {selectedDate && selectedDateBoletins.length === 0 && (
                   <p className="text-gray-500 text-center py-6 md:py-8 text-sm">
                     Nenhum boletim encontrado para esta data.
