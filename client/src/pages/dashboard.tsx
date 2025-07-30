@@ -6,7 +6,6 @@ import { Link } from "wouter";
 import { 
   FileText, 
   Gavel, 
-  Heart, 
   TrendingUp, 
   Clock, 
   Building,
@@ -31,13 +30,7 @@ export default function Dashboard() {
     queryKey: ["/api/boletins"],
   });
 
-  const { data: favorites = [], isLoading: isLoadingFavorites } = useQuery<Bidding[]>({
-    queryKey: ["/api/favorites"],
-    refetchOnWindowFocus: true,
-    staleTime: 0,
-    refetchInterval: 1000, // Atualizar a cada 1 segundo
-    refetchOnMount: true,
-  });
+
 
   // Cálculos baseados em dados reais da API  
   const totalLicitacoes = biddings.length;
@@ -48,7 +41,7 @@ export default function Dashboard() {
   
   const totalBoletins = boletins.length;
   const boletinsNaoVisualizados = boletins.filter(b => !b.visualizado).length;
-  const totalFavoritos = favorites.length;
+
 
   const dashboardCards = [
     {
@@ -71,16 +64,7 @@ export default function Dashboard() {
       count: isLoadingBiddings ? "..." : `${totalLicitacoes} total`,
       bgPattern: "bg-green-50"
     },
-    {
-      title: "Favoritos",
-      description: "Acesse suas licitações favoritas",
-      icon: Heart,
-      link: "/favorites",
-      gradient: "bg-gradient-to-br from-red-500 to-pink-700",
-      hoverGradient: "hover:from-red-600 hover:to-pink-800",
-      count: isLoadingFavorites ? "..." : `${totalFavoritos} ${totalFavoritos === 1 ? 'salvo' : 'salvos'}`,
-      bgPattern: "bg-red-50"
-    }
+
   ];
 
 
@@ -107,7 +91,7 @@ export default function Dashboard() {
         </div>
 
         {/* Main Navigation Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           {dashboardCards.map((card, index) => (
             <Link key={index} href={card.link}>
               <Card className={`hover:shadow-2xl hover:-translate-y-2 transition-all duration-500 cursor-pointer group border-0 shadow-lg overflow-hidden ${card.bgPattern}/30 backdrop-blur-sm`}>
