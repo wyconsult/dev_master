@@ -62,7 +62,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Favorites routes
-  // Endpoint geral para dashboard (sem userId específico)
   app.get("/api/favorites", async (req, res) => {
     try {
       // Para o dashboard, usar usuário padrão (1) se não especificado
@@ -100,27 +99,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/favorites", async (req, res) => {
     try {
-      const { userId, biddingId } = req.body;
+      const userId = 1; // Usuário padrão para desenvolvimento
+      const { biddingId, tipoObjeto, objeto, site, siteType, licitacaoData } = req.body;
       
-      if (!userId || !biddingId) {
-        return res.status(400).json({ message: "userId e biddingId são obrigatórios" });
+      if (!biddingId) {
+        return res.status(400).json({ message: "biddingId é obrigatório" });
       }
       
-      const favorite = await conLicitacaoStorage.addFavorite({ userId, biddingId });
+      const favoriteData = {
+        userId,
+        biddingId,
+        tipoObjeto: tipoObjeto || "Não categorizado",
+        objeto: objeto || "",
+        site: site || "Não especificado",
+        siteType: siteType || "Não categorizado",
+        licitacaoData: licitacaoData || "{}"
+      };
+      
+      const favorite = await conLicitacaoStorage.addFavorite(favoriteData);
       res.status(201).json(favorite);
     } catch (error) {
+      console.error("Erro ao adicionar favorito:", error);
       res.status(500).json({ message: "Erro interno do servidor" });
     }
   });
 
-  app.delete("/api/favorites/:userId/:biddingId", async (req, res) => {
+  app.delete("/api/favorites/:id", async (req, res) => {
     try {
-      const userId = parseInt(req.params.userId);
-      const biddingId = parseInt(req.params.biddingId);
-      
-      await conLicitacaoStorage.removeFavorite(userId, biddingId);
-      res.status(204).send();
+      const favoriteId = parseInt(req.params.id);
+      await conLicitacaoStorage.removeFavorite(favoriteId);
+      res.json({ success: true });
     } catch (error) {
+      console.error("Erro ao remover favorito:", error);
       res.status(500).json({ message: "Erro interno do servidor" });
     }
   });

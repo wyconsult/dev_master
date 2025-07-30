@@ -505,23 +505,33 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
     return favoriteBiddings;
   }
 
-  async addFavorite(insertFavorite: InsertFavorite): Promise<Favorite> {
+  async addFavorite(favoriteData: {
+    userId: number;
+    biddingId: number;
+    tipoObjeto?: string;
+    objeto?: string;
+    site?: string;
+    siteType?: string;
+    licitacaoData?: string;
+  }): Promise<Favorite> {
     const id = this.currentFavoriteId++;
-    const favorite: Favorite = { ...insertFavorite, id, createdAt: new Date() };
+    const favorite: Favorite = {
+      id,
+      userId: favoriteData.userId,
+      biddingId: favoriteData.biddingId,
+      tipoObjeto: favoriteData.tipoObjeto || null,
+      objeto: favoriteData.objeto || null,
+      site: favoriteData.site || null,
+      siteType: favoriteData.siteType || null,
+      licitacaoData: favoriteData.licitacaoData || null,
+      createdAt: new Date(),
+    };
     this.favorites.set(id, favorite);
     return favorite;
   }
 
-  async removeFavorite(userId: number, biddingId: number): Promise<void> {
-    let keyToDelete: number | undefined;
-    this.favorites.forEach((favorite, id) => {
-      if (favorite.userId === userId && favorite.biddingId === biddingId) {
-        keyToDelete = id;
-      }
-    });
-    if (keyToDelete !== undefined) {
-      this.favorites.delete(keyToDelete);
-    }
+  async removeFavorite(favoriteId: number): Promise<void> {
+    this.favorites.delete(favoriteId);
   }
 
   async isFavorite(userId: number, biddingId: number): Promise<boolean> {

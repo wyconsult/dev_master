@@ -40,6 +40,12 @@ export const favorites = pgTable("favorites", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").notNull(),
   biddingId: integer("bidding_id").notNull(),
+  // Campos adicionais conforme especificação do módulo de favoritos
+  tipoObjeto: text("tipo_objeto"), // Categoria do tipo de objeto
+  objeto: text("objeto"), // Descrição do objeto
+  site: text("site"), // Site/fonte da licitação
+  siteType: text("site_type"), // Tipo do site (Internet/Intranet/Email)
+  licitacaoData: text("licitacao_data"), // JSON com dados completos da licitação
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -118,3 +124,24 @@ export type Boletim = typeof boletins.$inferSelect;
 export type InsertAcompanhamento = z.infer<typeof insertAcompanhamentoSchema>;
 export type Acompanhamento = typeof acompanhamentos.$inferSelect;
 export type LoginRequest = z.infer<typeof loginSchema>;
+
+// Tabelas de referência para favoritos (conforme especificação)
+export const tiposObjeto = pgTable("tipos_objeto", {
+  id: serial("id").primaryKey(),
+  tipo_objeto: text("tipo_objeto").notNull(),
+  objeto: text("objeto").notNull(),
+});
+
+export const sites = pgTable("sites", {
+  id: serial("id").primaryKey(),
+  tipo: text("tipo").notNull(), // Internet/Intranet/Email
+  site: text("site").notNull(),
+});
+
+export const insertTipoObjetoSchema = createInsertSchema(tiposObjeto).omit({ id: true });
+export const insertSiteSchema = createInsertSchema(sites).omit({ id: true });
+
+export type TipoObjeto = typeof tiposObjeto.$inferSelect;
+export type NewTipoObjeto = z.infer<typeof insertTipoObjetoSchema>;
+export type Site = typeof sites.$inferSelect;
+export type NewSite = z.infer<typeof insertSiteSchema>;
