@@ -14,7 +14,7 @@ export default function Favorites() {
   const [dateFilter, setDateFilter] = useState("");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
-  const [categoryFilter, setCategoryFilter] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState("all");
 
   const { data: allFavorites = [], isLoading } = useQuery<any[]>({
     queryKey: ["/api/favorites"],
@@ -34,7 +34,7 @@ export default function Favorites() {
       if (dateTo && favDate > dateTo) return false;
     }
     
-    if (categoryFilter && fav.tipoObjeto !== categoryFilter) {
+    if (categoryFilter && categoryFilter !== "all" && fav.tipoObjeto !== categoryFilter) {
       return false;
     }
     
@@ -48,7 +48,7 @@ export default function Favorites() {
     setDateFilter("");
     setDateFrom("");
     setDateTo("");
-    setCategoryFilter("");
+    setCategoryFilter("all");
   };
 
   if (isLoading) {
@@ -113,10 +113,10 @@ export default function Favorites() {
                       <SelectValue placeholder="Todas as categorias" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Todas as categorias</SelectItem>
+                      <SelectItem value="all">Todas as categorias</SelectItem>
                       {categories.map((category) => (
-                        <SelectItem key={category} value={category}>
-                          {category}
+                        <SelectItem key={category} value={category || "unknown"}>
+                          {category || "Sem categoria"}
                         </SelectItem>
                       ))}
                     </SelectContent>
