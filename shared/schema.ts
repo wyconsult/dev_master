@@ -38,14 +38,8 @@ export const biddings = pgTable("biddings", {
 
 export const favorites = pgTable("favorites", {
   id: serial("id").primaryKey(),
-  userId: integer("user_id").notNull(),
-  biddingId: integer("bidding_id").notNull(),
-  // Campos adicionais conforme especificação do módulo de favoritos
-  tipoObjeto: text("tipo_objeto"), // Categoria do tipo de objeto
-  objeto: text("objeto"), // Descrição do objeto
-  site: text("site"), // Site/fonte da licitação
-  siteType: text("site_type"), // Tipo do site (Internet/Intranet/Email)
-  licitacaoData: text("licitacao_data"), // JSON com dados completos da licitação
+  userId: integer("user_id").notNull().references(() => users.id),
+  biddingId: integer("bidding_id").notNull().references(() => biddings.id),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 

@@ -2,7 +2,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Heart, ArrowRight } from "lucide-react";
 import { type Bidding } from "@shared/schema";
-import { FavoritesModule } from "@/components/favorites-module";
+
 import { cn } from "@/lib/utils";
 
 interface BiddingCardProps {
@@ -182,11 +182,14 @@ export function BiddingCard({ bidding, showFavoriteIcon = true }: BiddingCardPro
             >
               {expandTruncatedStatus(bidding.situacao || "")}
             </div>
-            {/* Módulo de Favoritos */}
             {showFavoriteIcon && (
-              <div className="ml-2">
-                <FavoritesModule licitacao={bidding} />
-              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="p-1 h-auto text-white hover:bg-white/20"
+              >
+                <Heart className="h-4 w-4" />
+              </Button>
             )}
           </div>
         </div>

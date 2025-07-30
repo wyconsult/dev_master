@@ -61,18 +61,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Favorites routes
+  // Favorites routes (versão simplificada)
   app.get("/api/favorites", async (req, res) => {
     try {
-      // Para o dashboard, usar usuário padrão (1) se não especificado
       const userId = 1; // Usuário padrão para desenvolvimento
       const favorites = await conLicitacaoStorage.getFavorites(userId);
-      
-      // Adicionar headers para evitar cache
-      res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
-      res.set('Pragma', 'no-cache');
-      res.set('Expires', '0');
-      
       res.json(favorites);
     } catch (error) {
       console.error('Erro ao buscar favoritos:', error);
@@ -80,43 +73,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/favorites/:userId", async (req, res) => {
-    try {
-      const userId = parseInt(req.params.userId);
-      const { date, dateFrom, dateTo } = req.query;
-      const favorites = await conLicitacaoStorage.getFavorites(userId, date as string, dateFrom as string, dateTo as string);
-      
-      // Adicionar headers para evitar cache
-      res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
-      res.set('Pragma', 'no-cache');
-      res.set('Expires', '0');
-      
-      res.json(favorites);
-    } catch (error) {
-      res.status(500).json({ message: "Erro interno do servidor" });
-    }
-  });
-
   app.post("/api/favorites", async (req, res) => {
     try {
+      const { biddingId } = req.body;
       const userId = 1; // Usuário padrão para desenvolvimento
-      const { biddingId, tipoObjeto, objeto, site, siteType, licitacaoData } = req.body;
       
       if (!biddingId) {
         return res.status(400).json({ message: "biddingId é obrigatório" });
       }
       
-      const favoriteData = {
-        userId,
-        biddingId,
-        tipoObjeto: tipoObjeto || "Não categorizado",
-        objeto: objeto || "",
-        site: site || "Não especificado",
-        siteType: siteType || "Não categorizado",
-        licitacaoData: licitacaoData || "{}"
-      };
-      
-      const favorite = await conLicitacaoStorage.addFavorite(favoriteData);
+      const favorite = await conLicitacaoStorage.addFavorite(userId, biddingId);
       res.status(201).json(favorite);
     } catch (error) {
       console.error("Erro ao adicionar favorito:", error);
@@ -124,10 +90,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete("/api/favorites/:id", async (req, res) => {
+  app.delete("/api/favorites/:userId/:biddingId", async (req, res) => {
     try {
-      const favoriteId = parseInt(req.params.id);
-      await conLicitacaoStorage.removeFavorite(favoriteId);
+      const userId = parseInt(req.params.userId);
+      const biddingId = parseInt(req.params.biddingId);
+      await conLicitacaoStorage.removeFavorite(userId, biddingId);
       res.json({ success: true });
     } catch (error) {
       console.error("Erro ao remover favorito:", error);
