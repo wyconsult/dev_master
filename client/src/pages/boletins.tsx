@@ -279,7 +279,7 @@ export default function Boletins() {
                 </div>
               </CardHeader>
               <CardContent className="px-2 md:px-6 pb-4">
-                <div className="grid grid-cols-7 gap-1 mb-4">
+                <div className="grid grid-cols-7 gap-0.5 mb-4">
                   {['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].map(day => (
                     <div key={day} className="p-1 text-center text-xs font-medium text-gray-500">
                       {isMobile ? day.slice(0, 1) : day}
@@ -297,16 +297,16 @@ export default function Boletins() {
                     const isCurrentDay = isToday(date);
 
                     return (
-                      <div key={index} className="relative aspect-square">
+                      <div key={index} className="relative">
                         <button
                           onClick={() => setSelectedDate(date)}
                           className={cn(
-                            "w-full h-full min-h-[44px] p-1 text-xs rounded border transition-colors flex flex-col items-center justify-start overflow-hidden",
+                            "w-full h-[44px] p-1 text-xs rounded border transition-colors flex flex-col items-center justify-start overflow-hidden relative",
                             {
-                              "bg-blue-500 text-white border-blue-500": isSelected,
-                              "bg-blue-100 border-blue-300": isCurrentDay && !isSelected,
-                              "hover:bg-gray-100 border-gray-300": !isSelected && !isCurrentDay,
-                              "text-gray-400 border-gray-200": !isCurrentMonth,
+                              "bg-blue-500 text-white border-blue-500 z-10": isSelected,
+                              "bg-blue-100 border-blue-300 z-0": isCurrentDay && !isSelected,
+                              "hover:bg-gray-100 border-gray-300 z-0": !isSelected && !isCurrentDay,
+                              "text-gray-400 border-gray-200 z-0": !isCurrentMonth,
                             }
                           )}
                         >
