@@ -166,14 +166,23 @@ export function FavoriteCategorization({
                             : "border-gray-200 hover:border-gray-300"
                         )}
                       >
-                        <div className="flex items-center gap-2">
-                          <div className={cn("w-3 h-3 rounded-full", category.color)}></div>
-                          <span className={cn(
-                            "text-sm font-medium",
-                            selectedCategory === category.id ? "text-green-700" : "text-gray-700"
-                          )}>
-                            {category.name}
-                          </span>
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="flex items-center gap-2">
+                            <div className={cn("w-3 h-3 rounded-full", category.color)}></div>
+                            <span className={cn(
+                              "text-sm font-medium",
+                              selectedCategory === category.id ? "text-green-700" : "text-gray-700"
+                            )}>
+                              {category.name}
+                            </span>
+                          </div>
+                          {/* Badge com quantidade de exemplos */}
+                          <Badge 
+                            variant="secondary" 
+                            className="text-xs px-1.5 py-0.5 bg-gray-100 text-gray-600"
+                          >
+                            {CATEGORIZATION_DATA[category.id as keyof typeof CATEGORIZATION_DATA]?.length || 0}
+                          </Badge>
                         </div>
                       </div>
                     ))}
@@ -244,6 +253,24 @@ export function FavoriteCategorization({
 
             <TabsContent value="notes" className="space-y-4 mt-6">
               <div className="space-y-4">
+                {/* Informações de Tabulação */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label className="text-sm font-semibold text-gray-800">UF:</Label>
+                    <Input
+                      placeholder="Ex: BA, SP, RJ..."
+                      className="mt-1 border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-sm font-semibold text-gray-800">Código UASG/Gestora:</Label>
+                    <Input
+                      placeholder="Ex: 123456"
+                      className="mt-1 border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                    />
+                  </div>
+                </div>
+
                 {/* Site */}
                 <div>
                   <Label className="text-sm font-semibold text-gray-800">Site:</Label>
@@ -254,8 +281,19 @@ export function FavoriteCategorization({
                       onChange={(e) => setSiteSearch(e.target.value)}
                       className="mb-2 border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
                     />
-                    <select className="w-full p-2 border border-gray-300 rounded-md text-sm">
-                      <option>https://egov.paradigmabs.com.br/sescsba/Default.aspx (Internet)</option>
+                    <select className="w-full p-2 border border-gray-300 rounded-md text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200">
+                      <option value="">Selecione um site...</option>
+                      {CATEGORIZATION_DATA.sites
+                        .filter(site => 
+                          !siteSearch || site.objeto.toLowerCase().includes(siteSearch.toLowerCase())
+                        )
+                        .slice(0, 10)
+                        .map(site => (
+                          <option key={site.id} value={site.objeto}>
+                            {site.objeto} ({site.tipo})
+                          </option>
+                        ))
+                      }
                     </select>
                   </div>
                   <div 
@@ -263,6 +301,24 @@ export function FavoriteCategorization({
                   >
                     <Plus className="h-4 w-4 text-gray-400 mx-auto mb-1" />
                     <span className="text-xs text-gray-600">+ Adicionar Novo Site</span>
+                  </div>
+                </div>
+
+                {/* Informações Financeiras */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label className="text-sm font-semibold text-gray-800">Valor Estimado/Contratado:</Label>
+                    <Input
+                      placeholder="Ex: R$ 50.000,00"
+                      className="mt-1 border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-sm font-semibold text-gray-800">Fornecedor/UASG do Fornecedor:</Label>
+                    <Input
+                      placeholder="Nome do fornecedor"
+                      className="mt-1 border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                    />
                   </div>
                 </div>
 
@@ -287,7 +343,7 @@ export function FavoriteCategorization({
                     placeholder="Adicione suas observações sobre esta licitação..."
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
-                    rows={4}
+                    rows={3}
                     className="mt-2 border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
                   />
                   <p className="text-xs text-gray-500 mt-1">
