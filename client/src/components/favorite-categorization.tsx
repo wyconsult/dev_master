@@ -33,6 +33,7 @@ export function FavoriteCategorization({
   const [notes, setNotes] = useState(currentNotes);
   const [activeTab, setActiveTab] = useState("category");
   const [searchTerm, setSearchTerm] = useState("");
+  const [siteSearch, setSiteSearch] = useState("");
   
   const { user } = useAuth();
   const { toast } = useToast();
@@ -249,6 +250,8 @@ export function FavoriteCategorization({
                   <div className="mt-2">
                     <Input
                       placeholder="Buscar site..."
+                      value={siteSearch}
+                      onChange={(e) => setSiteSearch(e.target.value)}
                       className="mb-2 border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
                     />
                     <select className="w-full p-2 border border-gray-300 rounded-md text-sm">
