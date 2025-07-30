@@ -91,54 +91,54 @@ export default function Dashboard() {
       
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
-        <div className="mb-12 text-center">
-          <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 text-white mb-6 shadow-lg">
-            <Gavel className="h-10 w-10" />
+        <div className="mb-8 md:mb-12 text-center px-4">
+          <div className="inline-flex items-center justify-center w-16 h-16 md:w-20 md:h-20 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 text-white mb-4 md:mb-6 shadow-lg">
+            <Gavel className="h-8 w-8 md:h-10 md:w-10" />
           </div>
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-gray-900 to-blue-700 bg-clip-text text-transparent mb-3">
+          <h1 className="text-2xl md:text-4xl font-bold bg-gradient-to-r from-gray-900 to-blue-700 bg-clip-text text-transparent mb-2 md:mb-3">
             Bem-vindo ao LicitaTraker
           </h1>
-          <p className="text-xl text-gray-600 mb-2">
+          <p className="text-lg md:text-xl text-gray-600 mb-1 md:mb-2">
             Olá, {user?.email?.split('@')[0]}! 👋
           </p>
-          <p className="text-gray-500">
+          <p className="text-sm md:text-base text-gray-500">
             Gerencie suas licitações e boletins de forma inteligente
           </p>
         </div>
 
         {/* Main Navigation Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 lg:gap-8 px-4">
           {dashboardCards.map((card, index) => (
             <Link key={index} href={card.link}>
-              <Card className={`hover:shadow-2xl hover:-translate-y-2 transition-all duration-500 cursor-pointer group border-0 shadow-lg overflow-hidden ${card.bgPattern}/30 backdrop-blur-sm`}>
-                <CardContent className="p-8 text-center relative">
+              <Card className={`hover:shadow-2xl hover:-translate-y-1 md:hover:-translate-y-2 transition-all duration-500 cursor-pointer group border-0 shadow-lg overflow-hidden ${card.bgPattern}/30 backdrop-blur-sm`}>
+                <CardContent className="p-4 md:p-6 lg:p-8 text-center relative">
                   {/* Background pattern */}
                   <div className="absolute inset-0 opacity-5">
                     <div className="w-full h-full bg-gradient-to-br from-transparent to-black/10"></div>
                   </div>
                   
-                  <div className={`inline-flex items-center justify-center w-20 h-20 rounded-2xl ${card.gradient} ${card.hoverGradient} text-white mb-6 group-hover:scale-110 group-hover:rotate-3 transition-all duration-500 shadow-lg`}>
-                    <card.icon className="h-10 w-10" />
+                  <div className={`inline-flex items-center justify-center w-16 h-16 md:w-20 md:h-20 rounded-2xl ${card.gradient} ${card.hoverGradient} text-white mb-4 md:mb-6 group-hover:scale-110 group-hover:rotate-3 transition-all duration-500 shadow-lg`}>
+                    <card.icon className="h-8 w-8 md:h-10 md:w-10" />
                   </div>
                   
-                  <h3 className="text-2xl font-bold text-gray-900 mb-3">
+                  <h3 className="text-xl md:text-2xl font-bold text-gray-900 mb-2 md:mb-3">
                     {card.title}
                   </h3>
                   
-                  <p className="text-gray-600 mb-6 leading-relaxed">
+                  <p className="text-sm md:text-base text-gray-600 mb-4 md:mb-6 leading-relaxed">
                     {card.description}
                   </p>
                   
-                  <div className="inline-flex items-center justify-center px-4 py-2 rounded-full bg-white/80 backdrop-blur-sm text-sm font-semibold text-gray-700 shadow-md border border-gray-200/50">
+                  <div className="inline-flex items-center justify-center px-3 md:px-4 py-1.5 md:py-2 rounded-full bg-white/80 backdrop-blur-sm text-xs md:text-sm font-semibold text-gray-700 shadow-md border border-gray-200/50">
                     {card.count}
                   </div>
                   
-                  <div className="mt-8">
+                  <div className="mt-4 md:mt-8">
                     <Button 
                       variant="ghost" 
-                      className="group-hover:bg-white/20 group-hover:backdrop-blur-sm transition-all duration-300 font-semibold"
+                      className="group-hover:bg-white/20 group-hover:backdrop-blur-sm transition-all duration-300 font-semibold text-xs md:text-sm"
                     >
-                      Acessar <span className="ml-2 group-hover:translate-x-1 transition-transform duration-300">→</span>
+                      Acessar <span className="ml-1 md:ml-2 group-hover:translate-x-1 transition-transform duration-300">→</span>
                     </Button>
                   </div>
                 </CardContent>

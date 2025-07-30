@@ -160,27 +160,27 @@ export default function Favorites() {
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
       <Navbar />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-12 text-center">
-          <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-gradient-to-r from-red-500 to-pink-600 text-white mb-6 shadow-lg">
-            <Heart className="h-10 w-10" />
+        <div className="mb-8 md:mb-12 text-center px-4">
+          <div className="inline-flex items-center justify-center w-16 h-16 md:w-20 md:h-20 rounded-full bg-gradient-to-r from-red-500 to-pink-600 text-white mb-4 md:mb-6 shadow-lg">
+            <Heart className="h-8 w-8 md:h-10 md:w-10" />
           </div>
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-gray-900 to-red-700 bg-clip-text text-transparent mb-3">
+          <h1 className="text-2xl md:text-4xl font-bold bg-gradient-to-r from-gray-900 to-red-700 bg-clip-text text-transparent mb-2 md:mb-3">
             Favoritas
           </h1>
-          <p className="text-xl text-gray-600 mb-2">
+          <p className="text-lg md:text-xl text-gray-600 mb-1 md:mb-2">
             Suas Preferidas ❤️
           </p>
-          <p className="text-gray-500">
+          <p className="text-sm md:text-base text-gray-500">
             Suas licitações marcadas como favoritas
           </p>
         </div>
 
         {/* Filters */}
-        <Card className="mb-6 border-0 shadow-xl bg-white/80 backdrop-blur-sm">
-          <CardHeader>
-            <CardTitle className="text-lg flex items-center justify-between">
+        <Card className="mb-6 border-0 shadow-xl bg-white/80 backdrop-blur-sm mx-4">
+          <CardHeader className="pb-4">
+            <CardTitle className="text-lg md:text-xl flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Filter className="h-5 w-5" />
+                <Filter className="h-4 w-4 md:h-5 md:w-5" />
                 Filtros de Pesquisa
               </div>
               {(numeroControle || selectedOrgaos.length > 0 || selectedUFs.length > 0 || (dateRange.from && dateRange.to)) && (
@@ -190,13 +190,13 @@ export default function Favorites() {
                   onClick={clearFilters}
                   className="h-8 w-8 p-0 hover:bg-gray-100"
                 >
-                  <Eraser className="h-4 w-4 text-red-500 hover:text-red-600" />
+                  <Eraser className="h-3 w-3 md:h-4 md:w-4 text-red-500 hover:text-red-600" />
                 </Button>
               )}
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <CardContent className="px-3 md:px-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
               {/* Número de Controle */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -438,25 +438,25 @@ export default function Favorites() {
         </Card>
 
         {/* Results Header */}
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-lg font-semibold text-gray-900">
+        <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-3 md:mb-4 px-4 gap-2 md:gap-0">
+          <h2 className="text-base md:text-lg font-semibold text-gray-900">
             {filteredFavorites.length === 0 ? 'Nenhum favorito encontrado' : `${filteredFavorites.length} favorito${filteredFavorites.length > 1 ? 's' : ''} encontrado${filteredFavorites.length > 1 ? 's' : ''}`}
           </h2>
           {filteredFavorites.length > 0 && filteredFavorites.length !== favorites.length && (
-            <span className="text-sm text-gray-500">
+            <span className="text-xs md:text-sm text-gray-500">
               {favorites.length} total
             </span>
           )}
         </div>
 
         {/* Results */}
-        <div className="space-y-4">
+        <div className="space-y-3 md:space-y-4 px-4">
           {filteredFavorites.length === 0 ? (
             <Card>
-              <CardContent className="p-12 text-center">
-                <Search className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">Nenhum favorito encontrado</h3>
-                <p className="text-gray-600">
+              <CardContent className="p-6 md:p-12 text-center">
+                <Search className="h-8 w-8 md:h-12 md:w-12 text-gray-400 mx-auto mb-3 md:mb-4" />
+                <h3 className="text-base md:text-lg font-medium text-gray-900 mb-2">Nenhum favorito encontrado</h3>
+                <p className="text-sm md:text-base text-gray-600">
                   {favorites.length === 0 
                     ? "Você ainda não marcou nenhuma licitação como favorita."
                     : "Não há favoritos que correspondam aos seus critérios de pesquisa."
