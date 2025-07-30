@@ -15,7 +15,7 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { type Bidding } from "@shared/schema";
-import { useAuth } from "@/lib/auth";
+import { useAuth } from "@/hooks/use-auth";
 
 
 
@@ -302,7 +302,7 @@ export default function Favorites() {
                               checked={selectedUFs.includes(uf.code)}
                               onChange={() => toggleUF(uf.code)}
                             />
-                            <span className="flex-1 text-sm">{uf.name}</span>
+                            <span>{uf.name}</span>
                           </CommandItem>
                         ))}
                       </CommandGroup>
@@ -313,7 +313,7 @@ export default function Favorites() {
                   <div className="mt-2 flex flex-wrap gap-1">
                     {selectedUFs.map((uf) => (
                       <Badge key={uf} variant="secondary" className="text-xs">
-                        {uf}
+                        {UF_OPTIONS.find(opt => opt.code === uf)?.name || uf}
                         <button
                           onClick={() => toggleUF(uf)}
                           className="ml-1 hover:text-destructive"
@@ -326,135 +326,148 @@ export default function Favorites() {
                 )}
               </div>
 
-              {/* Filtro de Data - Tipo */}
+              {/* Selecionar período */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Tipo de Data
+                  Selecionar período
                 </label>
-                <div className="space-y-2">
-                  {DATE_FILTER_OPTIONS.map((option) => (
-                    <div key={option.value} className="flex items-center space-x-2">
-                      <Checkbox
-                        id={option.value}
-                        checked={dateFilterType === option.value}
-                        onCheckedChange={() => setDateFilterType(option.value as "favorito" | "realizacao")}
-                      />
-                      <label htmlFor={option.value} className="text-sm text-gray-700">
-                        {option.label}
+                
+                {/* Seletor de tipo de data */}
+                <div className="mb-4 p-3 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200">
+                  <div className="text-sm font-semibold text-blue-800 mb-3 flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+                    Filtrar por:
+                  </div>
+                  <div className="grid grid-cols-1 gap-3">
+                    {DATE_FILTER_OPTIONS.map((option) => (
+                      <label 
+                        key={option.value} 
+                        className="flex items-center gap-3 cursor-pointer hover:bg-white/60 p-2 rounded-lg transition-colors"
+                        onClick={() => setDateFilterType(option.value as "favorito" | "realizacao")}
+                      >
+                        <div className={cn(
+                          "w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all",
+                          dateFilterType === option.value 
+                            ? "border-blue-600 bg-blue-600 shadow-md" 
+                            : "border-gray-400 hover:border-blue-400"
+                        )}>
+                          {dateFilterType === option.value && (
+                            <div className="w-2.5 h-2.5 rounded-full bg-white"></div>
+                          )}
+                        </div>
+                        <span className={cn(
+                          "text-sm font-medium transition-colors",
+                          dateFilterType === option.value 
+                            ? "text-blue-800" 
+                            : "text-gray-700 hover:text-blue-700"
+                        )}>
+                          {option.label}
+                        </span>
                       </label>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-1">
+                  {/* Data de Início */}
+                  <div>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          className={cn(
+                            "w-full justify-start text-left font-normal text-sm h-10 px-3 border-gray-300 text-gray-700",
+                            !dateRange.from && "text-gray-400"
+                          )}
+                        >
+                          <CalendarIcon className="mr-2 h-4 w-4" />
+                          <span className="truncate">
+                            {dateRange.from ? format(dateRange.from, "dd/MM/yyyy") : "Início"}
+                          </span>
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0 z-[60] bg-white border border-gray-200 shadow-xl" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={dateRange.from}
+                          onSelect={(date) => setDateRange(prev => ({ ...prev, from: date }))}
+                          initialFocus
+                          numberOfMonths={1}
+                          locale={ptBR}
+                        />
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+
+                  {/* Data de Fim */}
+                  <div>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          className={cn(
+                            "w-full justify-start text-left font-normal text-sm h-10 px-3 border-gray-300 text-gray-700",
+                            !dateRange.to && "text-gray-400"
+                          )}
+                        >
+                          <CalendarIcon className="mr-2 h-4 w-4" />
+                          <span className="truncate">
+                            {dateRange.to ? format(dateRange.to, "dd/MM/yyyy") : "Fim"}
+                          </span>
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0 z-[60] bg-white border border-gray-200 shadow-xl" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={dateRange.to}
+                          onSelect={(date) => setDateRange(prev => ({ ...prev, to: date }))}
+                          initialFocus
+                          numberOfMonths={1}
+                          locale={ptBR}
+                          disabled={(date) => dateRange.from ? date < dateRange.from : false}
+                        />
+                      </PopoverContent>
+                    </Popover>
+                  </div>
                 </div>
               </div>
-            </div>
 
-            {/* Date Range Picker */}
-            <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Data inicial
-                </label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className={cn(
-                        "w-full justify-start text-left font-normal border-gray-300 h-10",
-                        !dateRange.from && "text-muted-foreground"
-                      )}
-                    >
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {dateRange.from ? format(dateRange.from, "PPP", { locale: ptBR }) : "Selecione a data inicial"}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0 z-50" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={dateRange.from}
-                      onSelect={(date) => setDateRange(prev => ({ ...prev, from: date }))}
-                      disabled={(date) =>
-                        date > new Date() || date < new Date("1900-01-01")
-                      }
-                      initialFocus
-                    />
-                  </PopoverContent>
-                </Popover>
-              </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Data final
-                </label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className={cn(
-                        "w-full justify-start text-left font-normal border-gray-300 h-10",
-                        !dateRange.to && "text-muted-foreground"
-                      )}
-                    >
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {dateRange.to ? format(dateRange.to, "PPP", { locale: ptBR }) : "Selecione a data final"}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0 z-50" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={dateRange.to}
-                      onSelect={(date) => setDateRange(prev => ({ ...prev, to: date }))}
-                      disabled={(date) =>
-                        date > new Date() || 
-                        date < new Date("1900-01-01") ||
-                        (dateRange.from && date < dateRange.from)
-                      }
-                      initialFocus
-                    />
-                  </PopoverContent>
-                </Popover>
-              </div>
             </div>
           </CardContent>
         </Card>
 
+        {/* Results Header */}
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-lg font-semibold text-gray-900">
+            {filteredFavorites.length === 0 ? 'Nenhum favorito encontrado' : `${filteredFavorites.length} favorito${filteredFavorites.length > 1 ? 's' : ''} encontrado${filteredFavorites.length > 1 ? 's' : ''}`}
+          </h2>
+          {filteredFavorites.length > 0 && filteredFavorites.length !== favorites.length && (
+            <span className="text-sm text-gray-500">
+              {favorites.length} total
+            </span>
+          )}
+        </div>
+
         {/* Results */}
         <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-2xl font-bold text-gray-900">
-              Resultados ({filteredFavorites.length})
-            </h2>
-          </div>
-
           {filteredFavorites.length === 0 ? (
-            <Card className="text-center py-12">
-              <CardContent>
-                <Heart className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-xl font-semibold text-gray-700 mb-2">
-                  {favorites.length === 0 ? "Nenhuma licitação favorita" : "Nenhum resultado encontrado"}
-                </h3>
-                <p className="text-gray-500 mb-6">
+            <Card>
+              <CardContent className="p-12 text-center">
+                <Search className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">Nenhum favorito encontrado</h3>
+                <p className="text-gray-600">
                   {favorites.length === 0 
-                    ? "Comece adicionando licitações aos seus favoritos nas páginas de boletins ou licitações."
-                    : "Tente ajustar os filtros para encontrar o que procura."
+                    ? "Você ainda não marcou nenhuma licitação como favorita."
+                    : "Não há favoritos que correspondam aos seus critérios de pesquisa."
                   }
                 </p>
-                {(numeroControle || selectedOrgaos.length > 0 || selectedUFs.length > 0 || (dateRange.from && dateRange.to)) && (
-                  <Button onClick={clearFilters} variant="outline">
-                    <Eraser className="h-4 w-4 mr-2" />
-                    Limpar filtros
-                  </Button>
-                )}
               </CardContent>
             </Card>
           ) : (
-            <div className="grid gap-6">
-              {filteredFavorites.map((bidding) => (
-                <BiddingCard 
-                  key={bidding.id} 
-                  bidding={bidding}
-                />
-              ))}
-            </div>
+            filteredFavorites.map((bidding) => (
+              <BiddingCard key={bidding.id} bidding={bidding} showFavoriteIcon={true} />
+            ))
           )}
         </div>
       </div>

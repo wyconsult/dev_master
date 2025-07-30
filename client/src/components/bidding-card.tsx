@@ -2,7 +2,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Heart, ArrowRight } from "lucide-react";
 import { type Bidding } from "@shared/schema";
-
+import { useFavorites } from "@/hooks/use-favorites";
+import { useAuth } from "@/hooks/use-auth";
+import { useQuery } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
 
 interface BiddingCardProps {
@@ -11,6 +13,15 @@ interface BiddingCardProps {
 }
 
 export function BiddingCard({ bidding, showFavoriteIcon = true }: BiddingCardProps) {
+  const { user } = useAuth();
+  const { toggleFavorite, isLoading } = useFavorites();
+
+  const { data: favoriteStatus } = useQuery<{ isFavorite: boolean }>({
+    queryKey: [`/api/favorites/${user?.id}/${bidding.id}`],
+    enabled: !!user && showFavoriteIcon,
+  });
+
+  const isFavorite = favoriteStatus?.isFavorite || false;
 
   // Função para expandir status truncados da API
   const expandTruncatedStatus = (status: string) => {
@@ -126,7 +137,11 @@ export function BiddingCard({ bidding, showFavoriteIcon = true }: BiddingCardPro
     return dates;
   };
 
-
+  const handleFavoriteClick = () => {
+    if (user) {
+      toggleFavorite(bidding.id, isFavorite);
+    }
+  };
 
   const handleLinkClick = () => {
     const baseUrl = "https://consultaonline.conlicitacao.com.br";
@@ -155,7 +170,10 @@ export function BiddingCard({ bidding, showFavoriteIcon = true }: BiddingCardPro
 
   return (
     <Card
-      className="hover:shadow-md transition-shadow border border-gray-200 bg-white overflow-hidden"
+      className={cn(
+        "hover:shadow-md transition-shadow border border-gray-200 bg-white overflow-hidden",
+        showFavoriteIcon && isFavorite && "border-l-4 border-l-blue-500"
+      )}
     >
       {/* Header com gradiente verde */}
       <div className="bg-gradient-to-r from-green-500 to-emerald-600 text-white p-3 relative">
@@ -182,13 +200,21 @@ export function BiddingCard({ bidding, showFavoriteIcon = true }: BiddingCardPro
             >
               {expandTruncatedStatus(bidding.situacao || "")}
             </div>
+            {/* Favorite icon */}
             {showFavoriteIcon && (
               <Button
                 variant="ghost"
                 size="sm"
-                className="p-1 h-auto text-white hover:bg-white/20"
+                onClick={handleFavoriteClick}
+                disabled={isLoading}
+                className={cn(
+                  "transition-colors text-white hover:bg-white/20 p-1 h-auto",
+                  isFavorite && "text-white"
+                )}
               >
-                <Heart className="h-4 w-4" />
+                <Heart
+                  className={cn("h-4 w-4", isFavorite && "fill-current")}
+                />
               </Button>
             )}
           </div>

@@ -153,7 +153,6 @@ Application runs on `http://localhost:5000` with full API access when IP is auth
 
 ```
 Changelog:
-- January 30, 2025. Restaurada página de favoritos completa com todas as funcionalidades: filtros por busca, data específica, e intervalo de datas. Dashboard com 3 cards funcionais incluindo favoritos. Sistema totalmente funcional
 - January 28, 2025. Implementada contagem dinâmica real nos boletins - sistema busca dados detalhados da API ConLicitação para calcular quantidade_licitacoes e quantidade_acompanhamentos corretas em produção
 - January 28, 2025. Corrigidos problemas de duplicação de licitações e boletins vazios - fixada data para calendário e cache otimizado
 - January 28, 2025. Corrigidos erros TypeScript para execução local - criado env.d.ts com definições de tipos e LOCAL_SETUP.md com instruções completas

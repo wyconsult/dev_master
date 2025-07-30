@@ -25,8 +25,8 @@ export interface IConLicitacaoStorage {
   getBidding(id: number): Promise<Bidding | undefined>;
   
   // Favorites (mantemos localmente)
-  getFavorites(userId: number): Promise<Bidding[]>;
-  addFavorite(userId: number, biddingId: number): Promise<Favorite>;
+  getFavorites(userId: number, date?: string, dateFrom?: string, dateTo?: string): Promise<Bidding[]>;
+  addFavorite(favorite: InsertFavorite): Promise<Favorite>;
   removeFavorite(userId: number, biddingId: number): Promise<void>;
   isFavorite(userId: number, biddingId: number): Promise<boolean>;
 }
@@ -464,10 +464,37 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
   }
 
   // Métodos de favoritos (mantemos localmente)
-  async getFavorites(userId: number): Promise<Bidding[]> {
-    const userFavorites = Array.from(this.favorites.values()).filter(fav => fav.userId === userId);
-    const favoriteBiddings: Bidding[] = [];
+  async getFavorites(userId: number, date?: string, dateFrom?: string, dateTo?: string): Promise<Bidding[]> {
+    let userFavorites = Array.from(this.favorites.values())
+      .filter(fav => fav.userId === userId);
+
+    if (date) {
+      userFavorites = userFavorites.filter(fav => {
+        const favDate = fav.createdAt?.toISOString().split('T')[0];
+        return favDate === date;
+      });
+    }
     
+    if (dateFrom || dateTo) {
+      userFavorites = userFavorites.filter(fav => {
+        const favDate = fav.createdAt?.toISOString().split('T')[0];
+        if (!favDate) return false;
+        
+        let isInRange = true;
+        
+        if (dateFrom) {
+          isInRange = isInRange && favDate >= dateFrom;
+        }
+        
+        if (dateTo) {
+          isInRange = isInRange && favDate <= dateTo;
+        }
+        
+        return isInRange;
+      });
+    }
+    
+    const favoriteBiddings: Bidding[] = [];
     for (const fav of userFavorites) {
       const bidding = this.cachedBiddings.get(fav.biddingId);
       if (bidding) {
@@ -478,15 +505,10 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
     return favoriteBiddings;
   }
 
-  async addFavorite(userId: number, biddingId: number): Promise<Favorite> {
-    const favorite: Favorite = {
-      id: this.favorites.size + 1,
-      userId,
-      biddingId,
-      createdAt: new Date(),
-    };
-    
-    this.favorites.set(favorite.id, favorite);
+  async addFavorite(insertFavorite: InsertFavorite): Promise<Favorite> {
+    const id = this.currentFavoriteId++;
+    const favorite: Favorite = { ...insertFavorite, id, createdAt: new Date() };
+    this.favorites.set(id, favorite);
     return favorite;
   }
 
