@@ -1,473 +1,235 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Navbar } from "@/components/navbar";
+import { BiddingCard } from "@/components/bidding-card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { BiddingCard } from "@/components/bidding-card";
-import { Filter, Search, X, Calendar as CalendarIcon, Heart, Eraser } from "lucide-react";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from "@/components/ui/command";
-import { Calendar } from "@/components/ui/calendar";
-import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
-import { cn } from "@/lib/utils";
+import { Calendar, Eraser } from "lucide-react";
 import { type Bidding } from "@shared/schema";
-import { useAuth } from "@/hooks/use-auth";
-
-
-
-// Lista de UFs com nomes completos para evitar confusão
-const UF_OPTIONS = [
-  { code: "AC", name: "AC - Acre" },
-  { code: "AL", name: "AL - Alagoas" },
-  { code: "AP", name: "AP - Amapá" },
-  { code: "AM", name: "AM - Amazonas" },
-  { code: "BA", name: "BA - Bahia" },
-  { code: "CE", name: "CE - Ceará" },
-  { code: "DF", name: "DF - Distrito Federal" },
-  { code: "ES", name: "ES - Espírito Santo" },
-  { code: "GO", name: "GO - Goiás" },
-  { code: "MA", name: "MA - Maranhão" },
-  { code: "MT", name: "MT - Mato Grosso" },
-  { code: "MS", name: "MS - Mato Grosso do Sul" },
-  { code: "MG", name: "MG - Minas Gerais" },
-  { code: "PA", name: "PA - Pará" },
-  { code: "PB", name: "PB - Paraíba" },
-  { code: "PR", name: "PR - Paraná" },
-  { code: "PE", name: "PE - Pernambuco" },
-  { code: "PI", name: "PI - Piauí" },
-  { code: "RJ", name: "RJ - Rio de Janeiro" },
-  { code: "RN", name: "RN - Rio Grande do Norte" },
-  { code: "RS", name: "RS - Rio Grande do Sul" },
-  { code: "RO", name: "RO - Rondônia" },
-  { code: "RR", name: "RR - Roraima" },
-  { code: "SC", name: "SC - Santa Catarina" },
-  { code: "SP", name: "SP - São Paulo" },
-  { code: "SE", name: "SE - Sergipe" },
-  { code: "TO", name: "TO - Tocantins" }
-];
-
-// Tipos de filtro de data
-const DATE_FILTER_OPTIONS = [
-  { value: "favorito", label: "Data de inclusão favorito" },
-  { value: "realizacao", label: "Data de realização" }
-];
 
 export default function Favorites() {
-  const { user } = useAuth();
-  const [numeroControle, setNumeroControle] = useState("");
-  const [selectedOrgaos, setSelectedOrgaos] = useState<string[]>([]);
-  const [selectedUFs, setSelectedUFs] = useState<string[]>([]);
-  const [dateRange, setDateRange] = useState<{from?: Date, to?: Date}>({});
-  const [dateFilterType, setDateFilterType] = useState<"favorito" | "realizacao">("favorito");
-  const [orgaoPopoverOpen, setOrgaoPopoverOpen] = useState(false);
-  const [ufPopoverOpen, setUfPopoverOpen] = useState(false);
+  const [dateFilter, setDateFilter] = useState("");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState("");
 
-
-  const { data: favorites = [], isLoading } = useQuery<Bidding[]>({
-    queryKey: [`/api/favorites/${user?.id}`],
-    enabled: !!user,
+  const { data: allFavorites = [], isLoading } = useQuery<any[]>({
+    queryKey: ["/api/favorites"],
   });
 
-  // Extrair órgãos únicos dos favoritos
-  const uniqueOrgaos = Array.from(new Set(favorites.map(b => b.orgao_nome))).sort();
-
-  // Filter favorites based on form filters
-  const filteredFavorites = favorites.filter(bidding => {
-    const matchesNumeroControle = !numeroControle || 
-      bidding.conlicitacao_id?.toString().includes(numeroControle);
-    
-    const matchesOrgao = selectedOrgaos.length === 0 || 
-      selectedOrgaos.includes(bidding.orgao_nome);
-    
-    const matchesUF = selectedUFs.length === 0 || 
-      selectedUFs.includes(bidding.orgao_uf);
-
-    // Date filter logic - check by type of date filter selected
-    let matchesDateRange = true;
-    if (dateRange.from && dateRange.to) {
-      let biddingDate: Date;
-      
-      if (dateFilterType === "favorito") {
-        // Filter by favorite creation date - TODO: Need to get actual createdAt from favorites
-        // For now, using current date as placeholder since we don't have favorite creation date in schema
-        biddingDate = new Date(); // This would need to be actual favorite.createdAt
-      } else {
-        // Filter by datahora_abertura (data de realização)
-        if (!bidding.datahora_abertura) return false; // Skip if no opening date
-        biddingDate = new Date(bidding.datahora_abertura);
-      }
-      
-      const startDate = new Date(dateRange.from);
-      const endDate = new Date(dateRange.to);
-      
-      // Set time to beginning/end of day for accurate comparison
-      startDate.setHours(0, 0, 0, 0);
-      endDate.setHours(23, 59, 59, 999);
-      biddingDate.setHours(0, 0, 0, 0);
-      
-      matchesDateRange = biddingDate >= startDate && biddingDate <= endDate;
+  // Filtrar favoritos por data e categoria
+  const filteredFavorites = allFavorites.filter((fav) => {
+    if (dateFilter && !fav.createdAt?.includes(dateFilter)) {
+      return false;
     }
-
-    return matchesNumeroControle && matchesOrgao && matchesUF && matchesDateRange;
+    
+    if (dateFrom || dateTo) {
+      const favDate = fav.createdAt?.split('T')[0];
+      if (!favDate) return false;
+      
+      if (dateFrom && favDate < dateFrom) return false;
+      if (dateTo && favDate > dateTo) return false;
+    }
+    
+    if (categoryFilter && fav.tipoObjeto !== categoryFilter) {
+      return false;
+    }
+    
+    return true;
   });
 
-  const toggleOrgao = (orgao: string) => {
-    setSelectedOrgaos(prev => 
-      prev.includes(orgao) 
-        ? prev.filter(o => o !== orgao)
-        : [...prev, orgao]
-    );
-  };
-
-  const toggleUF = (uf: string) => {
-    setSelectedUFs(prev => 
-      prev.includes(uf) 
-        ? prev.filter(u => u !== uf)
-        : [...prev, uf]
-    );
-  };
+  // Extrair categorias únicas
+  const categories = Array.from(new Set(allFavorites.map(f => f.tipoObjeto).filter(Boolean)));
 
   const clearFilters = () => {
-    setNumeroControle("");
-    setSelectedOrgaos([]);
-    setSelectedUFs([]);
-    setDateRange({});
+    setDateFilter("");
+    setDateFrom("");
+    setDateTo("");
+    setCategoryFilter("");
   };
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen">
         <Navbar />
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="animate-pulse">
-            <div className="h-8 bg-gray-200 rounded w-1/4 mb-4"></div>
-            <div className="space-y-4">
-              {[...Array(3)].map((_, i) => (
-                <div key={i} className="h-48 bg-gray-200 rounded"></div>
-              ))}
-            </div>
-          </div>
+        <div className="container mx-auto px-4 py-6">
+          <div className="text-center">Carregando favoritos...</div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
+    <div className="min-h-screen">
       <Navbar />
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-12 text-center">
-          <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-gradient-to-r from-red-500 to-pink-600 text-white mb-6 shadow-lg">
-            <Heart className="h-10 w-10" />
-          </div>
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-gray-900 to-red-700 bg-clip-text text-transparent mb-3">
-            Favoritas
-          </h1>
-          <p className="text-xl text-gray-600 mb-2">
-            Suas Preferidas ❤️
-          </p>
-          <p className="text-gray-500">
-            Suas licitações marcadas como favoritas
-          </p>
-        </div>
-
-        {/* Filters */}
-        <Card className="mb-6 border-0 shadow-xl bg-white/80 backdrop-blur-sm">
-          <CardHeader>
-            <CardTitle className="text-lg flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Filter className="h-5 w-5" />
-                Filtros de Pesquisa
-              </div>
-              {(numeroControle || selectedOrgaos.length > 0 || selectedUFs.length > 0 || (dateRange.from && dateRange.to)) && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={clearFilters}
-                  className="h-8 w-8 p-0 hover:bg-gray-100"
-                >
-                  <Eraser className="h-4 w-4 text-red-500 hover:text-red-600" />
-                </Button>
-              )}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              {/* Número de Controle */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Número de Controle
-                </label>
-                <div className="relative">
+      <div className="container mx-auto px-4 py-6">
+        <div className="mb-6">
+          <h1 className="text-2xl font-bold mb-4 text-gray-900">Meus Favoritos</h1>
+          
+          {/* Filtros */}
+          <Card className="mb-6">
+            <CardHeader>
+              <CardTitle className="text-lg">Filtros</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div>
+                  <label className="text-sm font-medium mb-2 block">Data específica</label>
                   <Input
-                    placeholder="Ex. 13157470"
-                    value={numeroControle}
-                    onChange={(e) => setNumeroControle(e.target.value)}
-                    className="border-gray-300 text-gray-700 placeholder:text-gray-400 h-10"
+                    type="date"
+                    value={dateFilter}
+                    onChange={(e) => setDateFilter(e.target.value)}
+                    placeholder="Data do favorito"
                   />
                 </div>
-              </div>
-
-              {/* Filtrar Órgão */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Órgão
-                </label>
-                <Popover open={orgaoPopoverOpen} onOpenChange={setOrgaoPopoverOpen}>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      role="combobox"
-                      className="w-full justify-between border-gray-300 text-gray-700 h-10"
-                    >
-                      {selectedOrgaos.length === 0
-                        ? "Selecione um ou mais órgãos"
-                        : `${selectedOrgaos.length} selecionado(s)`
-                      }
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-80 p-0 z-50 bg-white border border-gray-200 shadow-lg">
-                    <Command>
-                      <CommandInput placeholder="Buscar órgão..." />
-                      <CommandEmpty>Nenhum órgão encontrado.</CommandEmpty>
-                      <CommandGroup className="max-h-64 overflow-auto">
-                        {uniqueOrgaos.map((orgao) => (
-                          <CommandItem
-                            key={orgao}
-                            onSelect={() => toggleOrgao(orgao)}
-                            className="flex items-center gap-2"
-                          >
-                            <Checkbox 
-                              checked={selectedOrgaos.includes(orgao)}
-                              onChange={() => toggleOrgao(orgao)}
-                            />
-                            <span className="flex-1 text-sm">{orgao}</span>
-                          </CommandItem>
-                        ))}
-                      </CommandGroup>
-                    </Command>
-                  </PopoverContent>
-                </Popover>
-                {selectedOrgaos.length > 0 && (
-                  <div className="mt-2 flex flex-wrap gap-1">
-                    {selectedOrgaos.map((orgao) => (
-                      <Badge key={orgao} variant="secondary" className="text-xs">
-                        {orgao.length > 20 ? `${orgao.substring(0, 20)}...` : orgao}
-                        <button
-                          onClick={() => toggleOrgao(orgao)}
-                          className="ml-1 hover:text-destructive"
-                        >
-                          <X className="h-3 w-3" />
-                        </button>
-                      </Badge>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              {/* Estado (UF) */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Estado (UF)
-                </label>
-                <Popover open={ufPopoverOpen} onOpenChange={setUfPopoverOpen}>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      role="combobox"
-                      className="w-full justify-between border-gray-300 text-gray-700 h-10"
-                    >
-                      {selectedUFs.length === 0
-                        ? "Selecione um ou mais UFs"
-                        : selectedUFs.map(uf => UF_OPTIONS.find(opt => opt.code === uf)?.code || uf).join(", ")
-                      }
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-64 p-0 z-50 bg-white border border-gray-200 shadow-lg">
-                    <Command>
-                      <CommandInput placeholder="Buscar UF..." />
-                      <CommandEmpty>Nenhuma UF encontrada.</CommandEmpty>
-                      <CommandGroup className="max-h-64 overflow-auto">
-                        {UF_OPTIONS.map((uf) => (
-                          <CommandItem
-                            key={uf.code}
-                            onSelect={() => toggleUF(uf.code)}
-                            className="flex items-center gap-2"
-                          >
-                            <Checkbox 
-                              checked={selectedUFs.includes(uf.code)}
-                              onChange={() => toggleUF(uf.code)}
-                            />
-                            <span>{uf.name}</span>
-                          </CommandItem>
-                        ))}
-                      </CommandGroup>
-                    </Command>
-                  </PopoverContent>
-                </Popover>
-                {selectedUFs.length > 0 && (
-                  <div className="mt-2 flex flex-wrap gap-1">
-                    {selectedUFs.map((uf) => (
-                      <Badge key={uf} variant="secondary" className="text-xs">
-                        {UF_OPTIONS.find(opt => opt.code === uf)?.name || uf}
-                        <button
-                          onClick={() => toggleUF(uf)}
-                          className="ml-1 hover:text-destructive"
-                        >
-                          <X className="h-3 w-3" />
-                        </button>
-                      </Badge>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              {/* Selecionar período */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Selecionar período
-                </label>
                 
-                {/* Seletor de tipo de data */}
-                <div className="mb-4 p-3 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200">
-                  <div className="text-sm font-semibold text-blue-800 mb-3 flex items-center gap-2">
-                    <div className="w-2 h-2 rounded-full bg-blue-500"></div>
-                    Filtrar por:
-                  </div>
-                  <div className="grid grid-cols-1 gap-3">
-                    {DATE_FILTER_OPTIONS.map((option) => (
-                      <label 
-                        key={option.value} 
-                        className="flex items-center gap-3 cursor-pointer hover:bg-white/60 p-2 rounded-lg transition-colors"
-                        onClick={() => setDateFilterType(option.value as "favorito" | "realizacao")}
-                      >
-                        <div className={cn(
-                          "w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all",
-                          dateFilterType === option.value 
-                            ? "border-blue-600 bg-blue-600 shadow-md" 
-                            : "border-gray-400 hover:border-blue-400"
-                        )}>
-                          {dateFilterType === option.value && (
-                            <div className="w-2.5 h-2.5 rounded-full bg-white"></div>
-                          )}
-                        </div>
-                        <span className={cn(
-                          "text-sm font-medium transition-colors",
-                          dateFilterType === option.value 
-                            ? "text-blue-800" 
-                            : "text-gray-700 hover:text-blue-700"
-                        )}>
-                          {option.label}
-                        </span>
-                      </label>
-                    ))}
-                  </div>
+                <div>
+                  <label className="text-sm font-medium mb-2 block">Data inicial</label>
+                  <Input
+                    type="date"
+                    value={dateFrom}
+                    onChange={(e) => setDateFrom(e.target.value)}
+                    placeholder="De"
+                  />
                 </div>
                 
-                <div className="grid grid-cols-2 gap-1">
-                  {/* Data de Início */}
-                  <div>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant="outline"
-                          className={cn(
-                            "w-full justify-start text-left font-normal text-sm h-10 px-3 border-gray-300 text-gray-700",
-                            !dateRange.from && "text-gray-400"
-                          )}
-                        >
-                          <CalendarIcon className="mr-2 h-4 w-4" />
-                          <span className="truncate">
-                            {dateRange.from ? format(dateRange.from, "dd/MM/yyyy") : "Início"}
-                          </span>
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0 z-[60] bg-white border border-gray-200 shadow-xl" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={dateRange.from}
-                          onSelect={(date) => setDateRange(prev => ({ ...prev, from: date }))}
-                          initialFocus
-                          numberOfMonths={1}
-                          locale={ptBR}
-                        />
-                      </PopoverContent>
-                    </Popover>
-                  </div>
-
-                  {/* Data de Fim */}
-                  <div>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant="outline"
-                          className={cn(
-                            "w-full justify-start text-left font-normal text-sm h-10 px-3 border-gray-300 text-gray-700",
-                            !dateRange.to && "text-gray-400"
-                          )}
-                        >
-                          <CalendarIcon className="mr-2 h-4 w-4" />
-                          <span className="truncate">
-                            {dateRange.to ? format(dateRange.to, "dd/MM/yyyy") : "Fim"}
-                          </span>
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0 z-[60] bg-white border border-gray-200 shadow-xl" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={dateRange.to}
-                          onSelect={(date) => setDateRange(prev => ({ ...prev, to: date }))}
-                          initialFocus
-                          numberOfMonths={1}
-                          locale={ptBR}
-                          disabled={(date) => dateRange.from ? date < dateRange.from : false}
-                        />
-                      </PopoverContent>
-                    </Popover>
-                  </div>
+                <div>
+                  <label className="text-sm font-medium mb-2 block">Data final</label>
+                  <Input
+                    type="date"
+                    value={dateTo}
+                    onChange={(e) => setDateTo(e.target.value)}
+                    placeholder="Até"
+                  />
+                </div>
+                
+                <div>
+                  <label className="text-sm font-medium mb-2 block">Categoria</label>
+                  <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Todas as categorias" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">Todas as categorias</SelectItem>
+                      {categories.map((category) => (
+                        <SelectItem key={category} value={category}>
+                          {category}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
+              
+              <div className="flex justify-end">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={clearFilters}
+                  className="text-red-600 border-red-300 hover:bg-red-50"
+                >
+                  <Eraser className="h-4 w-4 mr-2" />
+                  Limpar Filtros
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
 
-
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Results Header */}
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-lg font-semibold text-gray-900">
-            {filteredFavorites.length === 0 ? 'Nenhum favorito encontrado' : `${filteredFavorites.length} favorito${filteredFavorites.length > 1 ? 's' : ''} encontrado${filteredFavorites.length > 1 ? 's' : ''}`}
-          </h2>
-          {filteredFavorites.length > 0 && filteredFavorites.length !== favorites.length && (
-            <span className="text-sm text-gray-500">
-              {favorites.length} total
-            </span>
-          )}
-        </div>
-
-        {/* Results */}
-        <div className="space-y-4">
-          {filteredFavorites.length === 0 ? (
+          {/* Estatísticas */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
             <Card>
-              <CardContent className="p-12 text-center">
-                <Search className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">Nenhum favorito encontrado</h3>
-                <p className="text-gray-600">
-                  {favorites.length === 0 
-                    ? "Você ainda não marcou nenhuma licitação como favorita."
-                    : "Não há favoritos que correspondam aos seus critérios de pesquisa."
-                  }
-                </p>
+              <CardContent className="p-4 text-center">
+                <div className="text-2xl font-bold text-blue-600">{allFavorites.length}</div>
+                <div className="text-sm text-gray-600">Total de Favoritos</div>
               </CardContent>
             </Card>
+            
+            <Card>
+              <CardContent className="p-4 text-center">
+                <div className="text-2xl font-bold text-green-600">{filteredFavorites.length}</div>
+                <div className="text-sm text-gray-600">Filtrados</div>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardContent className="p-4 text-center">
+                <div className="text-2xl font-bold text-purple-600">{categories.length}</div>
+                <div className="text-sm text-gray-600">Categorias</div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+
+        {/* Lista de favoritos */}
+        <div className="space-y-4">
+          {filteredFavorites.length === 0 ? (
+            <div className="text-center py-8">
+              <div className="text-gray-500 mb-2">Nenhum favorito encontrado</div>
+              <div className="text-sm text-gray-400">
+                {allFavorites.length === 0 
+                  ? "Você ainda não tem favoritos. Favorite licitações interessantes para vê-las aqui."
+                  : "Tente ajustar os filtros para ver mais resultados."
+                }
+              </div>
+            </div>
           ) : (
-            filteredFavorites.map((bidding) => (
-              <BiddingCard key={bidding.id} bidding={bidding} showFavoriteIcon={true} />
-            ))
+            <>
+              {filteredFavorites.map((favorite) => (
+                <div key={favorite.id} className="relative">
+                  {/* Card do favorito */}
+                  <Card className="border-l-4 border-l-yellow-400">
+                    <CardContent className="p-4">
+                      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                        {/* Informações principais */}
+                        <div className="lg:col-span-2">
+                          <div className="mb-2">
+                            <Badge variant="secondary" className="mr-2">
+                              {favorite.tipoObjeto || "Sem categoria"}
+                            </Badge>
+                            <span className="text-xs text-gray-500">
+                              Favoritado em {new Date(favorite.createdAt).toLocaleDateString('pt-BR')}
+                            </span>
+                          </div>
+                          
+                          <h3 className="font-semibold text-gray-900 mb-2">
+                            {favorite.objeto || `ID: ${favorite.biddingId}`}
+                          </h3>
+                          
+                          {favorite.site && (
+                            <div className="text-sm text-gray-600 mb-2">
+                              <span className="font-medium">Site:</span> {favorite.site}
+                              {favorite.siteType && (
+                                <Badge variant="outline" className="ml-2 text-xs">
+                                  {favorite.siteType}
+                                </Badge>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                        
+                        {/* Dados da licitação original (se disponível) */}
+                        <div className="bg-gray-50 p-3 rounded">
+                          <div className="text-xs font-medium text-gray-700 mb-2">
+                            Dados da Licitação:
+                          </div>
+                          <div className="text-xs text-gray-600 space-y-1">
+                            <div><span className="font-medium">ID:</span> {favorite.biddingId}</div>
+                            {favorite.licitacaoData && (
+                              <div className="text-xs text-gray-500">
+                                Dados salvos disponíveis
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              ))}
+            </>
           )}
         </div>
       </div>

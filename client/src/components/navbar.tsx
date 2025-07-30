@@ -72,7 +72,7 @@ export function Navbar() {
                 }`}
               >
                 <Heart className="mr-2 h-4 w-4" />
-                Favoritos
+                Meus Favoritos
               </Button>
             </Link>
             <Button 
