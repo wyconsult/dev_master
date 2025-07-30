@@ -132,31 +132,31 @@ export default function Biddings() {
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
       <Navbar />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-12 text-center">
-          <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-gradient-to-r from-green-500 to-emerald-600 text-white mb-6 shadow-lg">
-            <Search className="h-10 w-10" />
+        <div className="mb-8 md:mb-12 text-center px-4">
+          <div className="inline-flex items-center justify-center w-16 h-16 md:w-20 md:h-20 rounded-full bg-gradient-to-r from-green-500 to-emerald-600 text-white mb-4 md:mb-6 shadow-lg">
+            <Search className="h-8 w-8 md:h-10 md:w-10" />
           </div>
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-gray-900 to-green-700 bg-clip-text text-transparent mb-3">
+          <h1 className="text-2xl md:text-4xl font-bold bg-gradient-to-r from-gray-900 to-green-700 bg-clip-text text-transparent mb-2 md:mb-3">
             Licitações
           </h1>
-          <p className="text-xl text-gray-600 mb-2">
+          <p className="text-lg md:text-xl text-gray-600 mb-1 md:mb-2">
             Busca Inteligente 🔍
           </p>
-          <p className="text-gray-500">
+          <p className="text-sm md:text-base text-gray-500">
             Encontre e acompanhe processos licitatórios
           </p>
         </div>
 
         {/* Filters */}
-        <Card className="mb-6 border-0 shadow-xl bg-white/80 backdrop-blur-sm">
-          <CardHeader>
-            <CardTitle className="text-lg flex items-center gap-2">
-              <Filter className="h-5 w-5" />
+        <Card className="mb-6 border-0 shadow-xl bg-white/80 backdrop-blur-sm mx-4">
+          <CardHeader className="pb-4">
+            <CardTitle className="text-lg md:text-xl flex items-center gap-2">
+              <Filter className="h-4 w-4 md:h-5 md:w-5" />
               Filtros de Pesquisa
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <CardContent className="px-3 md:px-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
               {/* Número de Controle */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -287,13 +287,13 @@ export default function Biddings() {
               </div>
 
               {/* Search Button */}
-              <div className="flex items-end gap-2">
-                <Button className="flex-1 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white border-0 shadow-lg">
-                  <Search className="mr-2 h-4 w-4" />
+              <div className="flex flex-col md:flex-row items-stretch md:items-end gap-2">
+                <Button className="flex-1 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white border-0 shadow-lg text-sm md:text-base">
+                  <Search className="mr-2 h-3 w-3 md:h-4 md:w-4" />
                   Pesquisar
                 </Button>
                 {(numeroControle || selectedOrgaos.length > 0 || selectedUFs.length > 0) && (
-                  <Button variant="outline" onClick={clearFilters} className="border-gray-300 text-gray-700 hover:bg-gray-50">
+                  <Button variant="outline" onClick={clearFilters} className="border-gray-300 text-gray-700 hover:bg-gray-50 text-sm md:text-base">
                     Limpar
                   </Button>
                 )}
@@ -303,13 +303,13 @@ export default function Biddings() {
         </Card>
 
         {/* Results */}
-        <div className="space-y-4">
+        <div className="space-y-3 md:space-y-4 px-4">
           {filteredBiddings.length === 0 ? (
             <Card>
-              <CardContent className="p-12 text-center">
-                <Search className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">Nenhuma licitação encontrada</h3>
-                <p className="text-gray-600">Não há licitações que correspondam aos seus critérios de pesquisa.</p>
+              <CardContent className="p-6 md:p-12 text-center">
+                <Search className="h-8 w-8 md:h-12 md:w-12 text-gray-400 mx-auto mb-3 md:mb-4" />
+                <h3 className="text-base md:text-lg font-medium text-gray-900 mb-2">Nenhuma licitação encontrada</h3>
+                <p className="text-sm md:text-base text-gray-600">Não há licitações que correspondam aos seus critérios de pesquisa.</p>
               </CardContent>
             </Card>
           ) : (

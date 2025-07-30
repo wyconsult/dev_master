@@ -176,22 +176,22 @@ export function BiddingCard({ bidding, showFavoriteIcon = true }: BiddingCardPro
       )}
     >
       {/* Header com gradiente verde */}
-      <div className="bg-gradient-to-r from-green-500 to-emerald-600 text-white p-3 relative">
-        <div className="flex justify-between items-start">
-          <div className="flex-1 pr-2">
-            <p className="text-sm font-medium leading-tight">
+      <div className="bg-gradient-to-r from-green-500 to-emerald-600 text-white p-3 md:p-4 relative">
+        <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-2 md:gap-0">
+          <div className="flex-1 pr-0 md:pr-2">
+            <p className="text-sm md:text-base font-medium leading-tight">
               <span className="font-semibold">Objeto:</span> {bidding.objeto}
             </p>
           </div>
-          <div className="flex items-center gap-2 flex-shrink-0">
+          <div className="flex items-center gap-2 flex-shrink-0 justify-between md:justify-start">
             {/* Status badge */}
             <div
               className={cn(
-                "rounded text-white text-xs font-bold px-3 py-1",
+                "rounded text-white text-xs font-bold px-2 md:px-3 py-1",
                 getStatusColor(bidding.situacao || "")
               )}
               style={{
-                minWidth: "70px",
+                minWidth: "60px",
                 textAlign: "center",
                 whiteSpace: "nowrap",
                 textTransform: "uppercase",
@@ -213,7 +213,7 @@ export function BiddingCard({ bidding, showFavoriteIcon = true }: BiddingCardPro
                 )}
               >
                 <Heart
-                  className={cn("h-4 w-4", isFavorite && "fill-current")}
+                  className={cn("h-3 w-3 md:h-4 md:w-4", isFavorite && "fill-current")}
                 />
               </Button>
             )}
@@ -221,13 +221,13 @@ export function BiddingCard({ bidding, showFavoriteIcon = true }: BiddingCardPro
         </div>
       </div>
 
-      <CardContent className="p-4">
+      <CardContent className="p-3 md:p-4">
 
         {/* Datas - seção destacada */}
         {datesInfo.length > 0 && (
-          <div className="mb-4 p-3 bg-gray-50 rounded-lg border">
-            <div className="font-semibold text-gray-800 mb-2 text-sm">Datas:</div>
-            <div className="grid grid-cols-1 gap-1 text-sm">
+          <div className="mb-3 md:mb-4 p-2 md:p-3 bg-gray-50 rounded-lg border">
+            <div className="font-semibold text-gray-800 mb-2 text-xs md:text-sm">Datas:</div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-1 text-xs md:text-sm">
               {datesInfo.map((date, index) => (
                 <div key={index} className="text-gray-700">
                   <span className="font-medium">{date.label}:</span> {date.value}
@@ -238,8 +238,8 @@ export function BiddingCard({ bidding, showFavoriteIcon = true }: BiddingCardPro
         )}
 
         {/* Main info grid */}
-        <div className="space-y-3 text-sm">
-          <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-2 md:space-y-3 text-xs md:text-sm">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-4">
             <span className="text-gray-700">
               <strong>Edital:</strong> {bidding.edital}
             </span>
@@ -251,23 +251,21 @@ export function BiddingCard({ bidding, showFavoriteIcon = true }: BiddingCardPro
           <div className="grid grid-cols-1 gap-2">
             <span className="text-gray-700">
               <strong>Órgão:</strong> {bidding.orgao_codigo ? `${bidding.orgao_codigo} - ${bidding.orgao_nome}` : bidding.orgao_nome}
-              {" | "}
-              <strong>Status:</strong> {expandTruncatedStatus(bidding.situacao || "")}
             </span>
-            <div className="flex justify-between items-center">
+            <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-2 md:gap-0">
               <span className="text-gray-700">
                 <strong>Cidade:</strong> {bidding.orgao_cidade} - {bidding.orgao_uf}
               </span>
               <a
                 href="#"
-                className="text-blue-600 hover:text-blue-800 underline text-sm cursor-pointer"
+                className="text-blue-600 hover:text-blue-800 underline text-xs md:text-sm cursor-pointer font-medium"
                 onClick={(e) => {
                   e.preventDefault();
                   handleLinkClick();
                 }}
                 style={{ userSelect: "none" }}
               >
-                <strong>Link:</strong> Acessar documento
+                Acessar documento →
               </a>
             </div>
           </div>
