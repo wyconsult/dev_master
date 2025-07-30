@@ -1,18 +1,30 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Heart, ArrowRight } from "lucide-react";
+import { Heart, ArrowRight, FileText } from "lucide-react";
 import { type Bidding } from "@shared/schema";
 import { useFavorites } from "@/hooks/use-favorites";
 import { useAuth } from "@/hooks/use-auth";
 import { useQuery } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
+import { FavoriteCategorization } from "@/components/favorite-categorization";
 
 interface BiddingCardProps {
   bidding: Bidding;
   showFavoriteIcon?: boolean;
+  showCategorization?: boolean;
+  favoriteData?: {
+    category?: string;
+    customCategory?: string; 
+    notes?: string;
+  };
 }
 
-export function BiddingCard({ bidding, showFavoriteIcon = true }: BiddingCardProps) {
+export function BiddingCard({ 
+  bidding, 
+  showFavoriteIcon = true, 
+  showCategorization = false,
+  favoriteData 
+}: BiddingCardProps) {
   const { user } = useAuth();
   const { toggleFavorite, isLoading } = useFavorites();
 
@@ -270,6 +282,29 @@ export function BiddingCard({ bidding, showFavoriteIcon = true }: BiddingCardPro
             </div>
           </div>
         </div>
+
+        {/* Categorização - apenas em favoritos */}
+        {showCategorization && (
+          <div className="mt-3 pt-3 border-t border-gray-200">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <FavoriteCategorization
+                  bidding={bidding}
+                  currentCategory={favoriteData?.category}
+                  currentCustomCategory={favoriteData?.customCategory}
+                  currentNotes={favoriteData?.notes}
+                />
+              </div>
+              
+              {favoriteData?.notes && (
+                <div className="flex items-center gap-1 text-gray-500">
+                  <FileText className="h-3 w-3" />
+                  <span className="text-xs">Com anotações</span>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </CardContent>
     </Card>
   );

@@ -29,6 +29,11 @@ export interface IConLicitacaoStorage {
   addFavorite(favorite: InsertFavorite): Promise<Favorite>;
   removeFavorite(userId: number, biddingId: number): Promise<void>;
   isFavorite(userId: number, biddingId: number): Promise<boolean>;
+  updateFavoriteCategorization(userId: number, biddingId: number, data: {
+    category?: string;
+    customCategory?: string;
+    notes?: string;
+  }): Promise<void>;
 }
 
 export class ConLicitacaoStorage implements IConLicitacaoStorage {
@@ -590,7 +595,14 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
 
   async addFavorite(insertFavorite: InsertFavorite): Promise<Favorite> {
     const id = this.currentFavoriteId++;
-    const favorite: Favorite = { ...insertFavorite, id, createdAt: new Date() };
+    const favorite: Favorite = { 
+      ...insertFavorite, 
+      id, 
+      createdAt: new Date(),
+      category: null,
+      customCategory: null,
+      notes: null
+    };
     this.favorites.set(id, favorite);
     return favorite;
   }
@@ -615,6 +627,23 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
       }
     });
     return found;
+  }
+
+  async updateFavoriteCategorization(userId: number, biddingId: number, data: {
+    category?: string;
+    customCategory?: string;
+    notes?: string;
+  }): Promise<void> {
+    this.favorites.forEach((favorite, id) => {
+      if (favorite.userId === userId && favorite.biddingId === biddingId) {
+        this.favorites.set(id, {
+          ...favorite,
+          category: data.category ?? null,
+          customCategory: data.customCategory ?? null,
+          notes: data.notes ?? null
+        });
+      }
+    });
   }
 }
 

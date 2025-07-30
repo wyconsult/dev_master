@@ -466,7 +466,17 @@ export default function Favorites() {
             </Card>
           ) : (
             filteredFavorites.map((bidding) => (
-              <BiddingCard key={bidding.id} bidding={bidding} showFavoriteIcon={true} />
+              <BiddingCard 
+                key={bidding.id} 
+                bidding={bidding} 
+                showFavoriteIcon={true}
+                showCategorization={true}
+                favoriteData={{
+                  category: null,
+                  customCategory: null,
+                  notes: null
+                }}
+              />
             ))
           )}
         </div>
