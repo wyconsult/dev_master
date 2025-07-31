@@ -4,6 +4,11 @@ interface FavoriteCategorizationData {
   category: string | null;
   customCategory: string | null;
   notes: string | null;
+  uf: string | null;
+  codigoUasg: string | null;
+  valorEstimado: string | null;
+  fornecedor: string | null;
+  site: string | null;
 }
 
 export function useFavoriteCategorization(userId: number, biddingId: number) {

@@ -142,12 +142,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = parseInt(req.params.userId);
       const biddingId = parseInt(req.params.biddingId);
-      const { category, customCategory, notes } = req.body;
+      const { category, customCategory, notes, uf, codigoUasg, valorEstimado, fornecedor, site } = req.body;
       
       await conLicitacaoStorage.updateFavoriteCategorization(userId, biddingId, {
         category,
         customCategory,
-        notes
+        notes,
+        uf,
+        codigoUasg,
+        valorEstimado,
+        fornecedor,
+        site
       });
       
       res.json({ success: true });

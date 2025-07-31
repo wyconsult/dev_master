@@ -601,7 +601,12 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
       createdAt: new Date(),
       category: null,
       customCategory: null,
-      notes: null
+      notes: null,
+      uf: null,
+      codigoUasg: null,
+      valorEstimado: null,
+      fornecedor: null,
+      site: null,
     };
     this.favorites.set(id, favorite);
     return favorite;
@@ -633,6 +638,11 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
     category?: string;
     customCategory?: string;
     notes?: string;
+    uf?: string;
+    codigoUasg?: string;
+    valorEstimado?: string;
+    fornecedor?: string;
+    site?: string;
   }): Promise<void> {
     this.favorites.forEach((favorite, id) => {
       if (favorite.userId === userId && favorite.biddingId === biddingId) {
@@ -640,7 +650,12 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
           ...favorite,
           category: data.category ?? null,
           customCategory: data.customCategory ?? null,
-          notes: data.notes ?? null
+          notes: data.notes ?? null,
+          uf: data.uf ?? null,
+          codigoUasg: data.codigoUasg ?? null,
+          valorEstimado: data.valorEstimado ?? null,
+          fornecedor: data.fornecedor ?? null,
+          site: data.site ?? null,
         });
       }
     });

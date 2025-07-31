@@ -34,6 +34,13 @@ export function FavoriteCategorization({
   const [activeTab, setActiveTab] = useState("category");
   const [searchTerm, setSearchTerm] = useState("");
   const [siteSearch, setSiteSearch] = useState("");
+  const [newCategoryName, setNewCategoryName] = useState("");
+  const [newSiteUrl, setNewSiteUrl] = useState("");
+  const [uf, setUf] = useState("");
+  const [codigoUasg, setCodigoUasg] = useState("");
+  const [valorEstimado, setValorEstimado] = useState("");
+  const [fornecedor, setFornecedor] = useState("");
+  const [selectedSite, setSelectedSite] = useState("");
   
   const { user } = useAuth();
   const { toast } = useToast();
@@ -48,17 +55,47 @@ export function FavoriteCategorization({
   const suggestedCategory = suggestCategory(bidding.objeto);
 
   const handleSave = () => {
-    updateCategorization({
+    const categorizationData = {
       category: selectedCategory || null,
       customCategory: customCategory.trim() || null,
       notes: notes.trim() || null,
-    });
+      uf: uf.trim() || null,
+      codigoUasg: codigoUasg.trim() || null,
+      valorEstimado: valorEstimado.trim() || null,
+      fornecedor: fornecedor.trim() || null,
+      site: selectedSite.trim() || null,
+    };
+
+    updateCategorization(categorizationData);
 
     toast({
       title: "Categorização atualizada",
-      description: "A categorização do favorito foi salva com sucesso.",
+      description: "Todas as informações foram salvas com sucesso.",
     });
     setIsOpen(false);
+  };
+
+  const handleAddNewCategory = () => {
+    if (newCategoryName.trim()) {
+      setCustomCategory(newCategoryName.trim());
+      setNewCategoryName("");
+      toast({
+        title: "Categoria adicionada",
+        description: `Nova categoria "${newCategoryName}" foi criada.`,
+      });
+      setActiveTab("notes");
+    }
+  };
+
+  const handleAddNewSite = () => {
+    if (newSiteUrl.trim()) {
+      setSelectedSite(newSiteUrl.trim());
+      setNewSiteUrl("");
+      toast({
+        title: "Site adicionado",
+        description: `Novo site "${newSiteUrl}" foi adicionado.`,
+      });
+    }
   };
 
   const handleSuggestCategory = () => {
@@ -189,19 +226,29 @@ export function FavoriteCategorization({
                   </div>
                 )}
 
-                {/* Botão de adicionar nova categoria */}
-                <div 
-                  className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center cursor-pointer hover:border-blue-400 hover:bg-blue-50 transition-colors"
-                  onClick={() => {
-                    // Adicionar funcionalidade futura para nova categoria
-                    toast({
-                      title: "Funcionalidade em desenvolvimento",
-                      description: "Em breve você poderá adicionar novos tipos de categoria.",
-                    });
-                  }}
-                >
-                  <Plus className="h-5 w-5 text-gray-400 mx-auto mb-1" />
-                  <span className="text-sm text-gray-600">+ Adicionar Novo Tipo</span>
+                {/* Formulário para adicionar nova categoria */}
+                <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 space-y-3">
+                  <div className="text-center">
+                    <Plus className="h-5 w-5 text-gray-400 mx-auto mb-2" />
+                    <span className="text-sm font-medium text-gray-700">Adicionar Novo Tipo</span>
+                  </div>
+                  <div className="flex gap-2">
+                    <Input
+                      placeholder="Nome da nova categoria..."
+                      value={newCategoryName}
+                      onChange={(e) => setNewCategoryName(e.target.value)}
+                      className="flex-1 text-sm"
+                      onKeyPress={(e) => e.key === 'Enter' && handleAddNewCategory()}
+                    />
+                    <Button 
+                      onClick={handleAddNewCategory}
+                      disabled={!newCategoryName.trim()}
+                      size="sm"
+                      className="bg-blue-600 hover:bg-blue-700"
+                    >
+                      Criar
+                    </Button>
+                  </div>
                 </div>
               </div>
 
@@ -265,6 +312,8 @@ export function FavoriteCategorization({
                     <Label className="text-sm font-semibold text-gray-800">UF:</Label>
                     <Input
                       placeholder="Ex: BA, SP, RJ..."
+                      value={uf}
+                      onChange={(e) => setUf(e.target.value)}
                       className="mt-1 border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
                     />
                   </div>
@@ -272,6 +321,8 @@ export function FavoriteCategorization({
                     <Label className="text-sm font-semibold text-gray-800">Código UASG/Gestora:</Label>
                     <Input
                       placeholder="Ex: 123456"
+                      value={codigoUasg}
+                      onChange={(e) => setCodigoUasg(e.target.value)}
                       className="mt-1 border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
                     />
                   </div>
@@ -287,7 +338,11 @@ export function FavoriteCategorization({
                       onChange={(e) => setSiteSearch(e.target.value)}
                       className="mb-2 border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
                     />
-                    <select className="w-full p-2 border border-gray-300 rounded-md text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200">
+                    <select 
+                      className="w-full p-2 border border-gray-300 rounded-md text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                      value={selectedSite}
+                      onChange={(e) => setSelectedSite(e.target.value)}
+                    >
                       <option value="">Selecione um site...</option>
                       {CATEGORIZATION_DATA.sites
                         .filter(site => 
@@ -302,18 +357,28 @@ export function FavoriteCategorization({
                       }
                     </select>
                   </div>
-                  <div 
-                    className="border-2 border-dashed border-gray-300 rounded-lg p-3 text-center cursor-pointer hover:border-blue-400 hover:bg-blue-50 transition-colors mt-2"
-                    onClick={() => {
-                      // Adicionar funcionalidade futura para novo site
-                      toast({
-                        title: "Funcionalidade em desenvolvimento",
-                        description: "Em breve você poderá adicionar novos sites de licitação.",
-                      });
-                    }}
-                  >
-                    <Plus className="h-4 w-4 text-gray-400 mx-auto mb-1" />
-                    <span className="text-xs text-gray-600">+ Adicionar Novo Site</span>
+                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-3 space-y-2 mt-2">
+                    <div className="text-center">
+                      <Plus className="h-4 w-4 text-gray-400 mx-auto mb-1" />
+                      <span className="text-xs font-medium text-gray-700">Adicionar Novo Site</span>
+                    </div>
+                    <div className="flex gap-2">
+                      <Input
+                        placeholder="URL do site..."
+                        value={newSiteUrl}
+                        onChange={(e) => setNewSiteUrl(e.target.value)}
+                        className="flex-1 text-xs"
+                        onKeyPress={(e) => e.key === 'Enter' && handleAddNewSite()}
+                      />
+                      <Button 
+                        onClick={handleAddNewSite}
+                        disabled={!newSiteUrl.trim()}
+                        size="sm"
+                        className="bg-blue-600 hover:bg-blue-700 text-xs px-2"
+                      >
+                        Add
+                      </Button>
+                    </div>
                   </div>
                 </div>
 
@@ -323,6 +388,8 @@ export function FavoriteCategorization({
                     <Label className="text-sm font-semibold text-gray-800">Valor Estimado/Contratado:</Label>
                     <Input
                       placeholder="Ex: R$ 50.000,00"
+                      value={valorEstimado}
+                      onChange={(e) => setValorEstimado(e.target.value)}
                       className="mt-1 border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
                     />
                   </div>
@@ -330,6 +397,8 @@ export function FavoriteCategorization({
                     <Label className="text-sm font-semibold text-gray-800">Fornecedor/UASG do Fornecedor:</Label>
                     <Input
                       placeholder="Nome do fornecedor"
+                      value={fornecedor}
+                      onChange={(e) => setFornecedor(e.target.value)}
                       className="mt-1 border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
                     />
                   </div>
