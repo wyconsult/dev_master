@@ -279,15 +279,15 @@ export default function Boletins() {
                 </div>
               </CardHeader>
               <CardContent className="px-2 md:px-6 pb-4">
-                <div className="grid grid-cols-7 gap-0.5 mb-4">
+                <div className="grid grid-cols-7 gap-1 mb-4">
                   {['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].map(day => (
-                    <div key={day} className="p-1 text-center text-xs font-medium text-gray-500">
+                    <div key={day} className="h-6 flex items-center justify-center text-xs font-medium text-gray-500">
                       {isMobile ? day.slice(0, 1) : day}
                     </div>
                   ))}
                   
                   {Array.from({ length: monthStart.getDay() }).map((_, index) => (
-                    <div key={`empty-${index}`} className="p-1"></div>
+                    <div key={`empty-${index}`} className="h-12"></div>
                   ))}
                   
                   {daysInMonth.map((date, index) => {
@@ -297,42 +297,34 @@ export default function Boletins() {
                     const isCurrentDay = isToday(date);
 
                     return (
-                      <div key={index} className="relative">
+                      <div key={index} className="h-12">
                         <button
                           onClick={() => setSelectedDate(date)}
                           className={cn(
-                            "w-full h-[44px] p-1 text-xs rounded border transition-colors flex flex-col items-center justify-start overflow-hidden",
+                            "w-full h-full p-1 text-xs rounded border transition-colors flex flex-col items-center justify-start overflow-hidden",
                             {
-                              "bg-blue-500 text-white border-blue-500 relative z-10": isSelected,
+                              "bg-blue-500 text-white border-blue-500": isSelected,
                               "bg-blue-100 border-blue-300": isCurrentDay && !isSelected,
                               "hover:bg-gray-100 border-gray-300": !isSelected && !isCurrentDay,
                               "text-gray-400 border-gray-200": !isCurrentMonth,
                             }
                           )}
                         >
-                          <span className="font-medium text-xs leading-tight">{date.getDate()}</span>
+                          <span className="font-medium text-xs leading-none mb-0.5">{date.getDate()}</span>
                           {dayBoletins.length > 0 && (
-                            <div className="flex flex-wrap gap-0.5 justify-center w-full mt-0.5">
+                            <div className="flex gap-0.5 justify-center w-full">
                               {dayBoletins.slice(0, isMobile ? 1 : 2).map((boletim, idx) => (
                                 <div
                                   key={`${boletim.id}-${idx}`}
                                   className={cn(
-                                    "px-1 py-0.5 rounded text-white text-center flex-shrink-0",
+                                    "w-2 h-2 rounded-full flex-shrink-0",
                                     getStatusColor(boletim.visualizado)
                                   )}
-                                  style={{ 
-                                    fontSize: '6px', 
-                                    lineHeight: '8px',
-                                    minWidth: '12px'
-                                  }}
-                                >
-                                  {getTurno(boletim.datahora_fechamento)}
-                                </div>
+                                  title={getTurno(boletim.datahora_fechamento)}
+                                />
                               ))}
                               {dayBoletins.length > (isMobile ? 1 : 2) && (
-                                <div className="text-gray-500" style={{ fontSize: '6px', lineHeight: '8px' }}>
-                                  +{dayBoletins.length - (isMobile ? 1 : 2)}
-                                </div>
+                                <span className="text-gray-500 text-xs">+{dayBoletins.length - (isMobile ? 1 : 2)}</span>
                               )}
                             </div>
                           )}

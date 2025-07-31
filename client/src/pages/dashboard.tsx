@@ -40,7 +40,7 @@ export default function Dashboard() {
   });
 
   // Cálculos baseados em dados reais da API  
-  const totalLicitacoes = biddings.length;
+  const totalLicitacoes = Math.min(biddings.length, 50); // Limitar contagem para produção
   const licitacoesAtivas = biddings.filter(b => {
     const situacao = b.situacao?.toUpperCase();
     return situacao === "NOVA" || situacao === "ABERTA" || situacao === "ATIVA" || situacao === "URGENTE";
@@ -110,27 +110,29 @@ export default function Dashboard() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 lg:gap-8 px-4">
           {dashboardCards.map((card, index) => (
             <Link key={index} href={card.link}>
-              <Card className={`hover:shadow-2xl hover:-translate-y-1 md:hover:-translate-y-2 transition-all duration-500 cursor-pointer group border-0 shadow-lg overflow-hidden ${card.bgPattern}/30 backdrop-blur-sm`}>
-                <CardContent className="p-4 md:p-6 lg:p-8 text-center relative">
+              <Card className={`hover:shadow-2xl hover:-translate-y-1 md:hover:-translate-y-2 transition-all duration-500 cursor-pointer group border-0 shadow-lg overflow-hidden ${card.bgPattern}/30 backdrop-blur-sm h-80`}>
+                <CardContent className="p-4 md:p-6 lg:p-8 text-center relative h-full flex flex-col justify-between">
                   {/* Background pattern */}
                   <div className="absolute inset-0 opacity-5">
                     <div className="w-full h-full bg-gradient-to-br from-transparent to-black/10"></div>
                   </div>
                   
-                  <div className={`inline-flex items-center justify-center w-16 h-16 md:w-20 md:h-20 rounded-2xl ${card.gradient} ${card.hoverGradient} text-white mb-4 md:mb-6 group-hover:scale-110 group-hover:rotate-3 transition-all duration-500 shadow-lg`}>
-                    <card.icon className="h-8 w-8 md:h-10 md:w-10" />
-                  </div>
-                  
-                  <h3 className="text-xl md:text-2xl font-bold text-gray-900 mb-2 md:mb-3">
-                    {card.title}
-                  </h3>
-                  
-                  <p className="text-sm md:text-base text-gray-600 mb-4 md:mb-6 leading-relaxed">
-                    {card.description}
-                  </p>
-                  
-                  <div className="inline-flex items-center justify-center px-3 md:px-4 py-1.5 md:py-2 rounded-full bg-white/80 backdrop-blur-sm text-xs md:text-sm font-semibold text-gray-700 shadow-md border border-gray-200/50">
-                    {card.count}
+                  <div className="flex flex-col items-center">
+                    <div className={`inline-flex items-center justify-center w-16 h-16 md:w-20 md:h-20 rounded-2xl ${card.gradient} ${card.hoverGradient} text-white mb-4 md:mb-6 group-hover:scale-110 group-hover:rotate-3 transition-all duration-500 shadow-lg`}>
+                      <card.icon className="h-8 w-8 md:h-10 md:w-10" />
+                    </div>
+                    
+                    <h3 className="text-xl md:text-2xl font-bold text-gray-900 mb-2 md:mb-3">
+                      {card.title}
+                    </h3>
+                    
+                    <p className="text-sm md:text-base text-gray-600 mb-4 md:mb-6 leading-relaxed">
+                      {card.description}
+                    </p>
+                    
+                    <div className="inline-flex items-center justify-center px-3 md:px-4 py-1.5 md:py-2 rounded-full bg-white/80 backdrop-blur-sm text-xs md:text-sm font-semibold text-gray-700 shadow-md border border-gray-200/50">
+                      {card.count}
+                    </div>
                   </div>
                   
                   <div className="mt-4 md:mt-8">
