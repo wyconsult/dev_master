@@ -341,7 +341,7 @@ export default function Boletins() {
                         <div className="flex flex-col h-full pt-5 px-1 pb-1">
                           {/* Manhã */}
                           <div className={cn(
-                            "h-4 md:h-5 flex items-center justify-center text-[9px] md:text-[10px] font-bold text-white cursor-pointer rounded-sm mx-0.5 mb-0.5",
+                            "h-4 md:h-5 flex items-center justify-center text-[9px] md:text-[10px] font-bold text-white cursor-pointer rounded-sm mx-0.5 mb-0.5 text-center w-full",
                             manhaBoletins.length > 0 
                               ? manhaBoletins.some(b => !b.visualizado) 
                                 ? "bg-green-500 hover:bg-green-600" 
@@ -351,12 +351,12 @@ export default function Boletins() {
                           onClick={() => manhaBoletins.length > 0 && setSelectedDate(date)}
                           title={manhaBoletins.length > 0 ? `${manhaBoletins.length} boletim(s) - Manhã` : ''}
                           >
-                            {manhaBoletins.length > 0 ? 'Manhã' : ''}
+                            <span className="w-full text-center">{manhaBoletins.length > 0 ? 'Manhã' : ''}</span>
                           </div>
 
                           {/* Tarde */}
                           <div className={cn(
-                            "h-4 md:h-5 flex items-center justify-center text-[9px] md:text-[10px] font-bold text-white cursor-pointer rounded-sm mx-0.5 mb-0.5",
+                            "h-4 md:h-5 flex items-center justify-center text-[9px] md:text-[10px] font-bold text-white cursor-pointer rounded-sm mx-0.5 mb-0.5 text-center w-full",
                             tardeBoletins.length > 0 
                               ? tardeBoletins.some(b => !b.visualizado) 
                                 ? "bg-green-500 hover:bg-green-600" 
@@ -366,12 +366,12 @@ export default function Boletins() {
                           onClick={() => tardeBoletins.length > 0 && setSelectedDate(date)}
                           title={tardeBoletins.length > 0 ? `${tardeBoletins.length} boletim(s) - Tarde` : ''}
                           >
-                            {tardeBoletins.length > 0 ? 'Tarde' : ''}
+                            <span className="w-full text-center">{tardeBoletins.length > 0 ? 'Tarde' : ''}</span>
                           </div>
 
                           {/* Noite */}
                           <div className={cn(
-                            "h-4 md:h-5 flex items-center justify-center text-[9px] md:text-[10px] font-bold text-white cursor-pointer rounded-sm mx-0.5",
+                            "h-4 md:h-5 flex items-center justify-center text-[9px] md:text-[10px] font-bold text-white cursor-pointer rounded-sm mx-0.5 text-center w-full",
                             noiteBoletins.length > 0 
                               ? noiteBoletins.some(b => !b.visualizado) 
                                 ? "bg-green-500 hover:bg-green-600" 
@@ -381,7 +381,7 @@ export default function Boletins() {
                           onClick={() => noiteBoletins.length > 0 && setSelectedDate(date)}
                           title={noiteBoletins.length > 0 ? `${noiteBoletins.length} boletim(s) - Noite` : ''}
                           >
-                            {noiteBoletins.length > 0 ? 'Noite' : ''}
+                            <span className="w-full text-center">{noiteBoletins.length > 0 ? 'Noite' : ''}</span>
                           </div>
                         </div>
                       </div>
