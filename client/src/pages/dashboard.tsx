@@ -40,7 +40,7 @@ export default function Dashboard() {
   });
 
   // Cálculos baseados em dados reais da API  
-  const totalLicitacoes = Math.min(biddings.length, 50); // Limitar contagem para produção
+  const totalLicitacoes = biddings.length;
   const licitacoesAtivas = biddings.filter(b => {
     const situacao = b.situacao?.toUpperCase();
     return situacao === "NOVA" || situacao === "ABERTA" || situacao === "ATIVA" || situacao === "URGENTE";

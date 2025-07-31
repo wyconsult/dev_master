@@ -79,6 +79,23 @@ export default function Boletins() {
     });
   };
 
+  const getBoletinsByPeriod = (date: Date, period: 'manha' | 'tarde' | 'noite') => {
+    const dayBoletins = getBoletinsForDate(date);
+    return dayBoletins.filter(boletim => {
+      const hour = new Date(boletim.datahora_fechamento).getHours();
+      switch (period) {
+        case 'manha':
+          return hour >= 6 && hour < 12;
+        case 'tarde':
+          return hour >= 12 && hour < 18;
+        case 'noite':
+          return hour >= 18 || hour < 6;
+        default:
+          return false;
+      }
+    });
+  };
+
   const selectedDateBoletins = selectedDate ? getBoletinsForDate(selectedDate) : [];
 
   const getStatusColor = (visualizado: boolean) => {
@@ -279,56 +296,94 @@ export default function Boletins() {
                 </div>
               </CardHeader>
               <CardContent className="px-2 md:px-6 pb-4">
+                {/* Headers dos dias da semana */}
                 <div className="grid grid-cols-7 gap-1 mb-4">
                   {['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].map(day => (
                     <div key={day} className="h-6 flex items-center justify-center text-xs font-medium text-gray-500">
                       {isMobile ? day.slice(0, 1) : day}
                     </div>
                   ))}
-                  
+                </div>
+
+                {/* Grade do calendário com design fixo */}
+                <div className="grid grid-cols-7 gap-1">
                   {Array.from({ length: monthStart.getDay() }).map((_, index) => (
-                    <div key={`empty-${index}`} className="h-12"></div>
+                    <div key={`empty-${index}`} className="h-20 md:h-24"></div>
                   ))}
                   
                   {daysInMonth.map((date, index) => {
-                    const dayBoletins = getBoletinsForDate(date);
-                    const isSelected = selectedDate && isSameDay(date, selectedDate);
                     const isCurrentMonth = isSameMonth(date, currentDate);
                     const isCurrentDay = isToday(date);
+                    const manhaBoletins = getBoletinsByPeriod(date, 'manha');
+                    const tardeBoletins = getBoletinsByPeriod(date, 'tarde');
+                    const noiteBoletins = getBoletinsByPeriod(date, 'noite');
 
                     return (
-                      <div key={index} className="h-12">
-                        <button
-                          onClick={() => setSelectedDate(date)}
-                          className={cn(
-                            "w-full h-full p-1 text-xs rounded border transition-colors flex flex-col items-center justify-start overflow-hidden",
-                            {
-                              "bg-blue-500 text-white border-blue-500": isSelected,
-                              "bg-blue-100 border-blue-300": isCurrentDay && !isSelected,
-                              "hover:bg-gray-100 border-gray-300": !isSelected && !isCurrentDay,
-                              "text-gray-400 border-gray-200": !isCurrentMonth,
-                            }
+                      <div
+                        key={index}
+                        className={cn(
+                          "relative w-full h-20 md:h-24 border rounded-lg overflow-hidden",
+                          isCurrentMonth ? "bg-white" : "bg-gray-50/50",
+                          isCurrentDay && "ring-2 ring-blue-500",
+                          "border-gray-200"
+                        )}
+                      >
+                        {/* Número do dia */}
+                        <div className={cn(
+                          "absolute top-1 left-1 text-xs font-bold z-10",
+                          isCurrentMonth ? "text-gray-900" : "text-gray-400",
+                          isCurrentDay && "text-blue-600"
+                        )}>
+                          {date.getDate()}
+                        </div>
+
+                        {/* Três seções: Manhã, Tarde, Noite */}
+                        <div className="flex flex-col h-full pt-4">
+                          {/* Manhã */}
+                          <div className={cn(
+                            "flex-1 flex items-center justify-center text-[8px] md:text-[9px] font-bold text-white cursor-pointer",
+                            manhaBoletins.length > 0 
+                              ? manhaBoletins.some(b => !b.visualizado) 
+                                ? "bg-green-500 hover:bg-green-600" 
+                                : "bg-gray-400 hover:bg-gray-500"
+                              : "bg-gray-100 text-gray-400 cursor-default"
                           )}
-                        >
-                          <span className="font-medium text-xs leading-none mb-0.5">{date.getDate()}</span>
-                          {dayBoletins.length > 0 && (
-                            <div className="flex gap-0.5 justify-center w-full">
-                              {dayBoletins.slice(0, isMobile ? 1 : 2).map((boletim, idx) => (
-                                <div
-                                  key={`${boletim.id}-${idx}`}
-                                  className={cn(
-                                    "w-2 h-2 rounded-full flex-shrink-0",
-                                    getStatusColor(boletim.visualizado)
-                                  )}
-                                  title={getTurno(boletim.datahora_fechamento)}
-                                />
-                              ))}
-                              {dayBoletins.length > (isMobile ? 1 : 2) && (
-                                <span className="text-gray-500 text-xs">+{dayBoletins.length - (isMobile ? 1 : 2)}</span>
-                              )}
-                            </div>
+                          onClick={() => manhaBoletins.length > 0 && setSelectedDate(date)}
+                          title={manhaBoletins.length > 0 ? `${manhaBoletins.length} boletim(s) - Manhã` : ''}
+                          >
+                            {manhaBoletins.length > 0 ? 'Manhã' : ''}
+                          </div>
+
+                          {/* Tarde */}
+                          <div className={cn(
+                            "flex-1 flex items-center justify-center text-[8px] md:text-[9px] font-bold text-white cursor-pointer border-t border-white/20",
+                            tardeBoletins.length > 0 
+                              ? tardeBoletins.some(b => !b.visualizado) 
+                                ? "bg-green-500 hover:bg-green-600" 
+                                : "bg-gray-400 hover:bg-gray-500"
+                              : "bg-gray-100 text-gray-400 cursor-default"
                           )}
-                        </button>
+                          onClick={() => tardeBoletins.length > 0 && setSelectedDate(date)}
+                          title={tardeBoletins.length > 0 ? `${tardeBoletins.length} boletim(s) - Tarde` : ''}
+                          >
+                            {tardeBoletins.length > 0 ? 'Tarde' : ''}
+                          </div>
+
+                          {/* Noite */}
+                          <div className={cn(
+                            "flex-1 flex items-center justify-center text-[8px] md:text-[9px] font-bold text-white cursor-pointer border-t border-white/20",
+                            noiteBoletins.length > 0 
+                              ? noiteBoletins.some(b => !b.visualizado) 
+                                ? "bg-green-500 hover:bg-green-600" 
+                                : "bg-gray-400 hover:bg-gray-500"
+                              : "bg-gray-100 text-gray-400 cursor-default"
+                          )}
+                          onClick={() => noiteBoletins.length > 0 && setSelectedDate(date)}
+                          title={noiteBoletins.length > 0 ? `${noiteBoletins.length} boletim(s) - Noite` : ''}
+                          >
+                            {noiteBoletins.length > 0 ? 'Noite' : ''}
+                          </div>
+                        </div>
                       </div>
                     );
                   })}
