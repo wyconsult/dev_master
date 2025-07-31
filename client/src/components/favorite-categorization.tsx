@@ -36,9 +36,11 @@ export function FavoriteCategorization({
   const [siteSearch, setSiteSearch] = useState("");
   const [newCategoryName, setNewCategoryName] = useState("");
   const [newSiteUrl, setNewSiteUrl] = useState("");
-  const [uf, setUf] = useState("");
-  const [codigoUasg, setCodigoUasg] = useState("");
-  const [valorEstimado, setValorEstimado] = useState("");
+  const [uf, setUf] = useState(bidding.orgao_uf || "");
+  const [codigoUasg, setCodigoUasg] = useState(bidding.orgao_codigo || "");
+  const [valorEstimado, setValorEstimado] = useState(
+    bidding.valor_estimado ? `R$ ${bidding.valor_estimado.toLocaleString('pt-BR')}` : ""
+  );
   const [fornecedor, setFornecedor] = useState("");
   const [selectedSite, setSelectedSite] = useState("");
   
