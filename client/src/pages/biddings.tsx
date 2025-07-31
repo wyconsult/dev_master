@@ -63,6 +63,8 @@ export default function Biddings() {
 
   const { data: allBiddings = [], isLoading } = useQuery<Bidding[]>({
     queryKey: ["/api/biddings"],
+    staleTime: 5 * 60 * 1000, // 5 minutos
+    refetchOnWindowFocus: false,
   });
 
   // Extrair órgãos únicos dos dados reais

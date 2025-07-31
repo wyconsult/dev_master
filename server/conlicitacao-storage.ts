@@ -44,7 +44,7 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
   private currentFavoriteId: number;
   private cachedBiddings: Map<number, Bidding>; // Cache das licitações
   private lastCacheUpdate: number;
-  private readonly CACHE_DURATION = 5 * 60 * 1000; // 5 minutos
+  private readonly CACHE_DURATION = 10 * 60 * 1000; // 10 minutos
 
   constructor() {
     this.users = new Map();
