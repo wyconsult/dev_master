@@ -83,7 +83,7 @@ export function FavoriteCategorization({
         </Button>
       </DialogTrigger>
       
-      <DialogContent className="max-w-2xl max-h-[85vh] overflow-hidden bg-white border-0 shadow-2xl">
+      <DialogContent className="max-w-2xl max-h-[85vh] bg-white border-0 shadow-2xl flex flex-col">
         <DialogHeader className="pb-4 border-b border-gray-100">
           <div className="flex items-center justify-between">
             <div>
@@ -100,7 +100,7 @@ export function FavoriteCategorization({
           </div>
         </DialogHeader>
 
-        <div className="flex-1 overflow-y-auto space-y-6 py-4">
+        <div className="flex-1 overflow-y-auto space-y-6 py-4 min-h-0">
           {/* Informações da Licitação */}
           <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-4 border border-blue-200">
             <h4 className="font-medium text-sm text-blue-800 mb-2 flex items-center gap-2">
@@ -192,7 +192,13 @@ export function FavoriteCategorization({
                 {/* Botão de adicionar nova categoria */}
                 <div 
                   className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center cursor-pointer hover:border-blue-400 hover:bg-blue-50 transition-colors"
-                  onClick={() => setActiveTab("notes")}
+                  onClick={() => {
+                    // Adicionar funcionalidade futura para nova categoria
+                    toast({
+                      title: "Funcionalidade em desenvolvimento",
+                      description: "Em breve você poderá adicionar novos tipos de categoria.",
+                    });
+                  }}
                 >
                   <Plus className="h-5 w-5 text-gray-400 mx-auto mb-1" />
                   <span className="text-sm text-gray-600">+ Adicionar Novo Tipo</span>
@@ -251,8 +257,8 @@ export function FavoriteCategorization({
               </div>
             </TabsContent>
 
-            <TabsContent value="notes" className="space-y-4 mt-6">
-              <div className="space-y-4">
+            <TabsContent value="notes" className="space-y-4 mt-6 overflow-y-auto max-h-96">
+              <div className="space-y-4 pb-4">
                 {/* Informações de Tabulação */}
                 <div className="grid grid-cols-2 gap-4">
                   <div>
@@ -298,6 +304,13 @@ export function FavoriteCategorization({
                   </div>
                   <div 
                     className="border-2 border-dashed border-gray-300 rounded-lg p-3 text-center cursor-pointer hover:border-blue-400 hover:bg-blue-50 transition-colors mt-2"
+                    onClick={() => {
+                      // Adicionar funcionalidade futura para novo site
+                      toast({
+                        title: "Funcionalidade em desenvolvimento",
+                        description: "Em breve você poderá adicionar novos sites de licitação.",
+                      });
+                    }}
                   >
                     <Plus className="h-4 w-4 text-gray-400 mx-auto mb-1" />
                     <span className="text-xs text-gray-600">+ Adicionar Novo Site</span>
