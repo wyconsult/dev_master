@@ -43,6 +43,11 @@ export const favorites = pgTable("favorites", {
   category: text("category").default("outros"), // Categoria: alimentacao, limpeza, sites, outros
   customCategory: text("custom_category"), // Categoria personalizada definida pelo usuário
   notes: text("notes"), // Notas/observações do usuário sobre o favorito
+  uf: text("uf"), // UF da licitação
+  codigoUasg: text("codigo_uasg"), // Código UASG/Gestora
+  valorEstimado: text("valor_estimado"), // Valor estimado/contratado
+  fornecedor: text("fornecedor"), // Fornecedor/UASG do fornecedor
+  site: text("site"), // Site de origem da licitação
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
