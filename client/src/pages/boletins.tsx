@@ -49,20 +49,29 @@ export default function Boletins() {
     markAsViewedMutation.mutate(boletimId, {
       onSuccess: () => {
         setSelectedBoletim(boletimId);
-        // Invalidar queries para atualizar dashboard
+        // Invalidar todas as queries relevantes para atualização em tempo real
         queryClient.invalidateQueries({ queryKey: ["/api/boletins"] });
         queryClient.invalidateQueries({ queryKey: ["/api/biddings"] });
         queryClient.invalidateQueries({ queryKey: ["/api/favorites"] });
+        queryClient.invalidateQueries({ queryKey: ["/api/filtros"] });
+        // Forçar re-render do componente
+        setTimeout(() => {
+          queryClient.invalidateQueries({ queryKey: ["/api/boletins"] });
+        }, 100);
       }
     });
   };
 
   const handleBackToCalendar = () => {
     setSelectedBoletim(null);
-    // Invalidar todas as queries relacionadas para forçar atualização
+    // Invalidar todas as queries relacionadas para forçar atualização completa
     queryClient.invalidateQueries({ queryKey: ["/api/boletins"] });
     queryClient.invalidateQueries({ queryKey: ["/api/biddings"] });
     queryClient.invalidateQueries({ queryKey: ["/api/favorites"] });
+    // Garantir que o calendário seja atualizado
+    setTimeout(() => {
+      queryClient.invalidateQueries({ queryKey: ["/api/boletins"] });
+    }, 50);
   };
 
   const monthStart = startOfMonth(currentDate);
@@ -318,37 +327,44 @@ export default function Boletins() {
                     const tardeBoletins = getBoletinsByPeriod(date, 'tarde');
                     const noiteBoletins = getBoletinsByPeriod(date, 'noite');
 
+                    const isSelectedDate = selectedDate && isSameDay(selectedDate, date);
+                    const totalBoletins = manhaBoletins.length + tardeBoletins.length + noiteBoletins.length;
+
                     return (
                       <div
                         key={index}
                         className={cn(
-                          "relative w-full h-22 md:h-26 border rounded-lg overflow-hidden",
+                          "relative w-full h-22 md:h-26 border rounded-lg overflow-hidden cursor-pointer transition-all",
                           isCurrentMonth ? "bg-white" : "bg-gray-50/50",
                           isCurrentDay && "ring-2 ring-blue-500",
+                          isSelectedDate && "ring-2 ring-green-500 bg-green-50",
+                          totalBoletins > 0 && "hover:shadow-md",
                           "border-gray-200"
                         )}
+                        onClick={() => totalBoletins > 0 && setSelectedDate(date)}
+                        title={totalBoletins > 0 ? `${totalBoletins} boletim(s) disponível(is)` : 'Nenhum boletim'}
                       >
                         {/* Número do dia */}
                         <div className={cn(
                           "absolute top-1 left-1 text-xs font-bold z-10",
                           isCurrentMonth ? "text-gray-900" : "text-gray-400",
-                          isCurrentDay && "text-blue-600"
+                          isCurrentDay && "text-blue-600",
+                          isSelectedDate && "text-green-600"
                         )}>
                           {date.getDate()}
                         </div>
 
                         {/* Três seções: Manhã, Tarde, Noite */}
-                        <div className="flex flex-col h-full pt-5 px-1 pb-1">
+                        <div className="flex flex-col h-full pt-5 px-1 pb-1 pointer-events-none">
                           {/* Manhã */}
                           <div className={cn(
-                            "h-4 md:h-5 flex items-center justify-center text-[9px] md:text-[10px] font-bold text-white cursor-pointer rounded-sm mx-0.5 mb-0.5 text-center w-full",
+                            "h-4 md:h-5 flex items-center justify-center text-[9px] md:text-[10px] font-bold text-white rounded-sm mx-0.5 mb-0.5 text-center w-full",
                             manhaBoletins.length > 0 
                               ? manhaBoletins.some(b => !b.visualizado) 
-                                ? "bg-green-500 hover:bg-green-600" 
-                                : "bg-gray-400 hover:bg-gray-500"
-                              : "bg-gray-100 text-gray-400 cursor-default"
+                                ? "bg-green-500" 
+                                : "bg-gray-400"
+                              : "bg-gray-100 text-gray-400"
                           )}
-                          onClick={() => manhaBoletins.length > 0 && setSelectedDate(date)}
                           title={manhaBoletins.length > 0 ? `${manhaBoletins.length} boletim(s) - Manhã` : ''}
                           >
                             <span className="w-full text-center">{manhaBoletins.length > 0 ? 'Manhã' : ''}</span>
@@ -356,14 +372,13 @@ export default function Boletins() {
 
                           {/* Tarde */}
                           <div className={cn(
-                            "h-4 md:h-5 flex items-center justify-center text-[9px] md:text-[10px] font-bold text-white cursor-pointer rounded-sm mx-0.5 mb-0.5 text-center w-full",
+                            "h-4 md:h-5 flex items-center justify-center text-[9px] md:text-[10px] font-bold text-white rounded-sm mx-0.5 mb-0.5 text-center w-full",
                             tardeBoletins.length > 0 
                               ? tardeBoletins.some(b => !b.visualizado) 
-                                ? "bg-green-500 hover:bg-green-600" 
-                                : "bg-gray-400 hover:bg-gray-500"
-                              : "bg-gray-100 text-gray-400 cursor-default"
+                                ? "bg-green-500" 
+                                : "bg-gray-400"
+                              : "bg-gray-100 text-gray-400"
                           )}
-                          onClick={() => tardeBoletins.length > 0 && setSelectedDate(date)}
                           title={tardeBoletins.length > 0 ? `${tardeBoletins.length} boletim(s) - Tarde` : ''}
                           >
                             <span className="w-full text-center">{tardeBoletins.length > 0 ? 'Tarde' : ''}</span>
@@ -371,14 +386,13 @@ export default function Boletins() {
 
                           {/* Noite */}
                           <div className={cn(
-                            "h-4 md:h-5 flex items-center justify-center text-[9px] md:text-[10px] font-bold text-white cursor-pointer rounded-sm mx-0.5 text-center w-full",
+                            "h-4 md:h-5 flex items-center justify-center text-[9px] md:text-[10px] font-bold text-white rounded-sm mx-0.5 text-center w-full",
                             noiteBoletins.length > 0 
                               ? noiteBoletins.some(b => !b.visualizado) 
-                                ? "bg-green-500 hover:bg-green-600" 
-                                : "bg-gray-400 hover:bg-gray-500"
-                              : "bg-gray-100 text-gray-400 cursor-default"
+                                ? "bg-green-500" 
+                                : "bg-gray-400"
+                              : "bg-gray-100 text-gray-400"
                           )}
-                          onClick={() => noiteBoletins.length > 0 && setSelectedDate(date)}
                           title={noiteBoletins.length > 0 ? `${noiteBoletins.length} boletim(s) - Noite` : ''}
                           >
                             <span className="w-full text-center">{noiteBoletins.length > 0 ? 'Noite' : ''}</span>

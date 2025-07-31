@@ -181,17 +181,46 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
       
       // Dados de teste para desenvolvimento enquanto IP não está autorizado
       
-      const boletimTeste: Boletim = {
-        id: 1,
-        numero_edicao: 341,
-        datahora_fechamento: "2025-07-29T12:00:00.000Z", // Data fixa para hoje ser encontrada no calendário
-        filtro_id: filtroId,
-        quantidade_licitacoes: 2, // Valor fixo para desenvolvimento
-        quantidade_acompanhamentos: 0,
-        visualizado: this.viewedBoletins.has(1)
-      };
+      const boletinsTeste: Boletim[] = [
+        {
+          id: 1,
+          numero_edicao: 341,
+          datahora_fechamento: "2025-07-09T08:30:00.000Z", // Manhã do dia 9 de julho
+          filtro_id: filtroId,
+          quantidade_licitacoes: 132,
+          quantidade_acompanhamentos: 49,
+          visualizado: this.viewedBoletins.has(1)
+        },
+        {
+          id: 2,
+          numero_edicao: 340,
+          datahora_fechamento: "2025-07-09T13:01:00.000Z", // Tarde do dia 9 de julho
+          filtro_id: filtroId,
+          quantidade_licitacoes: 223,
+          quantidade_acompanhamentos: 64,
+          visualizado: this.viewedBoletins.has(2)
+        },
+        {
+          id: 3,
+          numero_edicao: 339,
+          datahora_fechamento: "2025-07-09T20:36:00.000Z", // Noite do dia 9 de julho
+          filtro_id: filtroId,
+          quantidade_licitacoes: 170,
+          quantidade_acompanhamentos: 81,
+          visualizado: this.viewedBoletins.has(3)
+        },
+        {
+          id: 4,
+          numero_edicao: 338,
+          datahora_fechamento: "2025-07-31T15:00:00.000Z", // Hoje para teste
+          filtro_id: filtroId,
+          quantidade_licitacoes: 95,
+          quantidade_acompanhamentos: 23,
+          visualizado: this.viewedBoletins.has(4)
+        }
+      ];
 
-      return { boletins: [boletimTeste], total: 1 };
+      return { boletins: boletinsTeste, total: boletinsTeste.length };
     }
   }
 
