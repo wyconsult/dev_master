@@ -338,10 +338,10 @@ export default function Boletins() {
                         </div>
 
                         {/* Três seções: Manhã, Tarde, Noite */}
-                        <div className="flex flex-col h-full pt-4">
+                        <div className="flex flex-col h-full pt-5 px-1">
                           {/* Manhã */}
                           <div className={cn(
-                            "flex-1 flex items-center justify-center text-[8px] md:text-[9px] font-bold text-white cursor-pointer",
+                            "flex-1 flex items-center justify-center text-[8px] md:text-[9px] font-bold text-white cursor-pointer rounded-sm mx-0.5 mb-0.5",
                             manhaBoletins.length > 0 
                               ? manhaBoletins.some(b => !b.visualizado) 
                                 ? "bg-green-500 hover:bg-green-600" 
@@ -356,7 +356,7 @@ export default function Boletins() {
 
                           {/* Tarde */}
                           <div className={cn(
-                            "flex-1 flex items-center justify-center text-[8px] md:text-[9px] font-bold text-white cursor-pointer border-t border-white/20",
+                            "flex-1 flex items-center justify-center text-[8px] md:text-[9px] font-bold text-white cursor-pointer rounded-sm mx-0.5 mb-0.5",
                             tardeBoletins.length > 0 
                               ? tardeBoletins.some(b => !b.visualizado) 
                                 ? "bg-green-500 hover:bg-green-600" 
@@ -371,7 +371,7 @@ export default function Boletins() {
 
                           {/* Noite */}
                           <div className={cn(
-                            "flex-1 flex items-center justify-center text-[8px] md:text-[9px] font-bold text-white cursor-pointer border-t border-white/20",
+                            "flex-1 flex items-center justify-center text-[8px] md:text-[9px] font-bold text-white cursor-pointer rounded-sm mx-0.5",
                             noiteBoletins.length > 0 
                               ? noiteBoletins.some(b => !b.visualizado) 
                                 ? "bg-green-500 hover:bg-green-600" 
