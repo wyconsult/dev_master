@@ -308,7 +308,7 @@ export default function Boletins() {
                 {/* Grade do calendário com design fixo */}
                 <div className="grid grid-cols-7 gap-1">
                   {Array.from({ length: monthStart.getDay() }).map((_, index) => (
-                    <div key={`empty-${index}`} className="h-24 md:h-28"></div>
+                    <div key={`empty-${index}`} className="h-22 md:h-26"></div>
                   ))}
                   
                   {daysInMonth.map((date, index) => {
@@ -322,7 +322,7 @@ export default function Boletins() {
                       <div
                         key={index}
                         className={cn(
-                          "relative w-full h-24 md:h-28 border rounded-lg overflow-hidden",
+                          "relative w-full h-22 md:h-26 border rounded-lg overflow-hidden",
                           isCurrentMonth ? "bg-white" : "bg-gray-50/50",
                           isCurrentDay && "ring-2 ring-blue-500",
                           "border-gray-200"
