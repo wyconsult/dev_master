@@ -34,8 +34,8 @@ export default function Dashboard() {
   const { data: favorites = [], isLoading: isLoadingFavorites } = useQuery<Bidding[]>({
     queryKey: ["/api/favorites"],
     refetchOnWindowFocus: true,
-    staleTime: 0,
-    refetchInterval: 1000, // Atualizar a cada 1 segundo
+    staleTime: 30000, // 30 segundos
+    refetchInterval: 5000, // Atualizar a cada 5 segundos
     refetchOnMount: true,
   });
 
@@ -53,7 +53,7 @@ export default function Dashboard() {
   const dashboardCards = [
     {
       title: "Boletins",
-      description: "Visualize e gerencie boletins de licitações",
+      description: "Visualize e gerencie os boletins",
       icon: FileText,
       link: "/boletins",
       gradient: "bg-gradient-to-br from-blue-500 to-blue-700",
@@ -63,7 +63,7 @@ export default function Dashboard() {
     },
     {
       title: "Licitações",
-      description: "Explore todas as licitações disponíveis",
+      description: "Explore todas as licitações",
       icon: Gavel,
       link: "/biddings",
       gradient: "bg-gradient-to-br from-green-500 to-emerald-700",
