@@ -237,7 +237,7 @@ export function BiddingCard({
 
         {/* Datas - seção destacada */}
         {datesInfo.length > 0 && (
-          <div className="mb-3 md:mb-4 p-2 bg-gray-50 rounded-lg border-gray-200 border">
+          <div className="mb-3 md:mb-4 p-2 bg-gray-50 rounded-lg border-gray-200 border max-w-xs">
             <div className="font-semibold text-gray-800 mb-1 text-xs md:text-sm">Datas:</div>
             <div className="grid grid-cols-1 gap-1 text-xs">
               {datesInfo.map((date, index) => (
