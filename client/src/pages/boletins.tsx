@@ -49,29 +49,38 @@ export default function Boletins() {
     markAsViewedMutation.mutate(boletimId, {
       onSuccess: () => {
         setSelectedBoletim(boletimId);
-        // Invalidar todas as queries relevantes para atualização em tempo real
+        // Invalidar todas as queries relevantes para atualização imediata
         queryClient.invalidateQueries({ queryKey: ["/api/boletins"] });
         queryClient.invalidateQueries({ queryKey: ["/api/biddings"] });
         queryClient.invalidateQueries({ queryKey: ["/api/favorites"] });
         queryClient.invalidateQueries({ queryKey: ["/api/filtros"] });
-        // Forçar re-render do componente
+        // Forçar múltiplas atualizações do calendário para garantir visualização imediata
         setTimeout(() => {
           queryClient.invalidateQueries({ queryKey: ["/api/boletins"] });
-        }, 100);
+        }, 50);
+        setTimeout(() => {
+          queryClient.invalidateQueries({ queryKey: ["/api/boletins"] });
+        }, 200);
       }
     });
   };
 
   const handleBackToCalendar = () => {
     setSelectedBoletim(null);
-    // Invalidar todas as queries relacionadas para forçar atualização completa
+    // Invalidar todas as queries relacionadas para forçar atualização completa do calendário
     queryClient.invalidateQueries({ queryKey: ["/api/boletins"] });
     queryClient.invalidateQueries({ queryKey: ["/api/biddings"] });
     queryClient.invalidateQueries({ queryKey: ["/api/favorites"] });
-    // Garantir que o calendário seja atualizado
+    // Múltiplas atualizações para garantir que as cores das tarjas sejam atualizadas
     setTimeout(() => {
       queryClient.invalidateQueries({ queryKey: ["/api/boletins"] });
-    }, 50);
+    }, 25);
+    setTimeout(() => {
+      queryClient.invalidateQueries({ queryKey: ["/api/boletins"] });
+    }, 100);
+    setTimeout(() => {
+      queryClient.invalidateQueries({ queryKey: ["/api/boletins"] });
+    }, 300);
   };
 
   const monthStart = startOfMonth(currentDate);
@@ -317,7 +326,7 @@ export default function Boletins() {
                 {/* Grade do calendário com design fixo */}
                 <div className="grid grid-cols-7 gap-1">
                   {Array.from({ length: monthStart.getDay() }).map((_, index) => (
-                    <div key={`empty-${index}`} className="h-22 md:h-26"></div>
+                    <div key={`empty-${index}`} className="h-20 md:h-24"></div>
                   ))}
                   
                   {daysInMonth.map((date, index) => {
@@ -334,7 +343,7 @@ export default function Boletins() {
                       <div
                         key={index}
                         className={cn(
-                          "relative w-full h-22 md:h-26 border rounded-lg overflow-hidden cursor-pointer transition-all",
+                          "relative w-full h-20 md:h-24 border rounded-lg overflow-hidden cursor-pointer transition-all",
                           isCurrentMonth ? "bg-white" : "bg-gray-50/50",
                           isCurrentDay && "ring-2 ring-blue-500",
                           isSelectedDate && "ring-2 ring-green-500 bg-green-50",
