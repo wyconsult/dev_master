@@ -21,6 +21,11 @@ interface TabulationDialogProps {
   currentCategory?: string;
   currentCustomCategory?: string;
   currentNotes?: string;
+  currentUf?: string;
+  currentCodigoUasg?: string;
+  currentValorEstimado?: string;
+  currentFornecedor?: string;
+  currentSite?: string;
 }
 
 export function TabulationDialog({ 
@@ -29,7 +34,12 @@ export function TabulationDialog({
   onClose,
   currentCategory = "outros",
   currentCustomCategory = "",
-  currentNotes = ""
+  currentNotes = "",
+  currentUf = "",
+  currentCodigoUasg = "",
+  currentValorEstimado = "",
+  currentFornecedor = "",
+  currentSite = ""
 }: TabulationDialogProps) {
   const [selectedCategory, setSelectedCategory] = useState(currentCategory);
   const [customCategory, setCustomCategory] = useState(currentCustomCategory);
@@ -39,13 +49,13 @@ export function TabulationDialog({
   const [siteSearch, setSiteSearch] = useState("");
   const [newCategoryName, setNewCategoryName] = useState("");
   const [newSiteUrl, setNewSiteUrl] = useState("");
-  const [uf, setUf] = useState(bidding.orgao_uf || "");
-  const [codigoUasg, setCodigoUasg] = useState(bidding.orgao_codigo || "");
+  const [uf, setUf] = useState(currentUf || bidding.orgao_uf || "");
+  const [codigoUasg, setCodigoUasg] = useState(currentCodigoUasg || bidding.orgao_codigo || "");
   const [valorEstimado, setValorEstimado] = useState(
-    bidding.valor_estimado ? `R$ ${bidding.valor_estimado.toLocaleString('pt-BR')}` : ""
+    currentValorEstimado || (bidding.valor_estimado ? `R$ ${bidding.valor_estimado.toLocaleString('pt-BR')}` : "")
   );
-  const [fornecedor, setFornecedor] = useState("");
-  const [selectedSite, setSelectedSite] = useState("");
+  const [fornecedor, setFornecedor] = useState(currentFornecedor);
+  const [selectedSite, setSelectedSite] = useState(currentSite);
   
   const { user } = useAuth();
   const { toast } = useToast();
@@ -122,7 +132,7 @@ export function TabulationDialog({
                 <div className="w-8 h-8 rounded-lg bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center">
                   <Tags className="h-4 w-4 text-white" />
                 </div>
-                Categorizar Favorito
+                Editar Categorização
               </DialogTitle>
               <DialogDescription className="text-sm text-gray-600 mt-1">
                 Organize seu favorito por categoria para facilitar a busca e organização.

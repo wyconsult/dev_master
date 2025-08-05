@@ -18,6 +18,11 @@ interface BiddingCardProps {
     category?: string;
     customCategory?: string; 
     notes?: string;
+    uf?: string;
+    codigoUasg?: string;
+    valorEstimado?: string;
+    fornecedor?: string;
+    site?: string;
   };
 }
 
@@ -303,6 +308,11 @@ export function BiddingCard({
                   currentCategory={favoriteData?.category}
                   currentCustomCategory={favoriteData?.customCategory}
                   currentNotes={favoriteData?.notes}
+                  currentUf={favoriteData?.uf}
+                  currentCodigoUasg={favoriteData?.codigoUasg}
+                  currentValorEstimado={favoriteData?.valorEstimado}
+                  currentFornecedor={favoriteData?.fornecedor}
+                  currentSite={favoriteData?.site}
                 />
               </div>
               
@@ -325,6 +335,11 @@ export function BiddingCard({
         currentCategory={favoriteData?.category}
         currentCustomCategory={favoriteData?.customCategory}
         currentNotes={favoriteData?.notes}
+        currentUf={favoriteData?.uf}
+        currentCodigoUasg={favoriteData?.codigoUasg}
+        currentValorEstimado={favoriteData?.valorEstimado}
+        currentFornecedor={favoriteData?.fornecedor}
+        currentSite={favoriteData?.site}
       />
     </Card>
   );

@@ -19,13 +19,23 @@ interface FavoriteCategorizationProps {
   currentCategory?: string;
   currentCustomCategory?: string;
   currentNotes?: string;
+  currentUf?: string;
+  currentCodigoUasg?: string;
+  currentValorEstimado?: string;
+  currentFornecedor?: string;
+  currentSite?: string;
 }
 
 export function FavoriteCategorization({ 
   bidding, 
   currentCategory = "outros",
   currentCustomCategory = "",
-  currentNotes = ""
+  currentNotes = "",
+  currentUf = "",
+  currentCodigoUasg = "",
+  currentValorEstimado = "",
+  currentFornecedor = "",
+  currentSite = ""
 }: FavoriteCategorizationProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState(currentCategory);
@@ -36,13 +46,13 @@ export function FavoriteCategorization({
   const [siteSearch, setSiteSearch] = useState("");
   const [newCategoryName, setNewCategoryName] = useState("");
   const [newSiteUrl, setNewSiteUrl] = useState("");
-  const [uf, setUf] = useState(bidding.orgao_uf || "");
-  const [codigoUasg, setCodigoUasg] = useState(bidding.orgao_codigo || "");
+  const [uf, setUf] = useState(currentUf || bidding.orgao_uf || "");
+  const [codigoUasg, setCodigoUasg] = useState(currentCodigoUasg || bidding.orgao_codigo || "");
   const [valorEstimado, setValorEstimado] = useState(
-    bidding.valor_estimado ? `R$ ${bidding.valor_estimado.toLocaleString('pt-BR')}` : ""
+    currentValorEstimado || (bidding.valor_estimado ? `R$ ${bidding.valor_estimado.toLocaleString('pt-BR')}` : "")
   );
-  const [fornecedor, setFornecedor] = useState("");
-  const [selectedSite, setSelectedSite] = useState("");
+  const [fornecedor, setFornecedor] = useState(currentFornecedor);
+  const [selectedSite, setSelectedSite] = useState(currentSite);
   
   const { user } = useAuth();
   const { toast } = useToast();
@@ -118,7 +128,7 @@ export function FavoriteCategorization({
           className="h-8 px-3 text-xs border-gray-300 hover:border-blue-400 hover:bg-blue-50 transition-colors"
         >
           <Tags className="h-3 w-3 mr-1.5" />
-          Categorizar Favorito
+          Editar Categorização
         </Button>
       </DialogTrigger>
       
@@ -130,7 +140,7 @@ export function FavoriteCategorization({
                 <div className="w-8 h-8 rounded-lg bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center">
                   <Tags className="h-4 w-4 text-white" />
                 </div>
-                Categorizar Favorito
+                Editar Categorização
               </DialogTitle>
               <DialogDescription className="text-sm text-gray-600 mt-1">
                 Organize seu favorito por categoria para facilitar a busca e organização.
