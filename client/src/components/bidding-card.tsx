@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Heart, ArrowRight, FileText } from "lucide-react";
@@ -7,6 +8,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { useQuery } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
 import { FavoriteCategorization } from "@/components/favorite-categorization";
+import { TabulationDialog } from "./tabulation-dialog";
 
 interface BiddingCardProps {
   bidding: Bidding;
@@ -25,6 +27,7 @@ export function BiddingCard({
   showCategorization = false,
   favoriteData 
 }: BiddingCardProps) {
+  const [showTabulationDialog, setShowTabulationDialog] = useState(false);
   const { user } = useAuth();
   const { toggleFavorite, isLoading } = useFavorites();
 
@@ -151,7 +154,14 @@ export function BiddingCard({
 
   const handleFavoriteClick = () => {
     if (user) {
-      toggleFavorite(bidding.id, isFavorite);
+      if (!isFavorite) {
+        // Se não é favorito, adiciona aos favoritos e abre a tabulação
+        toggleFavorite(bidding.id, isFavorite);
+        setShowTabulationDialog(true);
+      } else {
+        // Se já é favorito, apenas remove dos favoritos
+        toggleFavorite(bidding.id, isFavorite);
+      }
     }
   };
 
@@ -306,6 +316,16 @@ export function BiddingCard({
           </div>
         )}
       </CardContent>
+
+      {/* Dialog de Tabulação */}
+      <TabulationDialog
+        bidding={bidding}
+        isOpen={showTabulationDialog}
+        onClose={() => setShowTabulationDialog(false)}
+        currentCategory={favoriteData?.category}
+        currentCustomCategory={favoriteData?.customCategory}
+        currentNotes={favoriteData?.notes}
+      />
     </Card>
   );
 }
