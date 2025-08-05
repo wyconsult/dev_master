@@ -472,9 +472,9 @@ export default function Favorites() {
                 showFavoriteIcon={true}
                 showCategorization={true}
                 favoriteData={{
-                  category: null,
-                  customCategory: null,
-                  notes: null
+                  category: undefined,
+                  customCategory: undefined,
+                  notes: undefined
                 }}
               />
             ))

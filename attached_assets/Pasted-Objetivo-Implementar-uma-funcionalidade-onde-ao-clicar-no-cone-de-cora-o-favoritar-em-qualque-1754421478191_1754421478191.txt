@@ -1,0 +1,51 @@
+Objetivo:
+Implementar uma funcionalidade onde, ao clicar no ícone de coração (favoritar) em qualquer card — seja na subtela aberta ao clicar em "Ver Licitações" de um boletim ou na tela Licitações — o sistema exiba imediatamente a opção de tabulação já existente nos cards da tela Favoritos.
+
+Contexto atual:
+
+O ícone de coração já existe nos cards e, ao clicar, envia o card para a tela de Favoritos.
+
+A opção de tabulação já está implementada e funcional nos cards dentro da tela Favoritos.
+
+Atualmente, para acessar a tabulação, o usuário precisa primeiro favoritar, depois ir até Favoritos.
+
+Alterações necessárias:
+
+Interceptar o evento de clique no ícone de coração nos seguintes contextos:
+
+Cards exibidos na tela Licitações.
+
+Cards exibidos na subtela aberta ao clicar em "Ver Licitações" dentro de um boletim.
+
+Ao favoritar:
+
+Executar a função/API atual que salva o card como favorito.
+
+Abrir automaticamente o mesmo componente/modal/popover de tabulação utilizado nos Favoritos.
+
+O estado visual de “favoritado” deve ser atualizado imediatamente no card (ícone preenchido).
+
+Reaproveitar o componente já existente para tabulação (não criar outro do zero).
+
+Garantir que a tabulação funcione normalmente mesmo fora da tela Favoritos.
+
+Caso o usuário cancele a tabulação, o card deve permanecer favoritado.
+
+Requisitos técnicos:
+
+Identificar onde está a função de renderização do componente de tabulação nos Favoritos e extrair para um componente reutilizável (caso ainda não esteja separado).
+
+Criar um handler único para o clique no coração que:
+
+Atualiza o status de favorito (API/backend).
+
+Atualiza o estado local de favoritos.
+
+Renderiza o modal/popover de tabulação imediatamente.
+
+Manter compatibilidade com as regras de negócio já existentes para favoritar/desfavoritar.
+
+Resumo:
+Sempre que o usuário clicar no coração para favoritar, abrir na hora a interface de tabulação (a mesma dos Favoritos), sem precisar navegar até a tela de Favoritos.
+
+
