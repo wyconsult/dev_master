@@ -472,9 +472,14 @@ export default function Favorites() {
                 showFavoriteIcon={true}
                 showCategorization={true}
                 favoriteData={{
-                  category: undefined,
-                  customCategory: undefined,
-                  notes: undefined
+                  category: (bidding as any).category,
+                  customCategory: (bidding as any).customCategory,
+                  notes: (bidding as any).notes,
+                  uf: (bidding as any).uf,
+                  codigoUasg: (bidding as any).codigoUasg,
+                  valorEstimado: (bidding as any).valorEstimado,
+                  fornecedor: (bidding as any).fornecedor,
+                  site: (bidding as any).site
                 }}
               />
             ))
