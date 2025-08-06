@@ -1,7 +1,5 @@
 import { conLicitacaoAPI } from './conlicitacao-api';
 import { Bidding, Boletim, Filtro, Acompanhamento, User, InsertUser, Favorite, InsertFavorite } from '../shared/schema';
-import fs from 'fs';
-import path from 'path';
 
 export interface IConLicitacaoStorage {
   // Users (mantemos localmente)
@@ -47,7 +45,6 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
   private cachedBiddings: Map<number, Bidding>; // Cache das licitações
   private lastCacheUpdate: number;
   private readonly CACHE_DURATION = 10 * 60 * 1000; // 10 minutos
-  private readonly DATA_FILE = path.join(process.cwd(), 'development-data.json');
 
   constructor() {
     this.users = new Map();
@@ -58,49 +55,10 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
     this.currentFavoriteId = 1;
     this.lastCacheUpdate = 0;
     
-    this.loadPersistedData();
     this.initializeMockData();
   }
 
-  private loadPersistedData() {
-    try {
-      if (fs.existsSync(this.DATA_FILE)) {
-        const data = JSON.parse(fs.readFileSync(this.DATA_FILE, 'utf8'));
-        
-        // Carregar favoritos com dados de categorização
-        if (data.favorites) {
-          this.favorites = new Map(data.favorites.map((f: any) => [f.id, {
-            ...f,
-            createdAt: new Date(f.createdAt)
-          }]));
-        }
-        
-        // Carregar contadores
-        if (data.currentFavoriteId) {
-          this.currentFavoriteId = data.currentFavoriteId;
-        }
-        
-        console.log('📁 Dados de desenvolvimento carregados do arquivo');
-      }
-    } catch (error) {
-      console.log('⚠️ Erro ao carregar dados persistidos, usando dados limpos');
-    }
-  }
 
-  private savePersistedData() {
-    try {
-      const data = {
-        favorites: Array.from(this.favorites.values()),
-        currentFavoriteId: this.currentFavoriteId,
-        lastSaved: new Date().toISOString()
-      };
-      
-      fs.writeFileSync(this.DATA_FILE, JSON.stringify(data, null, 2));
-      console.log('💾 Dados de desenvolvimento salvos');
-    } catch (error) {
-      console.error('❌ Erro ao salvar dados:', error);
-    }
-  }
 
   private initializeMockData() {
     // Criar usuário de teste se não existe
@@ -696,7 +654,6 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
       site: null,
     };
     this.favorites.set(id, favorite);
-    this.savePersistedData(); // Salvar dados automaticamente
     return favorite;
   }
 
@@ -710,7 +667,6 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
     if (keyToDelete !== undefined) {
       this.favorites.delete(keyToDelete);
     }
-    this.savePersistedData(); // Salvar dados automaticamente
   }
 
   async isFavorite(userId: number, biddingId: number): Promise<boolean> {
@@ -748,7 +704,6 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
         });
       }
     });
-    this.savePersistedData(); // Salvar dados automaticamente
   }
 }
 
