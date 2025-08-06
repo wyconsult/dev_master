@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { BiddingCard } from "@/components/bidding-card";
-import { Filter, Search, X, Calendar as CalendarIcon, Heart, Eraser } from "lucide-react";
+import { Filter, Search, X, Calendar as CalendarIcon, Heart, Eraser, FileText } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from "@/components/ui/command";
@@ -136,6 +136,157 @@ export default function Favorites() {
     setSelectedOrgaos([]);
     setSelectedUFs([]);
     setDateRange({});
+  };
+
+  // Função para gerar PDF
+  const generatePDF = () => {
+    if (!dateRange.from || !dateRange.to) return;
+
+    // Criar conteúdo HTML para o PDF
+    const htmlContent = createPDFContent();
+    
+    // Abrir nova janela para impressão/PDF
+    const printWindow = window.open('', '_blank');
+    if (printWindow) {
+      printWindow.document.write(htmlContent);
+      printWindow.document.close();
+      printWindow.focus();
+      setTimeout(() => {
+        printWindow.print();
+      }, 1000);
+    }
+  };
+
+  // Função para criar o conteúdo HTML do PDF
+  const createPDFContent = () => {
+    const dateFromStr = dateRange.from ? format(dateRange.from, "dd/MM/yyyy") : "";
+    const dateToStr = dateRange.to ? format(dateRange.to, "dd/MM/yyyy") : "";
+    const filterTypeLabel = dateFilterType === "favorito" ? "Data de inclusão favorito" : "Data de realização";
+    
+    let htmlRows = "";
+    
+    filteredFavorites.forEach((bidding) => {
+      const any = bidding as any;
+      
+      // Extrair dados do bidding
+      const controle = bidding.conlicitacao_id || "";
+      const data = bidding.datahora_abertura ? format(new Date(bidding.datahora_abertura), "dd/MM/yyyy") : "";
+      const pregao = bidding.edital || "";
+      const hora = bidding.datahora_abertura ? format(new Date(bidding.datahora_abertura), "HH:mm") : "";
+      const orgao = bidding.orgao_nome || "";
+      const objeto = bidding.objeto || "";
+      const uf = any.uf || bidding.orgao_uf || "";
+      const site = any.site || "";
+      const codigoUnidade = any.codigoUasg || bidding.orgao_codigo || "";
+      const valorEstimado = any.valorEstimado || (bidding.valor_estimado ? `R$ ${bidding.valor_estimado.toLocaleString('pt-BR')}` : "Não Informado");
+      const fornecedor = any.fornecedor || "";
+      const cnpj = ""; // Não temos esse campo
+      const valorContrato = ""; // Não temos esse campo
+      
+      htmlRows += `
+        <tr>
+          <td>${controle}</td>
+          <td>${data}</td>
+          <td>${pregao}</td>
+          <td>${hora}</td>
+          <td>${orgao}</td>
+          <td>${objeto}</td>
+          <td>${uf}</td>
+          <td>${site}</td>
+          <td>${codigoUnidade}</td>
+          <td>${valorEstimado}</td>
+          <td>${fornecedor}</td>
+          <td>${cnpj}</td>
+          <td>${valorContrato}</td>
+        </tr>
+      `;
+    });
+
+    return `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="UTF-8">
+        <title>Relatório de Favoritos - LicitaTraker</title>
+        <style>
+          body { 
+            font-family: Arial, sans-serif; 
+            margin: 20px; 
+            font-size: 12px;
+          }
+          .header {
+            text-align: center;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #333;
+            padding-bottom: 10px;
+          }
+          .info {
+            margin-bottom: 20px;
+            background-color: #f5f5f5;
+            padding: 10px;
+            border-radius: 5px;
+          }
+          table { 
+            width: 100%; 
+            border-collapse: collapse; 
+            margin-top: 20px;
+            font-size: 10px;
+          }
+          th, td { 
+            border: 1px solid #ddd; 
+            padding: 6px; 
+            text-align: left;
+            word-wrap: break-word;
+          }
+          th { 
+            background-color: #f2f2f2; 
+            font-weight: bold;
+            font-size: 9px;
+          }
+          .no-break { page-break-inside: avoid; }
+          @media print {
+            body { margin: 0; }
+            .header { page-break-after: avoid; }
+          }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <h1>LicitaTraker - Relatório de Favoritos</h1>
+          <p>Gerado em: ${format(new Date(), "dd/MM/yyyy 'às' HH:mm")}</p>
+        </div>
+        
+        <div class="info">
+          <p><strong>Filtro aplicado:</strong> ${filterTypeLabel}</p>
+          <p><strong>Período:</strong> ${dateFromStr} até ${dateToStr}</p>
+          <p><strong>Total de registros:</strong> ${filteredFavorites.length}</p>
+        </div>
+        
+        <table class="no-break">
+          <thead>
+            <tr>
+              <th>CONTROLE</th>
+              <th>DATA</th>
+              <th>Nº PREGÃO</th>
+              <th>HORA</th>
+              <th>ÓRGÃO</th>
+              <th>OBJETO</th>
+              <th>UF</th>
+              <th>SITE</th>
+              <th>CÓDIGO UNIDADE GESTORA</th>
+              <th>Valor Estimado Contratação</th>
+              <th>FORNECEDOR ATUAL</th>
+              <th>CNPJ do Fornecedor</th>
+              <th>Valor do Contrato</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${htmlRows}
+          </tbody>
+        </table>
+      </body>
+      </html>
+    `;
   };
 
   if (isLoading) {
@@ -432,6 +583,27 @@ export default function Favorites() {
                 </div>
               </div>
 
+              {/* Botão Gerar PDF */}
+              <div className="pt-4 border-t border-gray-200">
+                <Button
+                  variant="outline"
+                  className={cn(
+                    "w-full justify-center gap-2 h-10 font-medium transition-all",
+                    dateRange.from && dateRange.to
+                      ? "bg-red-50 border-red-200 text-red-700 hover:bg-red-100 hover:border-red-300"
+                      : "border-gray-300 text-gray-400 cursor-not-allowed opacity-50"
+                  )}
+                  disabled={!dateRange.from || !dateRange.to}
+                  onClick={() => {
+                    if (dateRange.from && dateRange.to) {
+                      generatePDF();
+                    }
+                  }}
+                >
+                  <FileText className="h-4 w-4" />
+                  Gerar PDF
+                </Button>
+              </div>
 
             </div>
           </CardContent>
