@@ -153,6 +153,7 @@ Application runs on `http://localhost:5000` with full API access when IP is auth
 
 ```
 Changelog:
+- January 28, 2025. Finalizada funcionalidade de tabulação completa: dados de categorização carregam automaticamente na página de favoritos, sistema funciona em memória durante a sessão e está pronto para dados reais da API em produção
 - January 28, 2025. Implementada funcionalidade de tabulação automática: ao clicar no ícone de coração para favoritar qualquer licitação, o sistema abre automaticamente a interface de tabulação, permitindo categorização imediata sem necessidade de navegar até a tela de Favoritos
 - January 28, 2025. Corrigido problema crítico: licitações agora são pré-carregadas automaticamente, permitindo busca sem visualizar boletins
 - January 28, 2025. Sistema testado e validado para deploy - todas as funcionalidades funcionando corretamente
