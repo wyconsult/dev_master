@@ -588,10 +588,10 @@ export default function Favorites() {
                 <Button
                   variant="outline"
                   className={cn(
-                    "w-full justify-center gap-2 h-10 font-medium transition-all",
+                    "w-full justify-center gap-3 h-12 font-semibold text-sm transition-all duration-300 relative overflow-hidden",
                     dateRange.from && dateRange.to
-                      ? "bg-red-50 border-red-200 text-red-700 hover:bg-red-100 hover:border-red-300"
-                      : "border-gray-300 text-gray-400 cursor-not-allowed opacity-50"
+                      ? "bg-gradient-to-r from-red-500 to-red-600 border-red-500 text-white hover:from-red-600 hover:to-red-700 hover:border-red-600 shadow-lg hover:shadow-xl transform hover:scale-[1.02] active:scale-[0.98]"
+                      : "border-gray-300 text-gray-400 cursor-not-allowed opacity-50 bg-gray-50"
                   )}
                   disabled={!dateRange.from || !dateRange.to}
                   onClick={() => {
@@ -600,8 +600,20 @@ export default function Favorites() {
                     }
                   }}
                 >
-                  <FileText className="h-4 w-4" />
-                  Gerar PDF
+                  <div className="flex items-center gap-3">
+                    <div className={cn(
+                      "p-1.5 rounded-full transition-colors",
+                      dateRange.from && dateRange.to
+                        ? "bg-white/20"
+                        : "bg-transparent"
+                    )}>
+                      <FileText className="h-4 w-4" />
+                    </div>
+                    <span className="font-bold tracking-wide">Gerar PDF</span>
+                  </div>
+                  {dateRange.from && dateRange.to && (
+                    <div className="absolute inset-0 bg-white/20 opacity-0 hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
+                  )}
                 </Button>
               </div>
 
