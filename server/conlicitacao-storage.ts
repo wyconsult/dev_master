@@ -615,7 +615,19 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
     for (const fav of userFavorites) {
       const bidding = this.cachedBiddings.get(fav.biddingId);
       if (bidding) {
-        favoriteBiddings.push(bidding);
+        // Incluir dados de categorização salvos no favorito
+        const biddingWithCategorization = {
+          ...bidding,
+          category: fav.category,
+          customCategory: fav.customCategory,
+          notes: fav.notes,
+          uf: fav.uf,
+          codigoUasg: fav.codigoUasg,
+          valorEstimado: fav.valorEstimado,
+          fornecedor: fav.fornecedor,
+          site: fav.site
+        };
+        favoriteBiddings.push(biddingWithCategorization as any);
       }
     }
     
