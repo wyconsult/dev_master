@@ -145,17 +145,16 @@ export default function Biddings() {
       return false;
     }
 
-    // Filtro por objeto
-    if (
-      objeto &&
-      !bidding.objeto_licitacao?.toLowerCase().includes(objeto.toLowerCase())
-    ) {
-      return false;
+    // Filtro por objeto - busca inteligente (permite palavra parcial)
+    if (objeto && objeto.trim().length >= 3) {
+      if (!bidding.objeto?.toLowerCase().includes(objeto.toLowerCase())) {
+        return false;
+      }
     }
 
     // Filtro por valores
     if (valorMinimo || valorMaximo) {
-      const valorBidding = parseValor(bidding.valor_estimado || "");
+      const valorBidding = parseValor(bidding.valor_estimado?.toString() || "");
 
       if (valorMinimo && valorBidding < parseFloat(valorMinimo)) {
         return false;
@@ -168,7 +167,7 @@ export default function Biddings() {
 
     // Filtro para mostrar apenas sem valor
     if (mostrarSemValor) {
-      const valor = parseValor(bidding.valor_estimado || "");
+      const valor = parseValor(bidding.valor_estimado?.toString() || "");
       if (valor > 0) return false;
     }
 
@@ -176,8 +175,8 @@ export default function Biddings() {
     if (dataInicio || dataFim) {
       const campoData =
         tipoData === "abertura"
-          ? bidding.data_abertura
-          : bidding.data_documento;
+          ? bidding.datahora_abertura
+          : bidding.datahora_documento;
       if (!isDateInRange(campoData || "", dataInicio, dataFim)) {
         return false;
       }
@@ -431,47 +430,45 @@ export default function Biddings() {
           </CardContent>
         </Card>
 
-        {/* Filtros Avançados - Expansível */}
-        <Card className="mb-6 border-0 shadow-xl bg-white/80 backdrop-blur-sm mx-4">
-          <CardHeader className="pb-4">
+        {/* Filtros Avançados - Expansível Compacto */}
+        <Card className="mb-6 border-0 shadow-lg bg-white/80 backdrop-blur-sm mx-4">
+          <CardHeader className="pb-2 py-3">
             <button
               onClick={toggleFiltrosAvancados}
               className="w-full flex items-center justify-between text-left"
             >
-              <CardTitle className="text-lg md:text-xl flex items-center gap-2">
-                <Filter className="h-4 w-4 md:h-5 md:w-5" />
+              <CardTitle className="text-base md:text-lg flex items-center gap-2">
+                <Filter className="h-4 w-4" />
                 Opções Avançadas de Filtros
               </CardTitle>
               {filtrosAvancadosExpandidos ? (
-                <ChevronUp className="h-5 w-5 text-gray-500" />
+                <ChevronUp className="h-4 w-4 text-gray-500" />
               ) : (
-                <ChevronDown className="h-5 w-5 text-gray-500" />
+                <ChevronDown className="h-4 w-4 text-gray-500" />
               )}
             </button>
           </CardHeader>
           {filtrosAvancadosExpandidos && (
-            <CardContent className="px-3 md:px-6 space-y-4">
-              {/* Filtros de texto */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Objeto da Licitação
-                  </label>
-                  <Input
-                    placeholder="Ex. Aquisição de equipamentos"
-                    value={objeto}
-                    onChange={(e) => setObjeto(e.target.value)}
-                    className="border-gray-300 text-gray-700 placeholder:text-gray-400 h-10"
-                  />
-                </div>
+            <CardContent className="px-3 md:px-6 py-4 space-y-3">
+              {/* Filtro de objeto */}
+              <div>
+                <label className="block text-xs font-medium text-gray-700 mb-1">
+                  Objeto da Licitação
+                </label>
+                <Input
+                  placeholder="Ex. Aquisição de equipamentos (mín. 3 caracteres)"
+                  value={objeto}
+                  onChange={(e) => setObjeto(e.target.value)}
+                  className="border-gray-300 text-gray-700 placeholder:text-gray-400 h-9 text-sm"
+                />
               </div>
 
               {/* Filtros de valor */}
-              <div className="space-y-4">
-                <h4 className="text-sm font-medium text-gray-700">Filtros de Valor</h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <h4 className="text-xs font-medium text-gray-700">Filtros de Valor</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-xs font-medium text-gray-700 mb-1">
                       Valor Mínimo (R$)
                     </label>
                     <Input
@@ -479,11 +476,11 @@ export default function Biddings() {
                       placeholder="Ex. 1000"
                       value={valorMinimo}
                       onChange={(e) => setValorMinimo(e.target.value)}
-                      className="border-gray-300 text-gray-700 placeholder:text-gray-400 h-10"
+                      className="border-gray-300 text-gray-700 placeholder:text-gray-400 h-9 text-sm"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-xs font-medium text-gray-700 mb-1">
                       Valor Máximo (R$)
                     </label>
                     <Input
@@ -491,7 +488,7 @@ export default function Biddings() {
                       placeholder="Ex. 50000"
                       value={valorMaximo}
                       onChange={(e) => setValorMaximo(e.target.value)}
-                      className="border-gray-300 text-gray-700 placeholder:text-gray-400 h-10"
+                      className="border-gray-300 text-gray-700 placeholder:text-gray-400 h-9 text-sm"
                     />
                   </div>
                 </div>
@@ -499,11 +496,11 @@ export default function Biddings() {
                   <Checkbox
                     id="mostrarSemValor"
                     checked={mostrarSemValor}
-                    onCheckedChange={setMostrarSemValor}
+                    onCheckedChange={(checked) => setMostrarSemValor(checked === true)}
                   />
                   <label
                     htmlFor="mostrarSemValor"
-                    className="text-sm font-medium text-gray-700"
+                    className="text-xs font-medium text-gray-700"
                   >
                     Mostrar apenas licitações sem valor informado
                   </label>
@@ -511,12 +508,12 @@ export default function Biddings() {
               </div>
 
               {/* Filtros de data */}
-              <div className="space-y-4">
-                <h4 className="text-sm font-medium text-gray-700">Filtros de Data</h4>
+              <div className="space-y-2">
+                <h4 className="text-xs font-medium text-gray-700">Filtros de Data</h4>
                 
                 {/* Seletor do tipo de data */}
                 <div className="flex items-center space-x-4">
-                  <span className="text-sm text-gray-600">Filtrar por:</span>
+                  <span className="text-xs text-gray-600">Filtrar por:</span>
                   <div className="flex items-center space-x-2">
                     <input
                       type="radio"
@@ -524,9 +521,9 @@ export default function Biddings() {
                       name="tipoData"
                       checked={tipoData === "abertura"}
                       onChange={() => setTipoData("abertura")}
-                      className="text-green-600"
+                      className="text-green-600 w-3 h-3"
                     />
-                    <label htmlFor="abertura" className="text-sm text-gray-700">
+                    <label htmlFor="abertura" className="text-xs text-gray-700">
                       Data de Abertura
                     </label>
                   </div>
@@ -537,36 +534,36 @@ export default function Biddings() {
                       name="tipoData"
                       checked={tipoData === "documento"}
                       onChange={() => setTipoData("documento")}
-                      className="text-green-600"
+                      className="text-green-600 w-3 h-3"
                     />
-                    <label htmlFor="documento" className="text-sm text-gray-700">
+                    <label htmlFor="documento" className="text-xs text-gray-700">
                       Data do Documento
                     </label>
                   </div>
                 </div>
 
                 {/* Campos de data */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-xs font-medium text-gray-700 mb-1">
                       Data Início
                     </label>
                     <Input
                       type="date"
                       value={dataInicio}
                       onChange={(e) => setDataInicio(e.target.value)}
-                      className="border-gray-300 text-gray-700 h-10"
+                      className="border-gray-300 text-gray-700 h-9 text-sm"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-xs font-medium text-gray-700 mb-1">
                       Data Fim
                     </label>
                     <Input
                       type="date"
                       value={dataFim}
                       onChange={(e) => setDataFim(e.target.value)}
-                      className="border-gray-300 text-gray-700 h-10"
+                      className="border-gray-300 text-gray-700 h-9 text-sm"
                     />
                   </div>
                 </div>
