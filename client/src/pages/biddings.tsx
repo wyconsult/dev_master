@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { BiddingCard } from "@/components/bidding-card";
-import { Filter, Search, X } from "lucide-react";
+import { Filter, Search, X, ChevronDown, ChevronUp } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -47,11 +47,29 @@ const UF_OPTIONS = [
 ];
 
 export default function Biddings() {
+  // Estados existentes
   const [numeroControle, setNumeroControle] = useState("");
   const [selectedOrgaos, setSelectedOrgaos] = useState<string[]>([]);
   const [selectedUFs, setSelectedUFs] = useState<string[]>([]);
   const [orgaoPopoverOpen, setOrgaoPopoverOpen] = useState(false);
   const [ufPopoverOpen, setUfPopoverOpen] = useState(false);
+
+  // Novos estados para filtros adicionais
+  const [cidade, setCidade] = useState("");
+  const [objeto, setObjeto] = useState("");
+  const [valorMinimo, setValorMinimo] = useState("");
+  const [valorMaximo, setValorMaximo] = useState("");
+  const [mostrarSemValor, setMostrarSemValor] = useState(false);
+
+  // Estados para filtros de data
+  const [dataInicio, setDataInicio] = useState("");
+  const [dataFim, setDataFim] = useState("");
+  const [tipoData, setTipoData] = useState<"abertura" | "documento">(
+    "abertura"
+  );
+
+  // Estado para controlar expansão dos filtros avançados
+  const [filtrosAvancadosExpandidos, setFiltrosAvancadosExpandidos] = useState(false);
 
   const buildFilters = () => {
     const filters: any = {};
@@ -70,23 +88,101 @@ export default function Biddings() {
   // Extrair órgãos únicos dos dados reais
   const uniqueOrgaos = Array.from(new Set(allBiddings.map(b => b.orgao_nome))).sort();
 
-  // Filtro dinâmico em tempo real
-  const filteredBiddings = allBiddings.filter(bidding => {
-    // Filtro por número de controle (dinâmico)
-    if (numeroControle && !bidding.conlicitacao_id.toString().includes(numeroControle)) {
+  // Função para converter valor string para número
+  const parseValor = (valor: string): number => {
+    if (!valor) return 0;
+    // Remove caracteres não numéricos exceto vírgulas e pontos
+    const cleanValue = valor.replace(/[^\d,.-]/g, "").replace(",", ".");
+    return parseFloat(cleanValue) || 0;
+  };
+
+  // Função para verificar se data está no range
+  const isDateInRange = (
+    dateString: string,
+    inicio: string,
+    fim: string
+  ): boolean => {
+    if (!dateString || (!inicio && !fim)) return true;
+
+    const date = new Date(dateString);
+    const startDate = inicio ? new Date(inicio) : null;
+    const endDate = fim ? new Date(fim) : null;
+
+    if (startDate && date < startDate) return false;
+    if (endDate && date > endDate) return false;
+
+    return true;
+  };
+
+  // Filtro dinâmico em tempo real - ATUALIZADO
+  const filteredBiddings = allBiddings.filter((bidding) => {
+    // Filtro por número de controle
+    if (
+      numeroControle &&
+      !bidding.conlicitacao_id.toString().includes(numeroControle)
+    ) {
       return false;
     }
-    
+
     // Filtro por órgãos selecionados
-    if (selectedOrgaos.length > 0 && !selectedOrgaos.includes(bidding.orgao_nome)) {
+    if (
+      selectedOrgaos.length > 0 &&
+      !selectedOrgaos.includes(bidding.orgao_nome)
+    ) {
       return false;
     }
-    
+
     // Filtro por UFs selecionados
     if (selectedUFs.length > 0 && !selectedUFs.includes(bidding.orgao_uf)) {
       return false;
     }
-    
+
+    // Filtro por cidade
+    if (
+      cidade &&
+      !bidding.orgao_cidade?.toLowerCase().includes(cidade.toLowerCase())
+    ) {
+      return false;
+    }
+
+    // Filtro por objeto
+    if (
+      objeto &&
+      !bidding.objeto_licitacao?.toLowerCase().includes(objeto.toLowerCase())
+    ) {
+      return false;
+    }
+
+    // Filtro por valores
+    if (valorMinimo || valorMaximo) {
+      const valorBidding = parseValor(bidding.valor_estimado || "");
+
+      if (valorMinimo && valorBidding < parseFloat(valorMinimo)) {
+        return false;
+      }
+
+      if (valorMaximo && valorBidding > parseFloat(valorMaximo)) {
+        return false;
+      }
+    }
+
+    // Filtro para mostrar apenas sem valor
+    if (mostrarSemValor) {
+      const valor = parseValor(bidding.valor_estimado || "");
+      if (valor > 0) return false;
+    }
+
+    // Filtro por data
+    if (dataInicio || dataFim) {
+      const campoData =
+        tipoData === "abertura"
+          ? bidding.data_abertura
+          : bidding.data_documento;
+      if (!isDateInRange(campoData || "", dataInicio, dataFim)) {
+        return false;
+      }
+    }
+
     return true;
   });
 
@@ -110,6 +206,21 @@ export default function Biddings() {
     setNumeroControle("");
     setSelectedOrgaos([]);
     setSelectedUFs([]);
+    setCidade("");
+    setObjeto("");
+    setValorMinimo("");
+    setValorMaximo("");
+    setMostrarSemValor(false);
+    setDataInicio("");
+    setDataFim("");
+  };
+
+  const toggleTipoData = () => {
+    setTipoData((prev) => (prev === "abertura" ? "documento" : "abertura"));
+  };
+
+  const toggleFiltrosAvancados = () => {
+    setFiltrosAvancadosExpandidos(!filtrosAvancadosExpandidos);
   };
 
   if (isLoading) {
@@ -149,29 +260,28 @@ export default function Biddings() {
           </p>
         </div>
 
-        {/* Filters */}
-        <Card className="mb-6 border-0 shadow-xl bg-white/80 backdrop-blur-sm mx-4">
+        {/* Filtros Principais - Sempre Visíveis */}
+        <Card className="mb-4 border-0 shadow-xl bg-white/80 backdrop-blur-sm mx-4">
           <CardHeader className="pb-4">
             <CardTitle className="text-lg md:text-xl flex items-center gap-2">
               <Filter className="h-4 w-4 md:h-5 md:w-5" />
-              Filtros de Pesquisa
+              Filtros Principais
             </CardTitle>
           </CardHeader>
-          <CardContent className="px-3 md:px-6">
+          <CardContent className="px-3 md:px-6 space-y-4">
+            {/* Filtros principais em grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
               {/* Número de Controle */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Filtrar Número de Controle
+                  N° Controle
                 </label>
-                <div className="relative">
-                  <Input
-                    placeholder="Ex. 13157470"
-                    value={numeroControle}
-                    onChange={(e) => setNumeroControle(e.target.value)}
-                    className="border-gray-300 text-gray-700 placeholder:text-gray-400 h-10"
-                  />
-                </div>
+                <Input
+                  placeholder="Ex. 13157470"
+                  value={numeroControle}
+                  onChange={(e) => setNumeroControle(e.target.value)}
+                  className="border-gray-300 text-gray-700 placeholder:text-gray-400 h-10"
+                />
               </div>
 
               {/* Filtrar Órgão */}
@@ -187,8 +297,8 @@ export default function Biddings() {
                       className="w-full justify-between border-gray-300 text-gray-700 h-10"
                     >
                       {selectedOrgaos.length === 0
-                        ? "Selecione um ou mais órgãos"
-                        : `${selectedOrgaos.length} selecionado(s)`
+                        ? "Selecione órgão(s)"
+                        : `${selectedOrgaos.length} órgão(s)`
                       }
                     </Button>
                   </PopoverTrigger>
@@ -214,21 +324,19 @@ export default function Biddings() {
                     </Command>
                   </PopoverContent>
                 </Popover>
-                {selectedOrgaos.length > 0 && (
-                  <div className="mt-2 flex flex-wrap gap-1">
-                    {selectedOrgaos.map((orgao) => (
-                      <Badge key={orgao} variant="secondary" className="text-xs">
-                        {orgao.length > 30 ? `${orgao.substring(0, 30)}...` : orgao}
-                        <button
-                          onClick={() => toggleOrgao(orgao)}
-                          className="ml-1 hover:text-destructive"
-                        >
-                          <X className="h-3 w-3" />
-                        </button>
-                      </Badge>
-                    ))}
-                  </div>
-                )}
+              </div>
+
+              {/* Cidade */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Cidade
+                </label>
+                <Input
+                  placeholder="Ex. São Paulo"
+                  value={cidade}
+                  onChange={(e) => setCidade(e.target.value)}
+                  className="border-gray-300 text-gray-700 placeholder:text-gray-400 h-10"
+                />
               </div>
 
               {/* Estado (UF) */}
@@ -244,8 +352,8 @@ export default function Biddings() {
                       className="w-full justify-between border-gray-300 text-gray-700 h-10"
                     >
                       {selectedUFs.length === 0
-                        ? "Selecione um ou mais UFs"
-                        : selectedUFs.map(uf => UF_OPTIONS.find(opt => opt.code === uf)?.code || uf).join(", ")
+                        ? "Selecione UF(s)"
+                        : selectedUFs.join(", ")
                       }
                     </Button>
                   </PopoverTrigger>
@@ -271,37 +379,200 @@ export default function Biddings() {
                     </Command>
                   </PopoverContent>
                 </Popover>
-                {selectedUFs.length > 0 && (
-                  <div className="mt-2 flex flex-wrap gap-1">
-                    {selectedUFs.map((uf) => (
-                      <Badge key={uf} variant="secondary" className="text-xs">
-                        {UF_OPTIONS.find(opt => opt.code === uf)?.name || uf}
-                        <button
-                          onClick={() => toggleUF(uf)}
-                          className="ml-1 hover:text-destructive"
-                        >
-                          <X className="h-3 w-3" />
-                        </button>
-                      </Badge>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              {/* Search Button */}
-              <div className="flex flex-col md:flex-row items-stretch md:items-end gap-2">
-                <Button className="flex-1 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white border-0 shadow-lg text-sm md:text-base">
-                  <Search className="mr-2 h-3 w-3 md:h-4 md:w-4" />
-                  Pesquisar
-                </Button>
-                {(numeroControle || selectedOrgaos.length > 0 || selectedUFs.length > 0) && (
-                  <Button variant="outline" onClick={clearFilters} className="border-gray-300 text-gray-700 hover:bg-gray-50 text-sm md:text-base">
-                    Limpar
-                  </Button>
-                )}
               </div>
             </div>
+
+            {/* Tags de filtros selecionados */}
+            <div className="space-y-2">
+              {selectedOrgaos.length > 0 && (
+                <div className="flex flex-wrap gap-1">
+                  {selectedOrgaos.map((orgao) => (
+                    <Badge key={orgao} variant="secondary" className="text-xs">
+                      {orgao.length > 30 ? `${orgao.substring(0, 30)}...` : orgao}
+                      <button
+                        onClick={() => toggleOrgao(orgao)}
+                        className="ml-1 hover:text-destructive"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </Badge>
+                  ))}
+                </div>
+              )}
+              {selectedUFs.length > 0 && (
+                <div className="flex flex-wrap gap-1">
+                  {selectedUFs.map((uf) => (
+                    <Badge key={uf} variant="secondary" className="text-xs">
+                      {UF_OPTIONS.find(opt => opt.code === uf)?.name || uf}
+                      <button
+                        onClick={() => toggleUF(uf)}
+                        className="ml-1 hover:text-destructive"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </Badge>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Botões de ação */}
+            <div className="flex flex-col sm:flex-row gap-2 pt-2">
+              <Button className="flex-1 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white border-0 shadow-lg">
+                <Search className="mr-2 h-4 w-4" />
+                Pesquisar
+              </Button>
+              {(numeroControle || selectedOrgaos.length > 0 || selectedUFs.length > 0 || cidade || objeto || valorMinimo || valorMaximo || mostrarSemValor || dataInicio || dataFim) && (
+                <Button variant="outline" onClick={clearFilters} className="border-gray-300 text-gray-700 hover:bg-gray-50">
+                  Limpar Filtros
+                </Button>
+              )}
+            </div>
           </CardContent>
+        </Card>
+
+        {/* Filtros Avançados - Expansível */}
+        <Card className="mb-6 border-0 shadow-xl bg-white/80 backdrop-blur-sm mx-4">
+          <CardHeader className="pb-4">
+            <button
+              onClick={toggleFiltrosAvancados}
+              className="w-full flex items-center justify-between text-left"
+            >
+              <CardTitle className="text-lg md:text-xl flex items-center gap-2">
+                <Filter className="h-4 w-4 md:h-5 md:w-5" />
+                Opções Avançadas de Filtros
+              </CardTitle>
+              {filtrosAvancadosExpandidos ? (
+                <ChevronUp className="h-5 w-5 text-gray-500" />
+              ) : (
+                <ChevronDown className="h-5 w-5 text-gray-500" />
+              )}
+            </button>
+          </CardHeader>
+          {filtrosAvancadosExpandidos && (
+            <CardContent className="px-3 md:px-6 space-y-4">
+              {/* Filtros de texto */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Objeto da Licitação
+                  </label>
+                  <Input
+                    placeholder="Ex. Aquisição de equipamentos"
+                    value={objeto}
+                    onChange={(e) => setObjeto(e.target.value)}
+                    className="border-gray-300 text-gray-700 placeholder:text-gray-400 h-10"
+                  />
+                </div>
+              </div>
+
+              {/* Filtros de valor */}
+              <div className="space-y-4">
+                <h4 className="text-sm font-medium text-gray-700">Filtros de Valor</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Valor Mínimo (R$)
+                    </label>
+                    <Input
+                      type="number"
+                      placeholder="Ex. 1000"
+                      value={valorMinimo}
+                      onChange={(e) => setValorMinimo(e.target.value)}
+                      className="border-gray-300 text-gray-700 placeholder:text-gray-400 h-10"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Valor Máximo (R$)
+                    </label>
+                    <Input
+                      type="number"
+                      placeholder="Ex. 50000"
+                      value={valorMaximo}
+                      onChange={(e) => setValorMaximo(e.target.value)}
+                      className="border-gray-300 text-gray-700 placeholder:text-gray-400 h-10"
+                    />
+                  </div>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="mostrarSemValor"
+                    checked={mostrarSemValor}
+                    onCheckedChange={setMostrarSemValor}
+                  />
+                  <label
+                    htmlFor="mostrarSemValor"
+                    className="text-sm font-medium text-gray-700"
+                  >
+                    Mostrar apenas licitações sem valor informado
+                  </label>
+                </div>
+              </div>
+
+              {/* Filtros de data */}
+              <div className="space-y-4">
+                <h4 className="text-sm font-medium text-gray-700">Filtros de Data</h4>
+                
+                {/* Seletor do tipo de data */}
+                <div className="flex items-center space-x-4">
+                  <span className="text-sm text-gray-600">Filtrar por:</span>
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="radio"
+                      id="abertura"
+                      name="tipoData"
+                      checked={tipoData === "abertura"}
+                      onChange={() => setTipoData("abertura")}
+                      className="text-green-600"
+                    />
+                    <label htmlFor="abertura" className="text-sm text-gray-700">
+                      Data de Abertura
+                    </label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="radio"
+                      id="documento"
+                      name="tipoData"
+                      checked={tipoData === "documento"}
+                      onChange={() => setTipoData("documento")}
+                      className="text-green-600"
+                    />
+                    <label htmlFor="documento" className="text-sm text-gray-700">
+                      Data do Documento
+                    </label>
+                  </div>
+                </div>
+
+                {/* Campos de data */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Data Início
+                    </label>
+                    <Input
+                      type="date"
+                      value={dataInicio}
+                      onChange={(e) => setDataInicio(e.target.value)}
+                      className="border-gray-300 text-gray-700 h-10"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Data Fim
+                    </label>
+                    <Input
+                      type="date"
+                      value={dataFim}
+                      onChange={(e) => setDataFim(e.target.value)}
+                      className="border-gray-300 text-gray-700 h-10"
+                    />
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          )}
         </Card>
 
         {/* Results */}
