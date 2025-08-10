@@ -1,0 +1,105 @@
+PS C:\Users\Geovani\LicitacaoTracker> git remote -v
+origin  https://github.com/wyconsult/dev_master.git (fetch)
+origin  https://github.com/wyconsult/dev_master.git (push)
+PS C:\Users\Geovani\LicitacaoTracker> git remote add origin https://github.com/wyconsult/dev_master.git
+error: remote origin already exists.
+PS C:\Users\Geovani\LicitacaoTracker> git pull origin main --rebase
+From https://github.com/wyconsult/dev_master
+ * branch            main       -> FETCH_HEAD
+warning: skipped previously applied commit 5bc41c3
+warning: skipped previously applied commit f337c16
+warning: skipped previously applied commit 14864ac
+warning: skipped previously applied commit 578ea29
+warning: skipped previously applied commit 4577fd7
+warning: skipped previously applied commit 02517ef
+warning: skipped previously applied commit c1c72d8
+warning: skipped previously applied commit 2ad08ba
+warning: skipped previously applied commit 1eb9081
+warning: skipped previously applied commit 5194837
+warning: skipped previously applied commit f0417e7
+warning: skipped previously applied commit 31133d3
+warning: skipped previously applied commit 20b797c
+warning: skipped previously applied commit 47a615f
+warning: skipped previously applied commit 4bb7774
+warning: skipped previously applied commit fa6cd40
+warning: skipped previously applied commit 6f4f835
+warning: skipped previously applied commit aa8850b
+warning: skipped previously applied commit d8e046d
+warning: skipped previously applied commit 6e0e006
+warning: skipped previously applied commit 2223867
+warning: skipped previously applied commit 433da70
+warning: skipped previously applied commit 5bab2d0
+warning: skipped previously applied commit 3095d3a
+warning: skipped previously applied commit 28edeec
+warning: skipped previously applied commit 9f8dd2a
+warning: skipped previously applied commit 269b2ff
+warning: skipped previously applied commit 39ce774
+warning: skipped previously applied commit 071d428
+warning: skipped previously applied commit 32cd561
+warning: skipped previously applied commit a3fe721
+warning: skipped previously applied commit 7ce240a
+warning: skipped previously applied commit ad689d7
+warning: skipped previously applied commit 9e5669c
+warning: skipped previously applied commit 61c02c4
+warning: skipped previously applied commit f50313d
+warning: skipped previously applied commit 8aa1398
+warning: skipped previously applied commit eef937e
+warning: skipped previously applied commit d9ecc69
+warning: skipped previously applied commit c6f47b6
+warning: skipped previously applied commit 7bb02b0
+warning: skipped previously applied commit 91fa2fc
+warning: skipped previously applied commit 2ab0daf
+hint: use --reapply-cherry-picks to include skipped commits
+hint: Disable this message with "git config advice.skippedCherryPicks false"
+error: The following untracked working tree files would be overwritten by checkout:
+        .local/state/replit/agent/.agent_state_02517ef76e46edbde51769730d9fabf828f29751.bin
+        .local/state/replit/agent/.agent_state_045f0f6a2b383c33c98707b3117c0cdd523a27ac.bin
+        .local/state/replit/agent/.agent_state_071d4289cbca63642b1f9137e1cc365157411d65.bin
+        .local/state/replit/agent/.agent_state_0787900bcf50123b845df6aa2101f2e755141280.bin
+        .local/state/replit/agent/.agent_state_08f77975cb8dc6ec23ca718eab50f7c48b35fce7.bin
+        .local/state/replit/agent/.agent_state_0abc8f7e162df06f8f99c4aa4f13ef7266756d39.bin
+        .local/state/replit/agent/.agent_state_0c4c9dea9cc97b84ee6d0d329d8b3edb82051044.bin
+        .local/state/replit/agent/.agent_state_0cc879a792bb420bc3c22d2a3214508688bd1eef.bin
+        .local/state/replit/agent/.agent_state_102ce2a6d469379b5aa9b000163cdc60212b61a9.bin
+        .local/state/replit/agent/.agent_state_11b23486c5db1c89e2ca48fc07dfa96c7ac17db8.bin
+        .local/state/replit/agent/.agent_state_12dd15bb0b399a36b8aa602432926c425f09b0d0.bin
+        .local/state/replit/agent/.agent_state_1389a2e4f3843719bebcbe2880dae59f138f6b19.bin
+        .local/state/replit/agent/.agent_state_14864ac19fe308e37064258c8d973a77ceb5c4bb.bin
+        .local/state/replit/agent/.agent_state_17f36b75cdb68a5a554e9ef83c4392414571dded.bin
+        .local/state/replit/agent/.agent_state_18e3d4a1aa9fcd7cda7104941ebfb3a70fcebc11.bin
+        .local/state/replit/agent/.agent_state_1b03782abe807cb177c73eefb28e4e3d1ff90d41.bin
+        .local/state/replit/agent/.agent_state_1cb816893e00c0a471cc2a7ba21e867cb6d89053.bin
+        .local/state/replit/agent/.agent_state_1e92baf53bdc1cdef7758953e3fcddef9a5d76df.bin
+        .local/state/replit/agent/.agent_state_1eb9081408bd88b97ecbb8f56ba48ed6566e0b54.bin
+        .local/state/replit/agent/.agent_state_20b797cffcef6e55411d2d3c03579886b4a53a2e.bin
+        .local/state/replit/agent/.agent_state_20c2e6cf3e2c6f44a35b94c7fe408e3b5fe7ec73.bin
+        .local/state/replit/agent/.agent_state_211a71a87e82a3b4c0ff9ec1b2c870939cca7608.bin
+        .local/state/replit/agent/.agent_state_2223867224be80c4915162ab1bba930b8a6142df.bin
+        .local/state/replit/agent/.agent_state_2499c1876adcab7de659d0c91a15655961ec7f7f.bin
+        .local/state/replit/agent/.agent_state_269b2ffa1d25c9705957a5ae7cb5d4df481bc647.bin
+        .local/state/replit/agent/.agent_state_26bf74218d90a1fb3a99e6eb5498e47862f315b1.bin
+        .local/state/replit/agent/.agent_state_28edeec626c98e810aa88f22ae788b762bdd5a81.bin
+        .local/state/replit/agent/.agent_state_291a91114b13e957e28bd3f822a86eb0c00c177d.bin
+        .local/state/replit/agent/.agent_state_2ab0dafb3961b0a7bd595cfa1a4aa209339b92c2.bin
+        .local/state/replit/agent/.agent_state_2ad08bafc82d4e5453141d8b8013cbd714c6814c.bin
+        .local/state/replit/agent/.agent_state_2cd9d4afc82b61ee943e457d92b35f9b07fc6d9c.bin
+        .local/state/replit/agent/.agent_state_2d69ba3105520975236794f68be6650539931c1b.bin
+        .local/state/replit/agent/.agent_state_2ebb9d6f1242b79d8ba7e73969d4d4db335934e4.bin
+        .local/state/replit/agent/.agent_state_2eeceef7dfd108a5564e3dc7c75423ae19f929a9.bin
+        .local/state/replit/agent/.agent_state_2fd5c61a0a1c17aadfa29b535754c3a12880c40e.bin
+        .local/state/replit/agent/.agent_state_2ff3aacadc612d469358a395fc9c85bcdfabad02.bin
+        .local/state/replit/agent/.agent_state_3095d3aa40ade5b4960a6f8ab966d0bc857f7b6c.bin
+        .local/state/replit/agent/.agent_state_3109635e10d1c908c8db0570efa1ee20e8a5ecde.bin
+        .local/state/replit/agent/.agent_state_31133d3414ea58568aefa6d0bd63a553ba46a3aa.bin
+        .local/state/replit/agent/.agent_state_32cd5618697792e4b23638ec83fe5b56c45c43c8.bin
+        .local/state/replit/agent/.agent_state_33e01c04e514d085bd94b2c2732e89232e0bca71.bin
+        .local/state/replit/agent/.agent_state_393f3aa7dd7f47ca35976bc9bdd9ea681ac7d156.bin
+        .local/state/replit/agent/.agent_state_396a677ace17ad32e9e79fa888da6848c870086f.bin
+        .local/state/replit/agent/.agent_state_3985d4ce49e3bfa28e2ca1c2d8b0483742375ccb.bin
+        .local/state/replit/agent/.agent_state_39ce77425134c396f90c9c5c8b3a02390f23fac3.bin
+        .local/state/replit/agent/.agent_state_3bcd61f126a639e6433f3825e0cfdea7ce90f2c4.bin
+        .local/state/replit/agent/.agent_state_3f7319158a8c0f8146c191a71ce4e48a41124fde.bin
+        .local/state/re
+Aborting
+error: could not detach HEAD
+PS C:\Users\Geovani\LicitacaoTracker> 
