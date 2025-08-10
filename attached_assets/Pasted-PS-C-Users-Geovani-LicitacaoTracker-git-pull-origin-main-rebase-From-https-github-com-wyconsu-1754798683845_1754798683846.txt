@@ -1,0 +1,87 @@
+PS C:\Users\Geovani\LicitacaoTracker> git pull origin main --rebase
+From https://github.com/wyconsult/dev_master
+ * branch            main       -> FETCH_HEAD
+warning: skipped previously applied commit 5bc41c3
+warning: skipped previously applied commit f337c16
+warning: skipped previously applied commit 14864ac
+warning: skipped previously applied commit 578ea29
+warning: skipped previously applied commit 4577fd7
+warning: skipped previously applied commit 02517ef
+warning: skipped previously applied commit c1c72d8
+warning: skipped previously applied commit 2ad08ba
+warning: skipped previously applied commit 1eb9081
+warning: skipped previously applied commit 5194837
+warning: skipped previously applied commit f0417e7
+warning: skipped previously applied commit 31133d3
+warning: skipped previously applied commit 20b797c
+warning: skipped previously applied commit 47a615f
+warning: skipped previously applied commit 4bb7774
+warning: skipped previously applied commit fa6cd40
+warning: skipped previously applied commit 6f4f835
+warning: skipped previously applied commit aa8850b
+warning: skipped previously applied commit d8e046d
+warning: skipped previously applied commit 6e0e006
+warning: skipped previously applied commit 2223867
+warning: skipped previously applied commit 433da70
+warning: skipped previously applied commit 5bab2d0
+warning: skipped previously applied commit 3095d3a
+warning: skipped previously applied commit 28edeec
+warning: skipped previously applied commit 9f8dd2a
+warning: skipped previously applied commit 269b2ff
+warning: skipped previously applied commit 39ce774
+warning: skipped previously applied commit 071d428
+warning: skipped previously applied commit 32cd561
+warning: skipped previously applied commit a3fe721
+warning: skipped previously applied commit 7ce240a
+warning: skipped previously applied commit ad689d7
+warning: skipped previously applied commit 9e5669c
+warning: skipped previously applied commit 61c02c4
+warning: skipped previously applied commit f50313d
+warning: skipped previously applied commit 8aa1398
+warning: skipped previously applied commit eef937e
+warning: skipped previously applied commit d9ecc69
+warning: skipped previously applied commit c6f47b6
+warning: skipped previously applied commit 7bb02b0
+warning: skipped previously applied commit 91fa2fc
+warning: skipped previously applied commit 2ab0daf
+hint: use --reapply-cherry-picks to include skipped commits
+hint: Disable this message with "git config advice.skippedCherryPicks false"
+warning: Cannot merge binary files: .local/state/replit/agent/.agent_state_main.bin (HEAD vs. c172458 (Apontamentos 08 08 2025.))
+Auto-merging .local/state/replit/agent/.agent_state_main.bin
+CONFLICT (add/add): Merge conflict in .local/state/replit/agent/.agent_state_main.bin
+warning: Cannot merge binary files: .local/state/replit/agent/repl_state.bin (HEAD vs. c172458 (Apontamentos 08 08 2025.))
+Auto-merging .local/state/replit/agent/repl_state.bin
+CONFLICT (add/add): Merge conflict in .local/state/replit/agent/repl_state.bin
+error: could not apply c172458... Apontamentos 08 08 2025.
+hint: Resolve all conflicts manually, mark them as resolved with
+hint: "git add/rm <conflicted_files>", then run "git rebase --continue".
+hint: You can instead skip this commit: run "git rebase --skip".
+hint: To abort and get back to the state before "git rebase", run "git rebase --abort".
+hint: Disable this message with "git config advice.mergeConflict false"
+Could not apply c172458... Apontamentos 08 08 2025.
+PS C:\Users\Geovani\LicitacaoTracker> git add .
+PS C:\Users\Geovani\LicitacaoTracker> git commit -m "Apontamentos 08 08 2025."
+[detached HEAD ba3b0db] Apontamentos 08 08 2025.
+ 13 files changed, 1 insertion(+)
+ create mode 100644 .local/state/replit/agent/.agent_state_32941ea6aa8992e081001ee197b70b90b965c8f5.bin
+ create mode 100644 .local/state/replit/agent/.agent_state_4f39f0f481091750de7078a3711af10e4399bd03.bin
+ create mode 100644 .local/state/replit/agent/.agent_state_6430f3d1a83fa37e469802ba9fb65eabb33b5b5e.bin
+ create mode 100644 .local/state/replit/agent/.agent_state_a981ab59a6de815d922d4a69011a2a1be82465c5.bin
+ create mode 100644 .local/state/replit/agent/.agent_state_ac46264f442da0bf4ab8ce294bfd8fc994d756ff.bin
+ create mode 100644 .local/state/replit/agent/.agent_state_c0367c0e355fc3b3a0d2515ab543f841721b08bb.bin
+ create mode 100644 .local/state/replit/agent/.agent_state_c81b01b81109853f36b0e5f6a3164c02f92a604d.bin
+ create mode 100644 .local/state/replit/agent/.agent_state_cea69d805d4aa7d5acf0503f7a387b3c67210a3f.bin
+ create mode 100644 .local/state/replit/agent/.agent_state_db14cc0af79461160389725e09ddd3753e64ab77.bin
+ create mode 100644 .local/state/replit/agent/.agent_state_eba93b822bd7e12711f897b26312fcb06db11157.bin
+ create mode 100644 .local/state/replit/agent/.agent_state_f9783c7e1c1ac49422db03e7b5cba6e8d2571960.bin
+ create mode 100644 .local/state/replit/agent/.agent_state_f9f87a060bb6436b8a6571fdf5530a25f6a93006.bin
+ create mode 100644 .local/state/replit/agent/filesystem/filesystem_state.json
+PS C:\Users\Geovani\LicitacaoTracker> git push origin main
+To https://github.com/wyconsult/dev_master.git
+ ! [rejected]        main -> main (non-fast-forward)
+error: failed to push some refs to 'https://github.com/wyconsult/dev_master.git'
+hint: Updates were rejected because a pushed branch tip is behind its remote
+hint: counterpart. If you want to integrate the remote changes, use 'git pull'
+hint: before pushing again.
+hint: See the 'Note about fast-forwards' in 'git push --help' for details.
+PS C:\Users\Geovani\LicitacaoTracker> 
