@@ -7,7 +7,7 @@
 - **Token de Autenticação**: `27a24a9a-44ce-4de8-a8ac-82cc58ca9f6e` (já configurado)
 - **IPs Autorizados Atualmente**: 
   - 35.227.80.200 (desenvolvimento - Replit)
-  - 31.97.26.138 (produção autorizada)
+  - 31.97.26.138 (produção autorizada - servidor alvo)
 
 ### 2. Configuração do Servidor de Produção
 
@@ -35,22 +35,45 @@ cd dev_master
 npm install
 ```
 
-### 2. Configurar Banco de Dados
+### 2. Deploy no Servidor (IP Autorizado: 31.97.26.138)
+
+#### No seu PC local:
 ```bash
-# Configurar as tabelas (apenas primeira vez)
-npm run db:push
+# Verificar remote
+git remote -v
+
+# Adicionar origin se necessário
+git remote add origin https://github.com/wyconsult/dev_master.git
+
+# Pull para sincronizar
+git pull origin main --rebase
+
+# Commit e push das mudanças
+git add .
+git commit -m "Apontamentos 08 08 2025."
+git push origin main
 ```
 
-### 3. Build para Produção
+#### No servidor de produção:
 ```bash
+# Conectar ao servidor
+ssh root@31.97.26.138
+# Senha: Vermelho006@
+
+# Ir para o diretório do projeto
+cd ~/dev_master
+
+# Puxar as mudanças
+git pull origin main
+
+# Instalar dependências (CI mode)
+npm ci
+
 # Gerar build otimizado
 npm run build
-```
 
-### 4. Executar em Produção
-```bash
-# Iniciar servidor de produção
-npm run start
+# Reiniciar PM2
+pm2 restart all
 ```
 
 ## Verificação de Funcionalidades
