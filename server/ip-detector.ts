@@ -9,7 +9,7 @@ export async function getCurrentExternalIP(): Promise<string> {
 
   for (const service of services) {
     try {
-      const response = await fetch(service, { timeout: 5000 });
+      const response = await fetch(service);
       const ip = (await response.text()).trim();
       
       // Validar se é um IP válido
