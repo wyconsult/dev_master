@@ -3,10 +3,9 @@ echo ===============================================
 echo DEPLOY AUTOMATICO LICITATRAKER - PRODUCAO
 echo ===============================================
 echo.
-echo Este script fará o deploy completo do sistema:
+echo Este script fará o sync para o GitHub:
 echo 1. Sync local -> GitHub
-echo 2. Deploy GitHub -> Servidor de Produção
-echo 3. Restart da aplicação
+echo 2. Instruções para deploy manual no servidor
 echo.
 echo IP de Produção Autorizado: 31.97.26.138
 echo Sistema preparado para dados reais da API ConLicitação
@@ -52,50 +51,46 @@ echo ✅ GitHub atualizado com sucesso!
 
 echo.
 echo ===========================================
-echo FASE 2: DEPLOY NO SERVIDOR DE PRODUÇÃO
+echo FASE 2: COMANDOS PARA O SERVIDOR
 echo ===========================================
 
 echo.
-echo Conectando ao servidor 31.97.26.138...
-echo NOTA: Digite a senha quando solicitado: Vermelho006@
+echo ✅ GitHub atualizado! Agora execute manualmente no servidor:
 echo.
-
-rem Conectar via SSH e executar comandos no servidor
-ssh root@31.97.26.138 "cd ~/dev_master && echo 'Atualizando código...' && git pull origin main && echo 'Instalando dependências...' && npm ci && echo 'Gerando build de produção...' && npm run build && echo 'Reiniciando aplicação...' && pm2 restart all && echo '✅ Deploy concluído com sucesso!'"
-
-if %errorlevel% neq 0 (
-    echo.
-    echo ⚠️ Erro no deploy SSH. Executar manualmente:
-    echo ssh root@31.97.26.138
-    echo cd ~/dev_master
-    echo git pull origin main
-    echo npm ci
-    echo npm run build
-    echo pm2 restart all
-    pause
-    exit /b 1
-)
+echo 1) Conecte ao servidor:
+echo    ssh root@31.97.26.138
+echo    (senha: Vermelho006@)
+echo.
+echo 2) Execute os comandos de deploy:
+echo    cd ~/dev_master
+echo    git pull origin main
+echo    npm ci
+echo    npm run build
+echo    pm2 restart all
+echo.
+echo 3) Verificar se funcionou:
+echo    pm2 status
+echo    pm2 logs licitatraker
 
 echo.
 echo ===========================================
-echo DEPLOY CONCLUÍDO COM SUCESSO!
+echo SYNC GITHUB CONCLUÍDO!
 echo ===========================================
 echo.
-echo ✅ Código sincronizado no GitHub
-echo ✅ Deploy realizado no servidor de produção
-echo ✅ Aplicação reiniciada com PM2
+echo ✅ Código sincronizado no GitHub com sucesso
 echo.
-echo Sistema funcional em: http://31.97.26.138:5000
+echo Próximos passos no servidor:
+echo 1. Conecte: ssh root@31.97.26.138
+echo 2. Atualize: cd ~/dev_master && git pull origin main
+echo 3. Build: npm ci && npm run build
+echo 4. Restart: pm2 restart all
 echo.
-echo Funcionalidades disponíveis:
-echo - Dashboard com dados reais da API ConLicitação
-echo - Filtros avançados de licitações
-echo - Sistema de favoritos com tabulação hierárquica
-echo - Geração de PDF otimizada
+echo Sistema estará disponível em: http://31.97.26.138:5000
+echo.
+echo Funcionalidades prontas:
+echo - Tabulação hierárquica 100%% funcional
+echo - PDF otimizado sem campos desnecessários
+echo - API preparada para dados reais da ConLicitação
 echo - Interface responsiva completa
-echo.
-echo Para monitorar logs:
-echo ssh root@31.97.26.138
-echo pm2 logs licitatraker
 echo.
 pause
