@@ -1,51 +1,200 @@
 // Estrutura hierárquica de categorização conforme planilha real
 export const TABULATION_HIERARCHY = {
   "Alimentação": {
-    "Auxiliar de Cozinha": [],
-    "Coffee Break/Almoço/Jantar": [],
-    "Fornecimento de Alimentação": [],
-    "Fornecimento de Refeições": [],
-    "Kit Lanche": [],
-    "Kit Lanche e Refeição": [],
-    "Preparo de Refeição": [],
-    "Produção de Refeição Local": [],
-    "Refeição CAPS": [],
-    "Refeição Local e Transportada": [],
-    "Refeição Socioeducativa": [],
-    "Refeição Transportada": [],
-    "Refeições UPA": [],
-    "Refeições UPA e Hospital Dia": [],
-    "Restaurante do Trabalhador": [],
-    "Restaurante Popular": [],
-    "Serviço de Alimentação Buffet": []
+    "Auxiliar de Cozinha": [
+      "Auxiliar de Cozinha Geral",
+      "Auxiliar de Cozinha Hospitalar",
+      "Auxiliar de Cozinha Escolar"
+    ],
+    "Coffee Break/Almoço/Jantar": [
+      "Coffee Break Simples",
+      "Coffee Break Completo",
+      "Almoço Executivo",
+      "Jantar Corporativo"
+    ],
+    "Fornecimento de Alimentação": [
+      "Fornecimento Regular",
+      "Fornecimento Especial",
+      "Fornecimento de Emergência"
+    ],
+    "Fornecimento de Refeições": [
+      "Refeições Prontas",
+      "Refeições Congeladas",
+      "Refeições Dietéticas"
+    ],
+    "Kit Lanche": [
+      "Kit Básico",
+      "Kit Premium",
+      "Kit Infantil"
+    ],
+    "Kit Lanche e Refeição": [
+      "Kit Completo",
+      "Kit Parcial",
+      "Kit Especial"
+    ],
+    "Preparo de Refeição": [
+      "Preparo Local",
+      "Preparo Terceirizado",
+      "Preparo Misto"
+    ],
+    "Produção de Refeição Local": [
+      "Produção Própria",
+      "Produção Compartilhada",
+      "Produção Supervisionada"
+    ],
+    "Refeição CAPS": [
+      "CAPS I",
+      "CAPS II", 
+      "CAPS III"
+    ],
+    "Refeição Local e Transportada": [
+      "Refeição Local",
+      "Refeição Transportada",
+      "Ambas"
+    ],
+    "Refeição Socioeducativa": [
+      "Escolar",
+      "Comunitária",
+      "Social"
+    ],
+    "Refeição Transportada": [
+      "Transporte Refrigerado",
+      "Transporte Térmico",
+      "Transporte Comum"
+    ],
+    "Refeições UPA": [
+      "UPA 24h",
+      "UPA Básica",
+      "UPA Ampliada"
+    ],
+    "Refeições UPA e Hospital Dia": [
+      "UPA",
+      "Hospital Dia",
+      "Ambos"
+    ],
+    "Restaurante do Trabalhador": [
+      "Popular",
+      "Empresarial",
+      "Público"
+    ],
+    "Restaurante Popular": [
+      "Básico",
+      "Ampliado",
+      "Especializado"
+    ],
+    "Serviço de Alimentação Buffet": [
+      "Buffet Simples",
+      "Buffet Completo",
+      "Buffet Premium"
+    ]
   },
   "Concessão": {
-    "Concessões de Restaurante": [],
-    "Exploração de Restaurante": [],
-    "Permissão de Uso": []
+    "Concessões de Restaurante": [
+      "Concessão Básica",
+      "Concessão Completa",
+      "Concessão Especializada"
+    ],
+    "Exploração de Restaurante": [
+      "Exploração Total",
+      "Exploração Parcial",
+      "Exploração Temporária"
+    ],
+    "Permissão de Uso": [
+      "Uso Básico",
+      "Uso Completo",
+      "Uso Especializado"
+    ]
   },
   "Mão de Obra": {
-    "Mão de Obra Cozinheira": [],
-    "Mão de Obra Cozinheira (s)": [],
-    "Mão de Obra Cozinheiro Escolar": [],
-    "Mão de Obra Diversas (os)": [],
-    "Mão de Obra Merendeira": [],
-    "Mão de Obra Merendeira e outros": [],
-    "Mão de Obra Merendeira Escolar": [],
-    "Mão de Obra Copeiragem": [],
-    "Mão de Obra Copeiragem Hospitalar": [],
-    "Mão Obra Cozinheiro e Auxiliar Cozinha": [],
-    "Mão de Obra Merendeira Empresa Escolar": [],
-    "Mão de Obra Merenda Escolar": [],
-    "Mão de Obra Merenda Escolar e outras": [],
-    "Mão de Obra Merendeira Empresa": []
+    "Mão de Obra Cozinheira": [
+      "Cozinheira Geral",
+      "Cozinheira Especializada",
+      "Cozinheira Chefe"
+    ],
+    "Mão de Obra Cozinheira (s)": [
+      "Uma Cozinheira",
+      "Múltiplas Cozinheiras",
+      "Equipe de Cozinheiras"
+    ],
+    "Mão de Obra Cozinheiro Escolar": [
+      "Ensino Fundamental",
+      "Ensino Médio",
+      "Ensino Superior"
+    ],
+    "Mão de Obra Diversas (os)": [
+      "Auxiliares",
+      "Especialistas",
+      "Coordenadores"
+    ],
+    "Mão de Obra Merendeira": [
+      "Merendeira Básica",
+      "Merendeira Especializada",
+      "Merendeira Supervisora"
+    ],
+    "Mão de Obra Merendeira e outros": [
+      "Merendeira Principal",
+      "Auxiliares",
+      "Equipe Completa"
+    ],
+    "Mão de Obra Merendeira Escolar": [
+      "Educação Infantil",
+      "Ensino Fundamental",
+      "Ensino Médio"
+    ],
+    "Mão de Obra Copeiragem": [
+      "Copeiro Básico",
+      "Copeiro Especializado",
+      "Chefe de Copeiragem"
+    ],
+    "Mão de Obra Copeiragem Hospitalar": [
+      "Copeiro Hospitalar",
+      "Copeiro UTI",
+      "Copeiro Especializado"
+    ],
+    "Mão Obra Cozinheiro e Auxiliar Cozinha": [
+      "Cozinheiro Principal",
+      "Auxiliar de Cozinha",
+      "Equipe Completa"
+    ],
+    "Mão de Obra Merendeira Empresa Escolar": [
+      "Empresa Pequena",
+      "Empresa Média",
+      "Empresa Grande"
+    ],
+    "Mão de Obra Merenda Escolar": [
+      "Merenda Básica",
+      "Merenda Completa",
+      "Merenda Especializada"
+    ],
+    "Mão de Obra Merenda Escolar e outras": [
+      "Merenda Principal",
+      "Outras Refeições",
+      "Serviço Completo"
+    ],
+    "Mão de Obra Merendeira Empresa": [
+      "Empresa Terceirizada",
+      "Empresa Própria",
+      "Empresa Mista"
+    ]
   },
   "Nutrição": {
-    "Motorista ambulância": [],
-    "Nutrição Hospitalar": []
+    "Motorista ambulância": [
+      "Motorista Básico",
+      "Motorista Especializado",
+      "Motorista UTI"
+    ],
+    "Nutrição Hospitalar": [
+      "Nutrição Clínica",
+      "Nutrição Pediátrica",
+      "Nutrição Geriátrica"
+    ]
   },
   "Prestação de Serviços": {
-    "Prestação de Serviços de cozinha unidades de Rancho": []
+    "Prestação de Serviços de cozinha unidades de Rancho": [
+      "Rancho Básico",
+      "Rancho Completo",
+      "Rancho Especializado"
+    ]
   }
 };
 
