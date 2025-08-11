@@ -8,7 +8,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { useQuery } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
 import { FavoriteCategorization } from "@/components/favorite-categorization";
-import { TabulationDialog } from "./tabulation-dialog";
+import { FavoriteTabulationDialog } from "./favorite-tabulation-dialog";
 
 interface BiddingCardProps {
   bidding: Bidding;
@@ -328,18 +328,11 @@ export function BiddingCard({
       </CardContent>
 
       {/* Dialog de Tabulação */}
-      <TabulationDialog
+      <FavoriteTabulationDialog
         bidding={bidding}
         isOpen={showTabulationDialog}
         onClose={() => setShowTabulationDialog(false)}
-        currentCategory={favoriteData?.category}
-        currentCustomCategory={favoriteData?.customCategory}
-        currentNotes={favoriteData?.notes}
-        currentUf={favoriteData?.uf}
-        currentCodigoUasg={favoriteData?.codigoUasg}
-        currentValorEstimado={favoriteData?.valorEstimado}
-        currentFornecedor={favoriteData?.fornecedor}
-        currentSite={favoriteData?.site}
+        userId={user?.id || 1}
       />
     </Card>
   );
