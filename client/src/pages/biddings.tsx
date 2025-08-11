@@ -79,10 +79,12 @@ export default function Biddings() {
     return filters;
   };
 
-  const { data: allBiddings = [], isLoading } = useQuery<Bidding[]>({
+  const { data: allBiddings = [], isLoading, error } = useQuery<Bidding[]>({
     queryKey: ["/api/biddings"],
     staleTime: 5 * 60 * 1000, // 5 minutos
     refetchOnWindowFocus: false,
+    retry: 3,
+    retryDelay: 1000,
   });
 
   // Extrair órgãos únicos dos dados reais
@@ -234,6 +236,24 @@ export default function Biddings() {
                 <div key={i} className="h-48 bg-gray-200 rounded"></div>
               ))}
             </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <Navbar />
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="text-center py-12">
+            <div className="text-red-500 text-lg mb-4">
+              Erro ao carregar licitações
+            </div>
+            <p className="text-gray-600">
+              Tente recarregar a página ou entre em contato com o suporte.
+            </p>
           </div>
         </div>
       </div>
