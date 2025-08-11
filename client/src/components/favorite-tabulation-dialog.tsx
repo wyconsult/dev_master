@@ -139,7 +139,7 @@ export function FavoriteTabulationDialog({
               }
               // Verificar especializações
               for (const [subcat, especializacoes] of Object.entries(subcategorias)) {
-                if (especializacoes.includes(currentCategory)) {
+                if ((especializacoes as string[]).includes(currentCategory)) {
                   setTipoObjeto(tipo);
                   setSubCategoria(subcat);
                   setEspecializacao(currentCategory);
@@ -160,11 +160,11 @@ export function FavoriteTabulationDialog({
   const tiposObjeto = Object.keys(tabulationDataLocal);
 
   // Obter sub-categorias baseadas no tipo selecionado
-  const subCategorias = tipoObjeto ? Object.keys(tabulationDataLocal[tipoObjeto] || {}) : [];
+  const subCategorias = tipoObjeto ? Object.keys((tabulationDataLocal as any)[tipoObjeto] || {}) : [];
 
   // Obter especializações baseadas na sub-categoria selecionada
   const especializacoes = (tipoObjeto && subCategoria) 
-    ? (tabulationDataLocal[tipoObjeto]?.[subCategoria] || [])
+    ? ((tabulationDataLocal as any)[tipoObjeto]?.[subCategoria] || [])
     : [];
 
   // Handlers para mudanças hierárquicas
