@@ -7,7 +7,7 @@ import { useFavorites } from "@/hooks/use-favorites";
 import { useAuth } from "@/hooks/use-auth";
 import { useQuery } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
-import { FavoriteCategorization } from "@/components/favorite-categorization";
+// import { FavoriteCategorization } from "@/components/favorite-categorization";
 import { FavoriteTabulationDialog } from "./favorite-tabulation-dialog";
 
 interface BiddingCardProps {
@@ -303,17 +303,17 @@ export function BiddingCard({
           <div className="mt-3 pt-3 border-t border-gray-200">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-2">
               <div className="flex items-center gap-2">
-                <FavoriteCategorization
-                  bidding={bidding}
-                  currentCategory={favoriteData?.category}
-                  currentCustomCategory={favoriteData?.customCategory}
-                  currentNotes={favoriteData?.notes}
-                  currentUf={favoriteData?.uf}
-                  currentCodigoUasg={favoriteData?.codigoUasg}
-                  currentValorEstimado={favoriteData?.valorEstimado}
-                  currentFornecedor={favoriteData?.fornecedor}
-                  currentSite={favoriteData?.site}
-                />
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setShowTabulationDialog(true)}
+                  className="text-blue-600 border-blue-600 hover:bg-blue-50"
+                >
+                  <div className="w-4 h-4 rounded bg-blue-600 flex items-center justify-center mr-2">
+                    <span className="text-white text-xs">✓</span>
+                  </div>
+                  Editar Categorização
+                </Button>
               </div>
               
               {favoriteData?.notes && (
