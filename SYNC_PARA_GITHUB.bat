@@ -20,7 +20,7 @@ git add -A
 
 echo.
 echo 4) Commitando funcionalidades completas...
-git commit -m "Deploy COMPLETO: Filtros avançados + Tabulação + PDF + Todas funcionalidades implementadas no Replit"
+git commit -m "Sistema completo: Tabulação hierárquica funcional + PDF otimizado + API preparada para dados reais"
 
 echo.
 echo 5) Enviando para GitHub...
