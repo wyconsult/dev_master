@@ -333,6 +333,10 @@ export function BiddingCard({
         isOpen={showTabulationDialog}
         onClose={() => setShowTabulationDialog(false)}
         userId={user?.id || 1}
+        currentCategory={favoriteData?.category}
+        currentCustomCategory={favoriteData?.customCategory}
+        currentNotes={favoriteData?.notes}
+        currentSite={favoriteData?.site}
       />
     </Card>
   );

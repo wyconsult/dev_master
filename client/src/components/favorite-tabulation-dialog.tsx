@@ -31,6 +31,10 @@ interface FavoriteTabulationDialogProps {
   isOpen: boolean;
   onClose: () => void;
   userId: number;
+  currentCategory?: string;
+  currentCustomCategory?: string;
+  currentNotes?: string;
+  currentSite?: string;
 }
 
 // Lista de sites simplificada
@@ -39,14 +43,39 @@ const SITES_LIST = [
   "Intranet"
 ];
 
-export function FavoriteTabulationDialog({ bidding, isOpen, onClose, userId }: FavoriteTabulationDialogProps) {
+export function FavoriteTabulationDialog({ 
+  bidding, 
+  isOpen, 
+  onClose, 
+  userId,
+  currentCategory,
+  currentCustomCategory,
+  currentNotes,
+  currentSite
+}: FavoriteTabulationDialogProps) {
   // Estados para sistema hierárquico
   const [tipoObjeto, setTipoObjeto] = useState("");
   const [subCategoria, setSubCategoria] = useState("");
   const [especializacao, setEspecializacao] = useState("");
-  const [selectedSite, setSelectedSite] = useState("");
-  const [notes, setNotes] = useState("");
-  const [newCategoryName, setNewCategoryName] = useState("");
+  const [selectedSite, setSelectedSite] = useState(currentSite || "");
+  const [notes, setNotes] = useState(currentNotes || "");
+  const [newCategoryName, setNewCategoryName] = useState(currentCustomCategory || "");
+
+  // Carregar dados existentes ao abrir
+  useEffect(() => {
+    if (isOpen) {
+      setSelectedSite(currentSite || "");
+      setNotes(currentNotes || "");
+      setNewCategoryName(currentCustomCategory || "");
+      
+      // Se existe categoria customizada, use ela
+      if (currentCustomCategory) {
+        setTipoObjeto(currentCustomCategory);
+      } else if (currentCategory) {
+        setTipoObjeto(currentCategory);
+      }
+    }
+  }, [isOpen, currentCategory, currentCustomCategory, currentNotes, currentSite]);
 
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -84,15 +113,17 @@ export function FavoriteTabulationDialog({ bidding, isOpen, onClose, userId }: F
   const updateCategorization = useMutation({
     mutationFn: () => {
       const categorizationData = {
-        category: tipoObjeto || null,
-        subCategory: subCategoria || null,
-        specialization: especializacao || null,
+        category: newCategoryName.trim() || tipoObjeto || null,
         customCategory: newCategoryName.trim() || null,
-        site: selectedSite || null,
         notes: notes.trim() || null,
+        uf: bidding.orgao_uf || null,
+        codigoUasg: bidding.orgao_codigo || null,
+        valorEstimado: bidding.valor_estimado?.toString() || null,
+        fornecedor: null,
+        site: selectedSite || null
       };
 
-      return apiRequest(`/api/favorites/${userId}/${bidding.id}/categorize`, "PATCH", categorizationData);
+      return apiRequest("PATCH", `/api/favorites/${userId}/${bidding.id}/categorize`, categorizationData);
     },
     onSuccess: () => {
       toast({
@@ -300,6 +331,7 @@ export function FavoriteTabulationDialog({ bidding, isOpen, onClose, userId }: F
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
                 className="min-h-32 max-h-32 resize-none border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 text-sm overflow-y-auto"
+                readOnly={false}
               />
               <p className="text-xs text-gray-500">
                 Use este espaço para registrar informações importantes sobre a licitação
