@@ -3,9 +3,9 @@ echo ===============================================
 echo DEPLOY AUTOMATICO LICITATRAKER - PRODUCAO
 echo ===============================================
 echo.
-echo Este script fará o sync para o GitHub:
+echo Este script fará o deploy completo automatico:
 echo 1. Sync local -> GitHub
-echo 2. Instruções para deploy manual no servidor
+echo 2. Deploy automatico no servidor (senhas incluídas)
 echo.
 echo IP de Produção Autorizado: 31.97.26.138
 echo Sistema preparado para dados reais da API ConLicitação
@@ -51,46 +51,58 @@ echo ✅ GitHub atualizado com sucesso!
 
 echo.
 echo ===========================================
-echo FASE 2: COMANDOS PARA O SERVIDOR
+echo FASE 2: DEPLOY AUTOMATICO NO SERVIDOR
 echo ===========================================
 
 echo.
-echo ✅ GitHub atualizado! Agora execute manualmente no servidor:
+echo Conectando automaticamente ao servidor...
+
+rem Criar script temporário para execução no servidor
+echo cd ~/dev_master > temp_deploy.sh
+echo git pull origin main >> temp_deploy.sh
+echo npm ci >> temp_deploy.sh
+echo npm run build >> temp_deploy.sh
+echo pm2 restart all >> temp_deploy.sh
+echo echo "✅ Deploy concluído com sucesso!" >> temp_deploy.sh
+
 echo.
-echo 1) Conecte ao servidor:
-echo    ssh root@31.97.26.138
-echo    (senha: Vermelho006@)
-echo.
-echo 2) Execute os comandos de deploy:
-echo    cd ~/dev_master
-echo    git pull origin main
-echo    npm ci
-echo    npm run build
-echo    pm2 restart all
-echo.
-echo 3) Verificar se funcionou:
-echo    pm2 status
-echo    pm2 logs licitatraker
+echo Executando deploy no servidor...
+rem Usar plink (PuTTY) para conexão automatizada
+plink -ssh root@31.97.26.138 -pw Vermelho006@ -batch -m temp_deploy.sh
+
+rem Limpar arquivo temporário
+del temp_deploy.sh
+
+if %errorlevel% neq 0 (
+    echo.
+    echo ⚠️ Erro no deploy automatico. Execute manualmente:
+    echo ssh root@31.97.26.138
+    echo cd ~/dev_master
+    echo git pull origin main
+    echo npm ci
+    echo npm run build
+    echo pm2 restart all
+    pause
+    exit /b 1
+)
 
 echo.
 echo ===========================================
-echo SYNC GITHUB CONCLUÍDO!
+echo DEPLOY COMPLETO FINALIZADO!
 echo ===========================================
 echo.
 echo ✅ Código sincronizado no GitHub com sucesso
+echo ✅ Deploy realizado automaticamente no servidor
+echo ✅ Aplicação reiniciada com PM2
 echo.
-echo Próximos passos no servidor:
-echo 1. Conecte: ssh root@31.97.26.138
-echo 2. Atualize: cd ~/dev_master && git pull origin main
-echo 3. Build: npm ci && npm run build
-echo 4. Restart: pm2 restart all
+echo Sistema disponível em: http://31.97.26.138:5000
 echo.
-echo Sistema estará disponível em: http://31.97.26.138:5000
-echo.
-echo Funcionalidades prontas:
+echo Funcionalidades implantadas:
 echo - Tabulação hierárquica 100%% funcional
 echo - PDF otimizado sem campos desnecessários
 echo - API preparada para dados reais da ConLicitação
 echo - Interface responsiva completa
+echo.
+echo Para monitorar: ssh root@31.97.26.138 e depois pm2 logs
 echo.
 pause
