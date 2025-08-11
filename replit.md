@@ -153,7 +153,7 @@ Application runs on `http://localhost:5000` with full API access when IP is auth
 
 ```
 Changelog:
-- August 11, 2025. Sistema de tabulação hierárquica 100% funcional: estrutura completa Tipo de Objeto → Categoria → Especialização baseada na planilha real, sites atualizados conforme especificação, PDF otimizado sem campos desnecessários, dados salvos e carregados corretamente entre telas
+- August 11, 2025. Sistema de tabulação hierárquica 100% funcional: estrutura completa Tipo de Objeto → Categoria → Especialização baseada na planilha real, sites atualizados conforme especificação, PDF otimizado sem campos desnecessários, dados salvos e carregados corretamente entre telas, arquivo único FIX_GIT_SETUP.bat para deploy simplificado
 - August 10, 2025. DEPLOY EM PRODUÇÃO REALIZADO COM SUCESSO: Sistema completo funcionando no servidor autorizado 31.97.26.138 com todas as funcionalidades (filtros avançados, tabulação automática, PDF, dados reais da API ConLicitação)
 - August 8, 2025. Sistema 100% preparado para deploy em produção: criado guia completo DEPLOY_PRODUCTION.md com todos os requisitos, configurações e checklist para receber dados reais da API ConLicitação
 - January 28, 2025. Finalizada funcionalidade de tabulação completa: dados de categorização carregam automaticamente na página de favoritos, sistema funciona em memória durante a sessão e está pronto para dados reais da API em produção
