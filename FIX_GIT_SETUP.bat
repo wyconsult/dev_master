@@ -1,10 +1,12 @@
 @echo off
 echo ===============================================
-echo CORRIGIR CONFIGURACAO GIT - LICITATRAKER
+echo GIT SETUP + SYNC GITHUB - LICITATRAKER
 echo ===============================================
 echo.
-echo Este script vai corrigir a configuração Git
-echo e preparar para deploys futuros.
+echo Este script vai:
+echo 1. Configurar o repositório Git
+echo 2. Fazer commit e sync para GitHub
+echo 3. Mostrar comandos para deploy manual
 echo.
 pause
 
@@ -42,25 +44,54 @@ echo.
 echo 8) Testando conexão...
 git ls-remote origin
 
-if %errorlevel% equ 0 (
+if %errorlevel% neq 0 (
     echo.
-    echo ✅ Git configurado corretamente!
-    echo.
-    echo Agora você pode usar:
-    echo - DEPLOY_AUTOMATICO.bat
-    echo - SETUP_GIT_E_DEPLOY.bat
-    echo.
-) else (
-    echo.
-    echo ⚠️ Erro na configuração. Possíveis causas:
-    echo 1. Problema de credenciais Git
-    echo 2. Repositório não existe ou sem acesso
-    echo 3. Problema de conectividade
-    echo.
-    echo Configure suas credenciais Git:
+    echo ⚠️ Erro na configuração. Configure suas credenciais:
     echo git config --global user.name "Seu Nome"
     echo git config --global user.email "seu@email.com"
-    echo.
+    pause
+    exit /b 1
 )
+
+echo.
+echo ✅ Git configurado! Fazendo sync...
+
+echo.
+echo 9) Limpando arquivos temporários...
+rmdir /s /q .local 2>nul
+git clean -fd
+
+echo.
+echo 10) Baixando mudanças do GitHub...
+git pull origin main --rebase --allow-unrelated-histories
+
+echo.
+echo 11) Adicionando mudanças locais...
+git add -A
+
+echo.
+echo 12) Commitando com mensagem atualizada...
+git commit -m "Deploy: Sistema tabulação hierárquica completo + PDF otimizado + API dados reais" || echo "Nada para commitar"
+
+echo.
+echo 13) Enviando para GitHub...
+git push origin main
+
+if %errorlevel% neq 0 (
+    echo ⚠️ Erro no push. Tentando forçar...
+    git push origin main --force-with-lease
+)
+
+echo.
+echo ===============================================
+echo SYNC CONCLUÍDO! Deploy manual no servidor:
+echo ===============================================
+echo 1. ssh root@31.97.26.138 (senha: Vermelho006@)
+echo 2. cd ~/dev_master
+echo 3. git pull origin main (senha: Vermelho006@)
+echo 4. npm ci
+echo 5. npm run build
+echo 6. pm2 restart all
+echo ===============================================
 
 pause
