@@ -20,7 +20,7 @@ git add -A
 
 echo.
 echo 4) Commitando funcionalidades completas...
-git commit -m "Sistema completo: Tabulação hierárquica funcional + PDF otimizado + API preparada para dados reais"
+git commit -m "Deploy: Sistema tabulação hierárquica completo + PDF otimizado + API dados reais"
 
 echo.
 echo 5) Enviando para GitHub...
@@ -28,13 +28,13 @@ git push origin main
 
 echo.
 echo ===============================================
-echo SUCESSO! Agora execute no servidor:
+echo SYNC GITHUB CONCLUÍDO! Deploy manual:
 echo ===============================================
-echo ssh root@31.97.26.138
-echo cd ~/dev_master
-echo git pull origin main
-echo npm ci
-echo npm run build  
-echo pm2 restart all
+echo 1. ssh root@31.97.26.138 (senha: Vermelho006@)
+echo 2. cd ~/dev_master
+echo 3. git pull origin main (senha: Vermelho006@)
+echo 4. npm ci
+echo 5. npm run build  
+echo 6. pm2 restart all
 echo ===============================================
 pause
