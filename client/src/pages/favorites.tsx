@@ -179,9 +179,6 @@ export default function Favorites() {
       const site = any.site || "";
       const codigoUnidade = any.codigoUasg || bidding.orgao_codigo || "";
       const valorEstimado = any.valorEstimado || (bidding.valor_estimado ? `R$ ${bidding.valor_estimado.toLocaleString('pt-BR')}` : "Não Informado");
-      const fornecedor = any.fornecedor || "";
-      const cnpj = ""; // Não temos esse campo
-      const valorContrato = ""; // Não temos esse campo
       
       htmlRows += `
         <tr>
@@ -195,9 +192,6 @@ export default function Favorites() {
           <td>${site}</td>
           <td>${codigoUnidade}</td>
           <td>${valorEstimado}</td>
-          <td>${fornecedor}</td>
-          <td>${cnpj}</td>
-          <td>${valorContrato}</td>
         </tr>
       `;
     });
@@ -275,9 +269,6 @@ export default function Favorites() {
               <th>SITE</th>
               <th>CÓDIGO UNIDADE GESTORA</th>
               <th>Valor Estimado Contratação</th>
-              <th>FORNECEDOR ATUAL</th>
-              <th>CNPJ do Fornecedor</th>
-              <th>Valor do Contrato</th>
             </tr>
           </thead>
           <tbody>
