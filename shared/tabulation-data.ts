@@ -139,27 +139,26 @@ export const TABULATION_HIERARCHY = {
   ]
 };
 
-// Lista de sites limpos (sem parênteses)
+// Lista de sites baseada na planilha de especificação
 export const SITES_LIST = [
-  "administratrao.pr.gov.br",
-  "apoiocotacoes.com.br",
-  "app2.ammlicita.org.br",
-  "aquisicoes.seplag.mt.gov.br",
-  "araraquaradaae.eportal.net.br/portal_licitacoes_externo_irrestrito",
-  "bancodepreco@educacaosalvador.net",
-  "bertioag.sp.gov.br/licitacao",
-  "bllcompras.com",
-  "BNC Compras",
-  "cabo.pe.gov.br",
-  "Compras BLL",
-  "COMPRAS BR",
-  "compras.gov",
-  "compras.barueri.sp.gov.br",
-  "compras.itaipu.gov.br",
-  "compras.mgtecnologia.com.br",
-  "compras.ma.gov.br",
-  "compras.manaus.am.gov.br",
-  "compras.mg.gov.br",
-  "compras.rj.gov.br",
-  "compras.sistemafergs"
+  "Portal de Transparência",
+  "Site Oficial da Prefeitura", 
+  "Site do TCE",
+  "Portal Nacional de Contratações Públicas (PNCP)",
+  "Comprasnet",
+  "BEC - Bolsa Eletrônica de Compras",
+  "Licitações-e",
+  "Portal de Compras do Estado",
+  "Sistema Próprio do Órgão",
+  "Jornal Oficial",
+  "Diário Oficial",
+  "Pregão Eletrônico",
+  "Licitação Presencial",
+  "Credenciamento",
+  "Registro de Preços",
+  "Portal Municipal de Licitações",
+  "Portal Estadual de Compras",
+  "Site Institucional",
+  "Portal de Contratações",
+  "Sistema Integrado de Compras"
 ];
