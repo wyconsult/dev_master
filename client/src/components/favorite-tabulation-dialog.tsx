@@ -9,19 +9,45 @@ import { Save, Plus, Tags } from "lucide-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-// Definir os dados de tabulação diretamente
+// Dados de tabulação hierárquica expandidos
 const tabulationDataLocal: Record<string, Record<string, string[]>> = {
   "Limpeza": {
-    "Limpeza Básica": ["Limpeza de escritórios", "Limpeza de banheiros", "Varredura"],
-    "Limpeza Semanal": ["Enceramento", "Lavagem de vidros", "Limpeza profunda"]
+    "Limpeza Básica": ["Limpeza de escritórios", "Limpeza de banheiros", "Varredura", "Coleta de lixo"],
+    "Limpeza Semanal": ["Enceramento", "Lavagem de vidros", "Limpeza profunda"],
+    "Limpeza Especializada": ["Limpeza hospitalar", "Limpeza industrial", "Desinfecção"]
   },
   "Alimentação": {
-    "Café da Manhã": ["Pães", "Bebidas quentes", "Frutas"],
-    "Almoço": ["Refeições completas", "Buffet", "Marmitas"]
+    "Café da Manhã": ["Pães", "Bebidas quentes", "Frutas", "Laticínios"],
+    "Almoço": ["Refeições completas", "Buffet", "Marmitas", "Self-service"],
+    "Lanches": ["Salgados", "Doces", "Bebidas", "Frutas"]
   },
-  "Sites/Portais": {
-    "Desenvolvimento": ["Sites institucionais", "Portais web", "E-commerce"],
-    "Manutenção": ["Atualizações", "Correções", "Suporte técnico"]
+  "Tecnologia": {
+    "Hardware": ["Computadores", "Servidores", "Periféricos", "Equipamentos de rede"],
+    "Software": ["Licenças", "Desenvolvimento", "Manutenção", "Suporte"],
+    "Telecomunicações": ["Telefonia", "Internet", "Videoconferência"]
+  },
+  "Serviços": {
+    "Consultoria": ["Técnica", "Jurídica", "Administrativa", "Financeira"],
+    "Manutenção": ["Predial", "Equipamentos", "Veículos", "Sistemas"],
+    "Segurança": ["Vigilância", "Monitoramento", "Controle de acesso"]
+  },
+  "Obras": {
+    "Construção": ["Civil", "Predial", "Infraestrutura"],
+    "Reforma": ["Pintura", "Elétrica", "Hidráulica", "Acabamento"],
+    "Urbanização": ["Pavimentação", "Sinalização", "Paisagismo"]
+  },
+  "Equipamentos": {
+    "Médicos": ["Diagnóstico", "Cirúrgico", "Laboratorial"],
+    "Industriais": ["Produção", "Controle", "Medição"],
+    "Veículos": ["Automóveis", "Caminhões", "Motocicletas", "Especiais"]
+  },
+  "Material": {
+    "Escritório": ["Papelaria", "Móveis", "Equipamentos"],
+    "Limpeza": ["Produtos", "Utensílios", "Equipamentos"],
+    "Construção": ["Cimento", "Ferro", "Madeira", "Acabamento"]
+  },
+  "Outros": {
+    "Diversos": ["Não classificados", "Múltiplas categorias", "Específicos"]
   }
 };
 import type { Bidding } from "@shared/schema";
@@ -37,10 +63,22 @@ interface FavoriteTabulationDialogProps {
   currentSite?: string;
 }
 
-// Lista de sites simplificada
+// Lista de sites expandida baseada na realidade das licitações
 const SITES_LIST = [
-  "Internet", 
-  "Intranet"
+  "Internet",
+  "Intranet", 
+  "Portal Transparência",
+  "Site Oficial Órgão",
+  "Comprasnet",
+  "Portal Licitações",
+  "Sistema Próprio",
+  "E-mail",
+  "Presencial",
+  "Portal Municipal",
+  "Portal Estadual",
+  "Banco do Brasil",
+  "Caixa Econômica",
+  "Outros"
 ];
 
 export function FavoriteTabulationDialog({ 
@@ -68,11 +106,26 @@ export function FavoriteTabulationDialog({
       setNotes(currentNotes || "");
       setNewCategoryName(currentCustomCategory || "");
       
-      // Se existe categoria customizada, use ela
+      // Carregar categoria hierárquica salva
       if (currentCustomCategory) {
         setTipoObjeto(currentCustomCategory);
+        setSubCategoria("");
+        setEspecializacao("");
       } else if (currentCategory) {
-        setTipoObjeto(currentCategory);
+        // Verificar se a categoria atual está na estrutura hierárquica
+        const categoriaEncontrada = Object.keys(tabulationDataLocal).find(tipo => tipo === currentCategory);
+        if (categoriaEncontrada) {
+          setTipoObjeto(categoriaEncontrada);
+        } else {
+          // Se não encontrou, pode ser uma sub-categoria
+          for (const [tipo, subcategorias] of Object.entries(tabulationDataLocal)) {
+            if (Object.keys(subcategorias).includes(currentCategory)) {
+              setTipoObjeto(tipo);
+              setSubCategoria(currentCategory);
+              break;
+            }
+          }
+        }
       }
     }
   }, [isOpen, currentCategory, currentCustomCategory, currentNotes, currentSite]);
@@ -113,7 +166,7 @@ export function FavoriteTabulationDialog({
   const updateCategorization = useMutation({
     mutationFn: () => {
       const categorizationData = {
-        category: newCategoryName.trim() || tipoObjeto || null,
+        category: newCategoryName.trim() || subCategoria || tipoObjeto || null,
         customCategory: newCategoryName.trim() || null,
         notes: notes.trim() || null,
         uf: bidding.orgao_uf || null,
