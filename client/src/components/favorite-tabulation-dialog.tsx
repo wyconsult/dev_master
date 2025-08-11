@@ -63,22 +63,23 @@ interface FavoriteTabulationDialogProps {
   currentSite?: string;
 }
 
-// Lista de sites expandida baseada na realidade das licitações
+// Lista de sites baseada na planilha de especificação
 const SITES_LIST = [
-  "Internet",
-  "Intranet", 
-  "Portal Transparência",
-  "Site Oficial Órgão",
+  "Portal de Transparência",
+  "Site Oficial da Prefeitura",
+  "Site do TCE",
+  "Portal Nacional de Contratações Públicas (PNCP)",
   "Comprasnet",
-  "Portal Licitações",
-  "Sistema Próprio",
-  "E-mail",
-  "Presencial",
-  "Portal Municipal",
-  "Portal Estadual",
-  "Banco do Brasil",
-  "Caixa Econômica",
-  "Outros"
+  "BEC - Bolsa Eletrônica de Compras",
+  "Licitações-e",
+  "Portal de Compras do Estado",
+  "Sistema Próprio do Órgão",
+  "Jornal Oficial",
+  "Diário Oficial",
+  "Pregão Eletrônico",
+  "Licitação Presencial",
+  "Credenciamento",
+  "Registro de Preços"
 ];
 
 export function FavoriteTabulationDialog({ 
@@ -112,17 +113,34 @@ export function FavoriteTabulationDialog({
         setSubCategoria("");
         setEspecializacao("");
       } else if (currentCategory) {
-        // Verificar se a categoria atual está na estrutura hierárquica
-        const categoriaEncontrada = Object.keys(tabulationDataLocal).find(tipo => tipo === currentCategory);
-        if (categoriaEncontrada) {
-          setTipoObjeto(categoriaEncontrada);
+        // Se a categoria contém separador hierárquico
+        if (currentCategory.includes(' → ')) {
+          const parts = currentCategory.split(' → ');
+          setTipoObjeto(parts[0] || "");
+          setSubCategoria(parts[1] || "");
+          setEspecializacao(parts[2] || "");
         } else {
-          // Se não encontrou, pode ser uma sub-categoria
-          for (const [tipo, subcategorias] of Object.entries(tabulationDataLocal)) {
-            if (Object.keys(subcategorias).includes(currentCategory)) {
-              setTipoObjeto(tipo);
-              setSubCategoria(currentCategory);
-              break;
+          // Verificar se a categoria atual está na estrutura hierárquica
+          const categoriaEncontrada = Object.keys(tabulationDataLocal).find(tipo => tipo === currentCategory);
+          if (categoriaEncontrada) {
+            setTipoObjeto(categoriaEncontrada);
+          } else {
+            // Se não encontrou, pode ser uma sub-categoria
+            for (const [tipo, subcategorias] of Object.entries(tabulationDataLocal)) {
+              if (Object.keys(subcategorias).includes(currentCategory)) {
+                setTipoObjeto(tipo);
+                setSubCategoria(currentCategory);
+                break;
+              }
+              // Verificar especializações
+              for (const [subcat, especializacoes] of Object.entries(subcategorias)) {
+                if (especializacoes.includes(currentCategory)) {
+                  setTipoObjeto(tipo);
+                  setSubCategoria(subcat);
+                  setEspecializacao(currentCategory);
+                  break;
+                }
+              }
             }
           }
         }
@@ -165,15 +183,22 @@ export function FavoriteTabulationDialog({
   // Mutation para salvar
   const updateCategorization = useMutation({
     mutationFn: () => {
+      // Criar categoria hierárquica completa para salvar
+      const fullHierarchy = [tipoObjeto, subCategoria, especializacao].filter(Boolean).join(' → ');
+      
       const categorizationData = {
-        category: newCategoryName.trim() || subCategoria || tipoObjeto || null,
+        category: newCategoryName.trim() || fullHierarchy || tipoObjeto || null,
         customCategory: newCategoryName.trim() || null,
         notes: notes.trim() || null,
         uf: bidding.orgao_uf || null,
         codigoUasg: bidding.orgao_codigo || null,
         valorEstimado: bidding.valor_estimado?.toString() || null,
         fornecedor: null,
-        site: selectedSite || null
+        site: selectedSite || null,
+        // Salvar componentes hierárquicos separadamente para reconstruir
+        tipoObjeto: tipoObjeto || null,
+        subCategoria: subCategoria || null,
+        especializacao: especializacao || null
       };
 
       return apiRequest("PATCH", `/api/favorites/${userId}/${bidding.id}/categorize`, categorizationData);
