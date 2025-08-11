@@ -154,7 +154,7 @@ export function TabulationDialog({
                   <SelectTrigger className="w-full">
                     <SelectValue placeholder="Selecione o tipo de objeto..." />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="bg-white border border-gray-200 shadow-lg z-50">
                     {tiposObjeto.map((tipo) => (
                       <SelectItem key={tipo} value={tipo}>
                         {tipo}
@@ -172,7 +172,7 @@ export function TabulationDialog({
                     <SelectTrigger className="w-full">
                       <SelectValue placeholder="Selecione a categoria..." />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="bg-white border border-gray-200 shadow-lg z-50">
                       {subCategorias.map((sub) => (
                         <SelectItem key={sub} value={sub}>
                           {sub}
@@ -191,7 +191,7 @@ export function TabulationDialog({
                     <SelectTrigger className="w-full">
                       <SelectValue placeholder="Selecione a especialização..." />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="bg-white border border-gray-200 shadow-lg z-50">
                       {especializacoes.map((esp: string) => (
                         <SelectItem key={esp} value={esp}>
                           {esp}
@@ -237,7 +237,7 @@ export function TabulationDialog({
                   <SelectTrigger className="w-full">
                     <SelectValue placeholder="Selecione o site..." />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="bg-white border border-gray-200 shadow-lg z-50">
                     {SITES_LIST.map((site) => (
                       <SelectItem key={site} value={site}>
                         {site}
@@ -252,14 +252,52 @@ export function TabulationDialog({
             <div className="space-y-4">
               <Label className="text-lg font-semibold text-gray-900">Notas</Label>
               
+              {/* Informações Adicionais */}
+              <div className="space-y-3 p-4 bg-gray-50 rounded-lg border">
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label className="text-xs font-medium text-gray-600">UF:</Label>
+                    <Input 
+                      value={bidding.orgao_uf || ''} 
+                      disabled 
+                      className="text-xs h-8 bg-white border-gray-200"
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-xs font-medium text-gray-600">Código UASG:</Label>
+                    <Input 
+                      value={bidding.orgao_codigo || ''} 
+                      disabled 
+                      className="text-xs h-8 bg-white border-gray-200"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <Label className="text-xs font-medium text-gray-600">Valor Estimado:</Label>
+                  <Input 
+                    value={bidding.valor_estimado ? `R$ ${bidding.valor_estimado.toLocaleString('pt-BR')}` : 'Não informado'} 
+                    disabled 
+                    className="text-xs h-8 bg-white border-gray-200"
+                  />
+                </div>
+              </div>
+              
               <div className="space-y-2">
                 <Label className="text-sm font-medium text-gray-700">Anotações e Observações:</Label>
                 <Textarea
-                  placeholder="Suas anotações sobre esta licitação..."
+                  placeholder="• Aspectos técnicos importantes
+• Requisitos específicos observados
+• Estratégias para participação
+• Documentos necessários
+• Contatos relevantes
+• Observações gerais..."
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
-                  className="min-h-32 border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                  className="min-h-32 border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 text-sm"
                 />
+                <p className="text-xs text-gray-500">
+                  Use este espaço para registrar informações importantes sobre a licitação
+                </p>
               </div>
             </div>
           </div>
