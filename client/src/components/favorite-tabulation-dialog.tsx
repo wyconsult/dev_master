@@ -1,117 +1,121 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";  
-import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Tags, Save, Plus } from "lucide-react";
-import { TABULATION_HIERARCHY, SITES_LIST } from "@shared/tabulation-data";
-import { type Bidding } from "@shared/schema";
-import { cn } from "@/lib/utils";
-import { useAuth } from "@/hooks/use-auth";
+import { Save, Plus, Tags } from "lucide-react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { useFavoriteCategorization } from "@/hooks/use-favorite-categorization";
+// Definir os dados de tabulação diretamente
+const tabulationDataLocal: Record<string, Record<string, string[]>> = {
+  "Limpeza": {
+    "Limpeza Básica": ["Limpeza de escritórios", "Limpeza de banheiros", "Varredura"],
+    "Limpeza Semanal": ["Enceramento", "Lavagem de vidros", "Limpeza profunda"]
+  },
+  "Alimentação": {
+    "Café da Manhã": ["Pães", "Bebidas quentes", "Frutas"],
+    "Almoço": ["Refeições completas", "Buffet", "Marmitas"]
+  },
+  "Sites/Portais": {
+    "Desenvolvimento": ["Sites institucionais", "Portais web", "E-commerce"],
+    "Manutenção": ["Atualizações", "Correções", "Suporte técnico"]
+  }
+};
+import type { Bidding } from "@shared/schema";
 
-interface TabulationDialogProps {
+interface FavoriteTabulationDialogProps {
   bidding: Bidding;
   isOpen: boolean;
   onClose: () => void;
-  currentCategory?: string;
-  currentCustomCategory?: string;
-  currentNotes?: string;
-  currentUf?: string;
-  currentCodigoUasg?: string;
-  currentValorEstimado?: string;
-  currentFornecedor?: string;
-  currentSite?: string;
+  userId: number;
 }
 
-export function TabulationDialog({ 
-  bidding, 
-  isOpen,
-  onClose,
-  currentCategory = "",
-  currentCustomCategory = "",
-  currentNotes = "",
-  currentUf = "",
-  currentCodigoUasg = "",
-  currentValorEstimado = "",
-  currentFornecedor = "",
-  currentSite = ""
-}: TabulationDialogProps) {
-  // Estados para seleção hierárquica
-  const [tipoObjeto, setTipoObjeto] = useState(currentCategory.split('|')[0] || "");
-  const [subCategoria, setSubCategoria] = useState(currentCategory.split('|')[1] || "");
-  const [especializacao, setEspecializacao] = useState(currentCategory.split('|')[2] || "");
-  const [selectedSite, setSelectedSite] = useState(currentSite);
-  const [notes, setNotes] = useState(currentNotes);
+// Lista de sites simplificada
+const SITES_LIST = [
+  "Internet", 
+  "Intranet"
+];
+
+export function FavoriteTabulationDialog({ bidding, isOpen, onClose, userId }: FavoriteTabulationDialogProps) {
+  // Estados para sistema hierárquico
+  const [tipoObjeto, setTipoObjeto] = useState("");
+  const [subCategoria, setSubCategoria] = useState("");
+  const [especializacao, setEspecializacao] = useState("");
+  const [selectedSite, setSelectedSite] = useState("");
+  const [notes, setNotes] = useState("");
   const [newCategoryName, setNewCategoryName] = useState("");
-  
-  const { user } = useAuth();
+
   const { toast } = useToast();
-  
-  // Usar hook de categorização
-  const { updateCategorization, isUpdating } = useFavoriteCategorization(
-    user?.id || 1, 
-    bidding.id
-  );
+  const queryClient = useQueryClient();
 
-  // Obter opções baseadas na seleção atual
-  const tiposObjeto = Object.keys(TABULATION_HIERARCHY);
-  const subCategorias = tipoObjeto && TABULATION_HIERARCHY[tipoObjeto as keyof typeof TABULATION_HIERARCHY] 
-    ? Object.keys(TABULATION_HIERARCHY[tipoObjeto as keyof typeof TABULATION_HIERARCHY] as any) 
-    : [];
-  const especializacoes = tipoObjeto && subCategoria && 
-    TABULATION_HIERARCHY[tipoObjeto as keyof typeof TABULATION_HIERARCHY] &&
-    (TABULATION_HIERARCHY[tipoObjeto as keyof typeof TABULATION_HIERARCHY] as any)[subCategoria]
-    ? (TABULATION_HIERARCHY[tipoObjeto as keyof typeof TABULATION_HIERARCHY] as any)[subCategoria]
+  // Obter tipos de objeto (chaves principais)
+  const tiposObjeto = Object.keys(tabulationDataLocal);
+
+  // Obter sub-categorias baseadas no tipo selecionado
+  const subCategorias = tipoObjeto ? Object.keys(tabulationDataLocal[tipoObjeto] || {}) : [];
+
+  // Obter especializações baseadas na sub-categoria selecionada
+  const especializacoes = (tipoObjeto && subCategoria) 
+    ? (tabulationDataLocal[tipoObjeto]?.[subCategoria] || [])
     : [];
 
-  // Reset das seleções quando muda o tipo
-  const handleTipoObjetoChange = (value: string) => {
-    setTipoObjeto(value);
-    setSubCategoria("");
-    setEspecializacao("");
+  // Handlers para mudanças hierárquicas
+  const handleTipoObjetoChange = (novoTipo: string) => {
+    setTipoObjeto(novoTipo);
+    setSubCategoria(""); // Reset sub-categoria
+    setEspecializacao(""); // Reset especialização
   };
 
-  const handleSubCategoriaChange = (value: string) => {
-    setSubCategoria(value);
-    setEspecializacao("");
-  };
-
-  const handleSave = () => {
-    const fullCategory = [tipoObjeto, subCategoria, especializacao].filter(Boolean).join('|');
-    
-    const categorizationData = {
-      category: fullCategory || null,
-      customCategory: newCategoryName.trim() || null,
-      notes: notes.trim() || null,
-      uf: null,
-      codigoUasg: null,
-      valorEstimado: null,
-      fornecedor: null,
-      site: selectedSite || null,
-    };
-
-    updateCategorization(categorizationData);
-
-    toast({
-      title: "Categorização salva",
-      description: "Todas as informações foram salvas com sucesso.",
-    });
-    onClose();
+  const handleSubCategoriaChange = (novaSub: string) => {
+    setSubCategoria(novaSub);
+    setEspecializacao(""); // Reset especialização
   };
 
   const handleAddNewCategory = () => {
-    if (newCategoryName.trim()) {
-      toast({
-        title: "Categoria personalizada adicionada",
-        description: `"${newCategoryName}" será salva como categoria personalizada.`,
-      });
-    }
+    if (!newCategoryName.trim()) return;
+    setTipoObjeto(newCategoryName.trim());
+    setNewCategoryName("");
   };
+
+  // Mutation para salvar
+  const updateCategorization = useMutation({
+    mutationFn: () => {
+      const categorizationData = {
+        category: tipoObjeto || null,
+        subCategory: subCategoria || null,
+        specialization: especializacao || null,
+        customCategory: newCategoryName.trim() || null,
+        site: selectedSite || null,
+        notes: notes.trim() || null,
+      };
+
+      return apiRequest(`/api/favorites/${userId}/${bidding.id}/categorize`, "PATCH", categorizationData);
+    },
+    onSuccess: () => {
+      toast({
+        title: "Categorização salva",
+        description: "A categorização foi salva com sucesso.",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/favorites"] });
+      onClose();
+    },
+    onError: () => {
+      toast({
+        title: "Erro ao salvar",
+        description: "Não foi possível salvar a categorização.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleSave = () => {
+    updateCategorization.mutate();
+  };
+
+  const isUpdating = updateCategorization.isPending;
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -164,7 +168,7 @@ export function TabulationDialog({
                 </Select>
               </div>
 
-              {/* 2º Nível: Sub-categoria (somente se tipo selecionado) */}
+              {/* 2º Nível: Sub-categoria */}
               {tipoObjeto && subCategorias.length > 0 && (
                 <div className="space-y-2">
                   <Label className="text-sm font-medium text-gray-700">Categoria:</Label>
@@ -183,7 +187,7 @@ export function TabulationDialog({
                 </div>
               )}
 
-              {/* 3º Nível: Especialização (somente se sub-categoria selecionada) */}
+              {/* 3º Nível: Especialização */}
               {subCategoria && especializacoes.length > 0 && (
                 <div className="space-y-2">
                   <Label className="text-sm font-medium text-gray-700">Especialização:</Label>
