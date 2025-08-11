@@ -84,14 +84,7 @@ if %errorlevel% neq 0 (
 
 echo.
 echo ===============================================
-echo SYNC CONCLUÍDO! Deploy manual no servidor:
-echo ===============================================
-echo 1. ssh root@31.97.26.138 (senha: Vermelho006@)
-echo 2. cd ~/dev_master
-echo 3. git pull origin main (senha: Vermelho006@)
-echo 4. npm ci
-echo 5. npm run build
-echo 6. pm2 restart all
+echo ✅ SYNC CONCLUÍDO COM SUCESSO!
 echo ===============================================
 
 pause
