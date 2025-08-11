@@ -20,14 +20,15 @@ git add -A
 
 echo.
 echo 4) Commitando sistema hierárquico...
-git commit -m "Sistema de Tabulação Hierárquica Implementado: 
+git commit -m "Sistema de Tabulação Hierárquica COMPLETO: 
 - Estrutura hierárquica: Tipo de Objeto -> Categoria -> Especialização
-- Layout simplificado: Categoria | Site | Notas (em uma aba)
-- Sites limpos sem parênteses
-- Campos fornecedor desabilitados conforme solicitado
-- Botão Salvar funcionando corretamente
-- Sistema pronto para geração de PDF
-- Todas as correções implementadas conforme especificação"
+- Layout simplificado: Categoria | Site | Notas (três colunas)
+- Dropdowns com background branco (problema transparência corrigido)
+- Seção Notas melhorada com informações adicionais (UF, Código, Valor)
+- Placeholder detalhado para anotações técnicas
+- Sites organizados e limpos
+- Problema de loading na tela licitações corrigido
+- Sistema 100% funcional e pronto para deploy"
 
 echo.
 echo 5) Enviando para GitHub...
