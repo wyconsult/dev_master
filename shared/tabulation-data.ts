@@ -1,164 +1,113 @@
-// Estrutura hierárquica de categorização conforme especificação
+// Estrutura hierárquica de categorização conforme planilha real
 export const TABULATION_HIERARCHY = {
   "Alimentação": {
-    "Auxiliar de Cozinha": [
-      "Auxiliar de Cozinha Geral",
-      "Auxiliar de Cozinha Especializada",
-      "Auxiliar de Cozinha Hospitalar"
-    ],
-    "Coffee Break/Almoço/Jantar": [
-      "Coffee Break Simples",
-      "Coffee Break Completo",
-      "Almoço Executivo",
-      "Jantar Corporativo"
-    ],
-    "Concessão": [
-      "Concessões de Restaurante",
-      "Exploração de Restaurante",
-      "Permissão de Uso"
-    ],
-    "Fornecimento de Alimentação": [
-      "Fornecimento Regular",
-      "Fornecimento Emergencial",
-      "Fornecimento Especializado"
-    ],
-    "Fornecimento de Refeições": [
-      "Refeições Prontas",
-      "Refeições Congeladas",
-      "Refeições Dietéticas"
-    ],
-    "Kit Lanche": [
-      "Kit Lanche Básico",
-      "Kit Lanche Premium",
-      "Kit Lanche Infantil"
-    ],
-    "Kit Lanche e Refeição": [
-      "Kit Completo Diário",
-      "Kit Semanal",
-      "Kit Mensal"
-    ],
-    "Nutrição Hospitalar": [
-      "Nutrição Clínica",
-      "Nutrição Pediátrica",
-      "Nutrição Geriátrica"
-    ],
-    "Preparo de Refeição": [
-      "Preparo in loco",
-      "Preparo Terceirizado",
-      "Preparo Misto"
-    ],
-    "Produção de Refeição Local": [
-      "Produção Própria",
-      "Produção Compartilhada",
-      "Produção Terceirizada"
-    ],
-    "Refeição CAPS": [
-      "Refeição CAPS I",
-      "Refeição CAPS II",
-      "Refeição CAPS III"
-    ],
-    "Refeição Local e Transportada": [
-      "Refeição Local",
-      "Refeição Transportada",
-      "Refeição Mista"
-    ],
-    "Refeição Socioeducativa": [
-      "Refeição Escolar",
-      "Refeição Comunitária",
-      "Refeição Social"
-    ],
-    "Refeição Transportada": [
-      "Transporte Refrigerado",
-      "Transporte Térmico",
-      "Transporte Comum"
-    ],
-    "Refeições UPA": [
-      "Refeições UPA 24h",
-      "Refeições UPA Básica",
-      "Refeições UPA Ampliada"
-    ],
-    "Refeições UPA e Hospital Dia": [
-      "UPA Integrada",
-      "Hospital Dia",
-      "Serviço Misto"
-    ],
-    "Restaurante do Trabalhador": [
-      "Restaurante Popular",
-      "Restaurante Empresarial",
-      "Restaurante Público"
-    ],
-    "Restaurante Popular": [
-      "Popular Básico",
-      "Popular Ampliado",
-      "Popular Especializado"
-    ],
-    "Serviço de Alimentação Buffet": [
-      "Buffet Simples",
-      "Buffet Completo",
-      "Buffet Premium"
-    ]
+    "Auxiliar de Cozinha": [],
+    "Coffee Break/Almoço/Jantar": [],
+    "Fornecimento de Alimentação": [],
+    "Fornecimento de Refeições": [],
+    "Kit Lanche": [],
+    "Kit Lanche e Refeição": [],
+    "Preparo de Refeição": [],
+    "Produção de Refeição Local": [],
+    "Refeição CAPS": [],
+    "Refeição Local e Transportada": [],
+    "Refeição Socioeducativa": [],
+    "Refeição Transportada": [],
+    "Refeições UPA": [],
+    "Refeições UPA e Hospital Dia": [],
+    "Restaurante do Trabalhador": [],
+    "Restaurante Popular": [],
+    "Serviço de Alimentação Buffet": []
   },
-  "Limpeza": {
-    "Limpeza Básica": [
-      "Limpeza Diária",
-      "Limpeza Semanal",
-      "Limpeza Mensal"
-    ],
-    "Limpeza Especializada": [
-      "Limpeza Hospitalar",
-      "Limpeza Industrial",
-      "Limpeza Técnica"
-    ],
-    "Conservação": [
-      "Conservação Predial",
-      "Conservação de Equipamentos",
-      "Conservação de Áreas Verdes"
-    ]
+  "Concessão": {
+    "Concessões de Restaurante": [],
+    "Exploração de Restaurante": [],
+    "Permissão de Uso": []
   },
-  "Sites/Portais": {
-    "Portal Governamental": [
-      "Portal Principal",
-      "Portal Setorial",
-      "Portal Temático"
-    ],
-    "Sistema de Compras": [
-      "Sistema Principal",
-      "Sistema Auxiliar",
-      "Sistema Integrado"
-    ],
-    "Plataforma de Licitações": [
-      "Plataforma Estadual",
-      "Plataforma Municipal",
-      "Plataforma Federal"
-    ]
+  "Mão de Obra": {
+    "Mão de Obra Cozinheira": [],
+    "Mão de Obra Cozinheira (s)": [],
+    "Mão de Obra Cozinheiro Escolar": [],
+    "Mão de Obra Diversas (os)": [],
+    "Mão de Obra Merendeira": [],
+    "Mão de Obra Merendeira e outros": [],
+    "Mão de Obra Merendeira Escolar": [],
+    "Mão de Obra Copeiragem": [],
+    "Mão de Obra Copeiragem Hospitalar": [],
+    "Mão Obra Cozinheiro e Auxiliar Cozinha": [],
+    "Mão de Obra Merendeira Empresa Escolar": [],
+    "Mão de Obra Merenda Escolar": [],
+    "Mão de Obra Merenda Escolar e outras": [],
+    "Mão de Obra Merendeira Empresa": []
   },
-  "Outros": [
-    "Categoria Geral",
-    "Categoria Específica",
-    "Categoria Personalizada"
-  ]
+  "Nutrição": {
+    "Motorista ambulância": [],
+    "Nutrição Hospitalar": []
+  },
+  "Prestação de Serviços": {
+    "Prestação de Serviços de cozinha unidades de Rancho": []
+  }
 };
 
-// Lista de sites baseada na planilha de especificação
+// Lista de sites conforme planilha real
 export const SITES_LIST = [
-  "Portal de Transparência",
-  "Site Oficial da Prefeitura", 
-  "Site do TCE",
-  "Portal Nacional de Contratações Públicas (PNCP)",
-  "Comprasnet",
-  "BEC - Bolsa Eletrônica de Compras",
-  "Licitações-e",
-  "Portal de Compras do Estado",
-  "Sistema Próprio do Órgão",
-  "Jornal Oficial",
-  "Diário Oficial",
-  "Pregão Eletrônico",
-  "Licitação Presencial",
-  "Credenciamento",
-  "Registro de Preços",
-  "Portal Municipal de Licitações",
-  "Portal Estadual de Compras",
-  "Site Institucional",
-  "Portal de Contratações",
-  "Sistema Integrado de Compras"
+  "www.selcorp.com.br",
+  "www.portaldacapitalba.com.br",
+  "www.fim.br",
+  "www.apr.sc.gov.br",
+  "https://aquisicoes.seplag.mt.gov.br/home",
+  "https://pregaoeletronico.com.br/",
+  "https://bllcompras.com/Home/Login",
+  "https://www.comprasnet.ba.gov.br/",
+  "https://www.compras.rj.gov.br",
+  "https://compras.mg.gov.br",
+  "https://www.comprasnet.ba.gov.br/",
+  "https://www.comprasnet.ba.gov.br/",
+  "https://www.administracao.pr.gov.br/Compras",
+  "https://compras.itanhaem.sp.gov.br/Default.aspx",
+  "https://compras.itapu.gov.br/Default.aspx",
+  "http://compras.mgtecnologia.com.br/",
+  "compras.manaus.am.gov.br",
+  "compras.sistemfergs",
+  "e-gov.rs",
+  "https://egov.paranguagabs.com.br/sesc_senac_rs",
+  "https://hml.sesc.com.br",
+  "http://www.parceiriassociais.sp.gov.br/OSC/OSC/",
+  "https://apostocimico.com.br",
+  "https://araraquaradaae.eportal.net.br/portal_licitacoes_externo_irrestrito",
+  "https://compras.mgtecnologia.com.br/",
+  "https://bnc.baguari.ibi.ce.gov.br/default.aspx",
+  "https://santacruzdorio.licitar.org.br/",
+  "https://www.portaldecompras.ce.gov.br/fornecedores",
+  "https://www.sesc-rs.com.br/licitacoes/",
+  "https://www.sesc.com.br",
+  "Licitamas Brasil",
+  "Licitar",
+  "Licitar Digital",
+  "https://plataforma.gov.al/servico/160",
+  "Novo BBMNET",
+  "Pt Integrado",
+  "Portal de Compras Públicas",
+  "portal.do.fornecedor.RS",
+  "Portal Petrobras",
+  "portaldecompras.ce.gov.br",
+  "pregaogande.sp.gov.br",
+  "Presencial",
+  "publinexo",
+  "selac.pr",
+  "SIGA MS",
+  "SIGA RJ",
+  "sma.sp.gov.br",
+  "https://licitacoes-e2.bb.com.br/aop-inter-estatico/",
+  "www.bertioga.sp.gov.br/licitacao",
+  "www.cabo.pe.gov.br",
+  "www.e-compras.am.gov.br",
+  "www.fim.br",
+  "www.funcol.ma.gov.br",
+  "www.licitamaisbrasilcom.br",
+  "www.otg.org.br",
+  "www.parceiriassociais.sp.gov.br/OSC/Chamamentos",
+  "www.publinexo.com.br/privado/",
+  "www.sesc.com.br",
+  "www.siga.sp.gov.br"
 ];

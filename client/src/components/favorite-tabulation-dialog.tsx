@@ -9,47 +9,11 @@ import { Save, Plus, Tags } from "lucide-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-// Dados de tabulação hierárquica expandidos
-const tabulationDataLocal: Record<string, Record<string, string[]>> = {
-  "Limpeza": {
-    "Limpeza Básica": ["Limpeza de escritórios", "Limpeza de banheiros", "Varredura", "Coleta de lixo"],
-    "Limpeza Semanal": ["Enceramento", "Lavagem de vidros", "Limpeza profunda"],
-    "Limpeza Especializada": ["Limpeza hospitalar", "Limpeza industrial", "Desinfecção"]
-  },
-  "Alimentação": {
-    "Café da Manhã": ["Pães", "Bebidas quentes", "Frutas", "Laticínios"],
-    "Almoço": ["Refeições completas", "Buffet", "Marmitas", "Self-service"],
-    "Lanches": ["Salgados", "Doces", "Bebidas", "Frutas"]
-  },
-  "Tecnologia": {
-    "Hardware": ["Computadores", "Servidores", "Periféricos", "Equipamentos de rede"],
-    "Software": ["Licenças", "Desenvolvimento", "Manutenção", "Suporte"],
-    "Telecomunicações": ["Telefonia", "Internet", "Videoconferência"]
-  },
-  "Serviços": {
-    "Consultoria": ["Técnica", "Jurídica", "Administrativa", "Financeira"],
-    "Manutenção": ["Predial", "Equipamentos", "Veículos", "Sistemas"],
-    "Segurança": ["Vigilância", "Monitoramento", "Controle de acesso"]
-  },
-  "Obras": {
-    "Construção": ["Civil", "Predial", "Infraestrutura"],
-    "Reforma": ["Pintura", "Elétrica", "Hidráulica", "Acabamento"],
-    "Urbanização": ["Pavimentação", "Sinalização", "Paisagismo"]
-  },
-  "Equipamentos": {
-    "Médicos": ["Diagnóstico", "Cirúrgico", "Laboratorial"],
-    "Industriais": ["Produção", "Controle", "Medição"],
-    "Veículos": ["Automóveis", "Caminhões", "Motocicletas", "Especiais"]
-  },
-  "Material": {
-    "Escritório": ["Papelaria", "Móveis", "Equipamentos"],
-    "Limpeza": ["Produtos", "Utensílios", "Equipamentos"],
-    "Construção": ["Cimento", "Ferro", "Madeira", "Acabamento"]
-  },
-  "Outros": {
-    "Diversos": ["Não classificados", "Múltiplas categorias", "Específicos"]
-  }
-};
+// Importar estrutura hierárquica da planilha real
+import { TABULATION_HIERARCHY } from "@shared/tabulation-data";
+
+// Usar a estrutura importada
+const tabulationDataLocal = TABULATION_HIERARCHY;
 import type { Bidding } from "@shared/schema";
 
 interface FavoriteTabulationDialogProps {
@@ -63,23 +27,64 @@ interface FavoriteTabulationDialogProps {
   currentSite?: string;
 }
 
-// Lista de sites baseada na planilha de especificação
+// Lista de sites conforme planilha real
 const SITES_LIST = [
-  "Portal de Transparência",
-  "Site Oficial da Prefeitura",
-  "Site do TCE",
-  "Portal Nacional de Contratações Públicas (PNCP)",
-  "Comprasnet",
-  "BEC - Bolsa Eletrônica de Compras",
-  "Licitações-e",
-  "Portal de Compras do Estado",
-  "Sistema Próprio do Órgão",
-  "Jornal Oficial",
-  "Diário Oficial",
-  "Pregão Eletrônico",
-  "Licitação Presencial",
-  "Credenciamento",
-  "Registro de Preços"
+  "www.selcorp.com.br",
+  "www.portaldacapitalba.com.br", 
+  "www.fim.br",
+  "www.apr.sc.gov.br",
+  "https://aquisicoes.seplag.mt.gov.br/home",
+  "https://pregaoeletronico.com.br/",
+  "https://bllcompras.com/Home/Login",
+  "https://www.comprasnet.ba.gov.br/",
+  "https://www.compras.rj.gov.br",
+  "https://compras.mg.gov.br",
+  "https://www.administracao.pr.gov.br/Compras",
+  "https://compras.itanhaem.sp.gov.br/Default.aspx",
+  "https://compras.itapu.gov.br/Default.aspx",
+  "http://compras.mgtecnologia.com.br/",
+  "compras.manaus.am.gov.br",
+  "compras.sistemfergs",
+  "e-gov.rs",
+  "https://egov.paranguagabs.com.br/sesc_senac_rs",
+  "https://hml.sesc.com.br",
+  "http://www.parceiriassociais.sp.gov.br/OSC/OSC/",
+  "https://apostocimico.com.br",
+  "https://araraquaradaae.eportal.net.br/portal_licitacoes_externo_irrestrito",
+  "https://bnc.baguari.ibi.ce.gov.br/default.aspx",
+  "https://santacruzdorio.licitar.org.br/",
+  "https://www.portaldecompras.ce.gov.br/fornecedores",
+  "https://www.sesc-rs.com.br/licitacoes/",
+  "https://www.sesc.com.br",
+  "Licitamas Brasil",
+  "Licitar",
+  "Licitar Digital",
+  "https://plataforma.gov.al/servico/160",
+  "Novo BBMNET",
+  "Pt Integrado",
+  "Portal de Compras Públicas",
+  "portal.do.fornecedor.RS",
+  "Portal Petrobras",
+  "portaldecompras.ce.gov.br",
+  "pregaogande.sp.gov.br",
+  "Presencial",
+  "publinexo",
+  "selac.pr",
+  "SIGA MS",
+  "SIGA RJ",
+  "sma.sp.gov.br",
+  "https://licitacoes-e2.bb.com.br/aop-inter-estatico/",
+  "www.bertioga.sp.gov.br/licitacao",
+  "www.cabo.pe.gov.br",
+  "www.e-compras.am.gov.br",
+  "www.fim.br",
+  "www.funcol.ma.gov.br",
+  "www.licitamaisbrasilcom.br",
+  "www.otg.org.br",
+  "www.parceiriassociais.sp.gov.br/OSC/Chamamentos",
+  "www.publinexo.com.br/privado/",
+  "www.sesc.com.br",
+  "www.siga.sp.gov.br"
 ];
 
 export function FavoriteTabulationDialog({ 
