@@ -79,13 +79,17 @@ export default function Biddings() {
     return filters;
   };
 
-  const { data: allBiddings = [], isLoading, error } = useQuery<Bidding[]>({
+  const { data: allBiddings = [], isLoading, error, isFetching } = useQuery<Bidding[]>({
     queryKey: ["/api/biddings"],
-    staleTime: 5 * 60 * 1000, // 5 minutos
+    staleTime: 30000, // 30 segundos
     refetchOnWindowFocus: false,
-    retry: 3,
-    retryDelay: 1000,
+    retry: false, // Sem retry para evitar delay
+    enabled: true,
+    refetchInterval: false,
   });
+
+  // Debug para verificar o estado
+  console.log("Biddings Query State:", { isLoading, error, dataLength: allBiddings.length });
 
   // Extrair órgãos únicos dos dados reais
   const uniqueOrgaos = Array.from(new Set(allBiddings.map(b => b.orgao_nome))).sort();
@@ -224,18 +228,14 @@ export default function Biddings() {
     setFiltrosAvancadosExpandidos(!filtrosAvancadosExpandidos);
   };
 
-  if (isLoading) {
+  if (isLoading && !allBiddings.length) {
     return (
       <div className="min-h-screen bg-gray-50">
         <Navbar />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="animate-pulse">
-            <div className="h-8 bg-gray-200 rounded w-1/4 mb-4"></div>
-            <div className="space-y-4">
-              {[...Array(3)].map((_, i) => (
-                <div key={i} className="h-48 bg-gray-200 rounded"></div>
-              ))}
-            </div>
+          <div className="text-center py-8">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <p className="text-gray-600">Carregando licitações...</p>
           </div>
         </div>
       </div>
