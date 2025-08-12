@@ -233,7 +233,7 @@ export function FavoriteTabulationDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-3xl max-h-[85vh] bg-white border-0 shadow-2xl flex flex-col">
+      <DialogContent className="max-w-5xl max-h-[90vh] bg-white border-0 shadow-2xl flex flex-col">
         <DialogHeader className="pb-4 border-b border-gray-100">
           <DialogTitle className="flex items-center gap-2 text-lg font-semibold text-gray-900">
             <div className="w-8 h-8 rounded-lg bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center">
@@ -405,12 +405,7 @@ export function FavoriteTabulationDialog({
             <div className="space-y-2">
               <Label className="text-sm font-medium text-gray-700">Anotações e Observações:</Label>
               <Textarea
-                placeholder="• Aspectos técnicos importantes
-• Requisitos específicos observados
-• Estratégias para participação
-• Documentos necessários
-• Contatos relevantes
-• Observações gerais..."
+                placeholder="Use este espaço para registrar informações importantes sobre a licitação"
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
                 className="min-h-32 max-h-32 resize-none border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 text-sm overflow-y-auto"

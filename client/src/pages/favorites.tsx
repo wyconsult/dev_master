@@ -174,7 +174,25 @@ export default function Favorites() {
       const pregao = bidding.edital || "";
       const hora = bidding.datahora_abertura ? format(new Date(bidding.datahora_abertura), "HH:mm") : "";
       const orgao = bidding.orgao_nome || "";
-      const objeto = bidding.objeto || "";
+      
+      // USAR CATEGORIA TABULADA NO LUGAR DO OBJETO ORIGINAL
+      // Se há categoria tabulada, extrair a "Categoria:" (segundo nível da hierarquia)
+      let objeto = bidding.objeto || "";
+      if (any.category) {
+        // Se a categoria contém separador hierárquico " → "
+        if (any.category.includes(' → ')) {
+          const parts = any.category.split(' → ');
+          // Usar a segunda parte (Categoria: ex. "Kit Lanche")
+          objeto = parts[1] || parts[0] || objeto;
+        } else if (any.customCategory) {
+          // Se é categoria personalizada, usar ela
+          objeto = any.customCategory;
+        } else {
+          // Se não tem separador, usar a categoria como está
+          objeto = any.category;
+        }
+      }
+      
       const uf = any.uf || bidding.orgao_uf || "";
       const site = any.site || "";
       const codigoUnidade = any.codigoUasg || bidding.orgao_codigo || "";
