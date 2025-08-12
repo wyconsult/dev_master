@@ -71,7 +71,7 @@ git add -A
 
 echo.
 echo 12) Commitando com mensagem atualizada...
-git commit -m "Deploy: Sistema tabulação hierárquica completo + PDF otimizado + API dados reais" || echo "Nada para commitar"
+git commit -m "UI Melhorias: PopUp tabulação maior + campo anotações limpo + PDF com categoria no objeto" || echo "Nada para commitar"
 
 echo.
 echo 13) Enviando para GitHub...
