@@ -408,7 +408,7 @@ export function FavoriteTabulationDialog({
                 placeholder="Use este espaço para registrar informações importantes sobre a licitação"
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
-                className="min-h-32 max-h-32 resize-none border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 text-sm overflow-y-auto"
+                className="min-h-32 max-h-32 resize-none border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 text-sm overflow-y-auto placeholder:text-gray-300"
                 readOnly={false}
               />
               <p className="text-xs text-gray-500">
