@@ -40,7 +40,7 @@ export const favorites = pgTable("favorites", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").notNull(),
   biddingId: integer("bidding_id").notNull(),
-  category: text("category").default("outros"), // Categoria: alimentacao, limpeza, sites, outros
+  category: text("category"), // Categoria: alimentacao, limpeza, sites, outros
   customCategory: text("custom_category"), // Categoria personalizada definida pelo usuário
   notes: text("notes"), // Notas/observações do usuário sobre o favorito
   uf: text("uf"), // UF da licitação

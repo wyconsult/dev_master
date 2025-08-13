@@ -689,21 +689,49 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
     fornecedor?: string;
     site?: string;
   }): Promise<void> {
+    // Buscar o favorito existente
+    let foundFavoriteId: number | undefined;
+    let foundFavorite: Favorite | undefined;
+    
     this.favorites.forEach((favorite, id) => {
       if (favorite.userId === userId && favorite.biddingId === biddingId) {
-        this.favorites.set(id, {
-          ...favorite,
-          category: data.category ?? null,
-          customCategory: data.customCategory ?? null,
-          notes: data.notes ?? null,
-          uf: data.uf ?? null,
-          codigoUasg: data.codigoUasg ?? null,
-          valorEstimado: data.valorEstimado ?? null,
-          fornecedor: data.fornecedor ?? null,
-          site: data.site ?? null,
-        });
+        foundFavorite = favorite;
+        foundFavoriteId = id;
       }
     });
+    
+    if (foundFavorite && foundFavoriteId !== undefined) {
+      // Atualizar favorito existente
+      this.favorites.set(foundFavoriteId, {
+        ...foundFavorite,
+        category: data.category ?? null,
+        customCategory: data.customCategory ?? null,
+        notes: data.notes ?? null,
+        uf: data.uf ?? null,
+        codigoUasg: data.codigoUasg ?? null,
+        valorEstimado: data.valorEstimado ?? null,
+        fornecedor: data.fornecedor ?? null,
+        site: data.site ?? null,
+      });
+    } else {
+      // Criar novo favorito com categorização
+      const id = this.currentFavoriteId++;
+      const favorite: Favorite = { 
+        userId,
+        biddingId,
+        id, 
+        createdAt: new Date(),
+        category: data.category ?? null,
+        customCategory: data.customCategory ?? null,
+        notes: data.notes ?? null,
+        uf: data.uf ?? null,
+        codigoUasg: data.codigoUasg ?? null,
+        valorEstimado: data.valorEstimado ?? null,
+        fornecedor: data.fornecedor ?? null,
+        site: data.site ?? null,
+      };
+      this.favorites.set(id, favorite);
+    }
   }
 }
 
