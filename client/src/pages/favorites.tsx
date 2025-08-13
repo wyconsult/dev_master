@@ -190,21 +190,14 @@ export default function Favorites() {
       const orgao = bidding.orgao_nome || "";
       
       // USAR CATEGORIA TABULADA NO LUGAR DO OBJETO ORIGINAL
-      // Se há categoria tabulada, extrair a "Categoria:" (segundo nível da hierarquia)
+      // Mostrar o caminho completo da tabulação hierárquica
       let objeto = bidding.objeto || "";
-      if (any.category) {
-        // Se a categoria contém separador hierárquico " → "
-        if (any.category.includes(' → ')) {
-          const parts = any.category.split(' → ');
-          // Usar a segunda parte (Categoria: ex. "Kit Lanche")
-          objeto = parts[1] || parts[0] || objeto;
-        } else if (any.customCategory) {
-          // Se é categoria personalizada, usar ela
-          objeto = any.customCategory;
-        } else {
-          // Se não tem separador, usar a categoria como está
-          objeto = any.category;
-        }
+      if (any.customCategory) {
+        // Se há categoria personalizada, usar ela
+        objeto = any.customCategory;
+      } else if (any.category) {
+        // Usar o caminho completo da hierarquia: Tipo de Objeto → Categoria → Especialização
+        objeto = any.category;
       }
       
       const uf = any.uf || bidding.orgao_uf || "";
