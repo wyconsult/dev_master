@@ -71,7 +71,7 @@ git add -A
 
 echo.
 echo 12) Commitando com mensagem atualizada...
-git commit -m "v2.1: Sistema completo - tabulação hierárquica, PDF otimizado, pesquisa sites dinâmica, favoritos com coração preenchido" || echo "Nada para commitar"
+git commit -m "v2.1: Site com busca integrada, layout corrigido, footer copyright profissional" || echo "Nada para commitar"
 
 echo.
 echo 13) Enviando para GitHub...
@@ -89,9 +89,12 @@ echo ===============================================
 echo.
 echo === FUNCIONALIDADES v2.1 IMPLEMENTADAS ===
 echo • Tabulação hierárquica completa (Tipo → Categoria → Especialização)
+echo • Campo de site com busca integrada (padrão Estado UF)
 echo • PDF com campo OBJETO extraindo apenas categoria
-echo • Pesquisa dinâmica de sites com filtro em tempo real
+echo • Pesquisa dinâmica de sites com filtro em tempo real (72 sites)
 echo • Favoritos com coração preenchido (indica favorito)
+echo • Layout transparente do campo site corrigido
+echo • Footer de copyright profissional na tela login
 echo • Sistema preparado para dados reais API ConLicitação
 echo • Filtros avançados por data, UF, órgão
 echo • Interface responsiva mobile-first
