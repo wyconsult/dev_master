@@ -103,8 +103,7 @@ export function TabulationDialog({
     };
 
     try {
-      // Primeiro adiciona aos favoritos, depois salva a categorização
-      await addToFavorites(bidding.id);
+      // Apenas salva a categorização - que também adiciona aos favoritos se necessário
       await updateCategorization(categorizationData);
 
       toast({
@@ -264,9 +263,9 @@ export function TabulationDialog({
                       <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                     </Button>
                   </PopoverTrigger>
-                  <PopoverContent className="w-full p-0">
+                  <PopoverContent className="w-[400px] p-0">
                     <Command>
-                      <CommandInput placeholder="Pesquisar sites..." />
+                      <CommandInput placeholder="Digite para pesquisar sites..." />
                       <CommandEmpty>Nenhum site encontrado.</CommandEmpty>
                       <CommandGroup className="max-h-60 overflow-auto">
                         {SITES_LIST.map((site) => (
