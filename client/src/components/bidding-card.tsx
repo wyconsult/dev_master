@@ -160,11 +160,10 @@ export function BiddingCard({
   const handleFavoriteClick = () => {
     if (user) {
       if (!isFavorite) {
-        // Se não é favorito, adiciona aos favoritos e abre a tabulação
-        toggleFavorite(bidding.id, isFavorite);
+        // Se não é favorito, apenas abre a tabulação (não adiciona aos favoritos ainda)
         setShowTabulationDialog(true);
       } else {
-        // Se já é favorito, apenas remove dos favoritos
+        // Se já é favorito, remove dos favoritos
         toggleFavorite(bidding.id, isFavorite);
       }
     }

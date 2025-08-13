@@ -71,8 +71,13 @@ export function useFavorites() {
     }
   };
 
+  const addToFavorites = (biddingId: number) => {
+    addFavoriteMutation.mutate(biddingId);
+  };
+
   return {
     toggleFavorite,
+    addToFavorites,
     isLoading: addFavoriteMutation.isPending || removeFavoriteMutation.isPending
   };
 }
