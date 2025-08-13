@@ -5,9 +5,10 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";  
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
-import { Tags, Save, Plus } from "lucide-react";
+import { Tags, Save, Plus, Check, ChevronsUpDown } from "lucide-react";
 import { TABULATION_HIERARCHY, SITES_LIST } from "@shared/tabulation-data";
 import { type Bidding } from "@shared/schema";
 import { cn } from "@/lib/utils";
@@ -51,6 +52,7 @@ export function TabulationDialog({
   const [notes, setNotes] = useState(currentNotes);
   const [newCategoryName, setNewCategoryName] = useState("");
   const [newSiteName, setNewSiteName] = useState("");
+  const [siteOpen, setSiteOpen] = useState(false);
   // Sites disponíveis (incluindo o selecionado se não estiver na lista)
   const allSites = [...SITES_LIST, ...(selectedSite && !SITES_LIST.includes(selectedSite) ? [selectedSite] : [])];
   
@@ -246,21 +248,50 @@ export function TabulationDialog({
             <div className="space-y-4">
               <Label className="text-lg font-semibold text-gray-900">Site</Label>
               
-              {/* Site da Licitação - Dropdown único */}
+              {/* Site da Licitação - Combobox com busca */}
               <div className="space-y-2">
                 <Label className="text-sm font-medium text-gray-700">Site da Licitação:</Label>
-                <Select value={selectedSite || ""} onValueChange={setSelectedSite}>
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Selecione o site..." />
-                  </SelectTrigger>
-                  <SelectContent className="max-h-60 bg-white border border-gray-200 shadow-lg">
-                    {SITES_LIST.map((site, index) => (
-                      <SelectItem key={index} value={site}>
-                        {site}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Popover open={siteOpen} onOpenChange={setSiteOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      role="combobox"
+                      aria-expanded={siteOpen}
+                      className="w-full justify-between"
+                    >
+                      {selectedSite || "Selecione o site..."}
+                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-full p-0">
+                    <Command>
+                      <CommandInput placeholder="Buscar site..." className="h-9" />
+                      <CommandList>
+                        <CommandEmpty>Nenhum site encontrado.</CommandEmpty>
+                        <CommandGroup>
+                          {SITES_LIST.map((site, index) => (
+                            <CommandItem
+                              key={index}
+                              value={site}
+                              onSelect={(currentValue) => {
+                                setSelectedSite(currentValue === selectedSite ? "" : currentValue);
+                                setSiteOpen(false);
+                              }}
+                            >
+                              {site}
+                              <Check
+                                className={cn(
+                                  "ml-auto h-4 w-4",
+                                  selectedSite === site ? "opacity-100" : "opacity-0"
+                                )}
+                              />
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
               </div>
 
               {/* Adicionar Site Personalizado */}
