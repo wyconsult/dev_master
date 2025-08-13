@@ -41,7 +41,7 @@ export function BiddingCard({
     enabled: !!user && showFavoriteIcon,
   });
 
-  const isFavorite = favoriteStatus?.isFavorite || false;
+  const isFavorite = favoriteStatus?.isFavorite || showCategorization; // In favorites page, always show as favorited
 
   // Função para expandir status truncados da API
   const expandTruncatedStatus = (status: string) => {
