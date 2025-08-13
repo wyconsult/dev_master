@@ -204,7 +204,7 @@ export default function Favorites() {
         // Extrair apenas a categoria (segundo nível): "Tipo → Categoria → Especialização"
         const categoryStr = any.category.trim();
         if (categoryStr.includes(' → ')) {
-          const parts = categoryStr.split(' → ').map(p => p.trim());
+          const parts = categoryStr.split(' → ').map((p: string) => p.trim());
           // Usar apenas a segunda parte (Categoria)
           objeto = parts[1] || parts[0] || objeto;
           console.log('Debug PDF - Categoria extraída:', objeto);
