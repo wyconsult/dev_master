@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -6,7 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Tags, Save, Plus, BookOpen } from "lucide-react";
+import { Tags, Save, Plus, BookOpen, ChevronDown, Search } from "lucide-react";
 import { MAIN_CATEGORIES, CATEGORIZATION_DATA, suggestCategory } from "@/data/categorization";
 import { type Bidding } from "@shared/schema";
 import { cn } from "@/lib/utils";
@@ -53,6 +53,8 @@ export function FavoriteCategorization({
   );
   const [fornecedor, setFornecedor] = useState(currentFornecedor);
   const [selectedSite, setSelectedSite] = useState(currentSite);
+  const [siteDropdownOpen, setSiteDropdownOpen] = useState(false);
+  const siteDropdownRef = useRef<HTMLDivElement>(null);
   
   const { user } = useAuth();
   const { toast } = useToast();
@@ -62,6 +64,17 @@ export function FavoriteCategorization({
     user?.id || 1, 
     bidding.id
   );
+
+  // Fechar dropdown ao clicar fora
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (siteDropdownRef.current && !siteDropdownRef.current.contains(event.target as Node)) {
+        setSiteDropdownOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   // Sugerir categoria automaticamente baseada no objeto
   const suggestedCategory = suggestCategory(bidding.objeto);
@@ -109,6 +122,17 @@ export function FavoriteCategorization({
       });
     }
   };
+
+  const handleSiteSelect = (site: string) => {
+    setSelectedSite(site);
+    setSiteSearch("");
+    setSiteDropdownOpen(false);
+  };
+
+  // Filtrar sites baseado na pesquisa
+  const filteredSites = CATEGORIZATION_DATA.sites.filter(site => 
+    !siteSearch || site.objeto.toLowerCase().includes(siteSearch.toLowerCase())
+  ).slice(0, 15);
 
   const handleSuggestCategory = () => {
     setSelectedCategory(suggestedCategory);
@@ -340,57 +364,85 @@ export function FavoriteCategorization({
                   </div>
                 </div>
 
-                {/* Site */}
+                {/* Site - Dropdown Pesquisável */}
                 <div>
-                  <Label className="text-sm font-semibold text-gray-800">Site:</Label>
-                  <div className="mt-2">
-                    <Input
-                      placeholder="Buscar site..."
-                      value={siteSearch}
-                      onChange={(e) => setSiteSearch(e.target.value)}
-                      className="mb-2 border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
-                    />
-                    <select 
-                      className="w-full p-2 border border-gray-300 rounded-md text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
-                      value={selectedSite}
-                      onChange={(e) => setSelectedSite(e.target.value)}
+                  <Label className="text-sm font-semibold text-gray-800">Site da Licitação:</Label>
+                  <div className="relative mt-2" ref={siteDropdownRef}>
+                    <div 
+                      className="w-full p-2 border border-gray-300 rounded-md text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 cursor-pointer flex items-center justify-between bg-white"
+                      onClick={() => setSiteDropdownOpen(!siteDropdownOpen)}
                     >
-                      <option value="">Selecione um site...</option>
-                      {CATEGORIZATION_DATA.sites
-                        .filter(site => 
-                          !siteSearch || site.objeto.toLowerCase().includes(siteSearch.toLowerCase())
-                        )
-                        .slice(0, 10)
-                        .map(site => (
-                          <option key={site.id} value={site.objeto}>
-                            {site.objeto} ({site.tipo})
-                          </option>
-                        ))
-                      }
-                    </select>
-                  </div>
-                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-3 space-y-2 mt-2">
-                    <div className="text-center">
-                      <Plus className="h-4 w-4 text-gray-400 mx-auto mb-1" />
-                      <span className="text-xs font-medium text-gray-700">Adicionar Novo Site</span>
+                      <div className="flex items-center gap-2">
+                        <Search className="h-4 w-4 text-gray-400" />
+                        <span className={selectedSite ? "text-gray-900" : "text-gray-500"}>
+                          {selectedSite || "Selecione o site..."}
+                        </span>
+                      </div>
+                      <ChevronDown className={`h-4 w-4 text-gray-400 transition-transform ${siteDropdownOpen ? 'rotate-180' : ''}`} />
                     </div>
-                    <div className="flex gap-2">
-                      <Input
-                        placeholder="URL do site..."
-                        value={newSiteUrl}
-                        onChange={(e) => setNewSiteUrl(e.target.value)}
-                        className="flex-1 text-xs"
-                        onKeyPress={(e) => e.key === 'Enter' && handleAddNewSite()}
-                      />
-                      <Button 
-                        onClick={handleAddNewSite}
-                        disabled={!newSiteUrl.trim()}
-                        size="sm"
-                        className="bg-blue-600 hover:bg-blue-700 text-xs px-2"
-                      >
-                        Add
-                      </Button>
-                    </div>
+                    
+                    {siteDropdownOpen && (
+                      <div className="absolute top-full left-0 right-0 z-50 bg-white border border-gray-300 rounded-md shadow-lg mt-1 max-h-64 overflow-hidden">
+                        {/* Campo de pesquisa dentro do dropdown */}
+                        <div className="p-2 border-b border-gray-200">
+                          <div className="relative">
+                            <Search className="h-4 w-4 text-gray-400 absolute left-2 top-1/2 transform -translate-y-1/2" />
+                            <Input
+                              placeholder="Buscar site..."
+                              value={siteSearch}
+                              onChange={(e) => setSiteSearch(e.target.value)}
+                              className="pl-8 text-sm border-gray-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-200"
+                              autoFocus
+                            />
+                          </div>
+                        </div>
+                        
+                        {/* Lista de sites */}
+                        <div className="max-h-48 overflow-y-auto">
+                          {filteredSites.length > 0 ? (
+                            filteredSites.map(site => (
+                              <div
+                                key={site.id}
+                                className="p-2 hover:bg-blue-50 cursor-pointer border-b border-gray-100 last:border-b-0"
+                                onClick={() => handleSiteSelect(site.objeto)}
+                              >
+                                <div className="text-sm text-gray-900">{site.objeto}</div>
+                                <div className="text-xs text-gray-500">{site.tipo}</div>
+                              </div>
+                            ))
+                          ) : (
+                            <div className="p-3 text-sm text-gray-500 text-center">
+                              Nenhum site encontrado
+                            </div>
+                          )}
+                        </div>
+                        
+                        {/* Adicionar novo site */}
+                        <div className="border-t border-gray-200 p-2 bg-gray-50">
+                          <div className="text-xs font-medium text-gray-700 mb-2 flex items-center gap-1">
+                            <Plus className="h-3 w-3" />
+                            Adicionar Novo Site
+                          </div>
+                          <div className="flex gap-2">
+                            <Input
+                              placeholder="URL do site..."
+                              value={newSiteUrl}
+                              onChange={(e) => setNewSiteUrl(e.target.value)}
+                              className="flex-1 text-xs"
+                              onKeyPress={(e) => e.key === 'Enter' && handleAddNewSite()}
+                            />
+                            <Button 
+                              onClick={handleAddNewSite}
+                              disabled={!newSiteUrl.trim()}
+                              size="sm"
+                              className="bg-blue-600 hover:bg-blue-700 text-xs px-2"
+                            >
+                              Add
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
 
