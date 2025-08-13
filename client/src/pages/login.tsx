@@ -61,8 +61,9 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 px-4">
-      <div className="max-w-md w-full space-y-8">
+    <div className="min-h-screen flex flex-col bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
+      <div className="flex-1 flex items-center justify-center px-4">
+        <div className="max-w-md w-full space-y-8">
         <div className="text-center">
           <div className="mx-auto w-20 h-20 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center mb-6 shadow-lg">
             <Gavel className="text-white h-10 w-10" />
@@ -144,11 +145,25 @@ export default function Login() {
           </CardContent>
         </Card>
         
-        <div className="text-center text-sm text-gray-600">
-          <p>Usuário de teste: admin@test.com</p>
-          <p>Senha: admin123</p>
+          <div className="text-center text-sm text-gray-600 space-y-2">
+            <p>Usuário de teste: admin@test.com</p>
+            <p>Senha: admin123</p>
+          </div>
         </div>
       </div>
+      
+      {/* Footer Copyright */}
+      <footer className="py-6 border-t border-gray-200 bg-white/50 backdrop-blur-sm">
+        <div className="container mx-auto px-6 text-center">
+          <p className="text-sm text-gray-600">
+            © {new Date().getFullYear()} <span className="font-semibold text-gray-800">LicitaTracker</span>. 
+            Todos os direitos reservados.
+          </p>
+          <p className="text-xs text-gray-500 mt-1">
+            Sistema de Gerenciamento de Licitações | Desenvolvido com tecnologia avançada
+          </p>
+        </div>
+      </footer>
     </div>
   );
 }
