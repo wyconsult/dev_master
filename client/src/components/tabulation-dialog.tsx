@@ -46,6 +46,7 @@ export function TabulationDialog({
   const [subCategoria, setSubCategoria] = useState(currentCategory.split('|')[1] || "");
   const [especializacao, setEspecializacao] = useState(currentCategory.split('|')[2] || "");
   const [selectedSite, setSelectedSite] = useState(currentSite);
+  const [siteSearch, setSiteSearch] = useState("");
   const [notes, setNotes] = useState(currentNotes);
   const [newCategoryName, setNewCategoryName] = useState("");
   
@@ -233,18 +234,42 @@ export function TabulationDialog({
               
               <div className="space-y-2">
                 <Label className="text-sm font-medium text-gray-700">Site da Licitação:</Label>
-                <Select value={selectedSite} onValueChange={setSelectedSite}>
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Selecione o site..." />
-                  </SelectTrigger>
-                  <SelectContent className="bg-white border border-gray-200 shadow-lg z-50">
-                    {SITES_LIST.map((site) => (
-                      <SelectItem key={site} value={site}>
-                        {site}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                
+                {/* Campo de pesquisa digitável */}
+                <div className="space-y-2">
+                  <Input
+                    placeholder="Digite o nome do site ou pesquise..."
+                    value={siteSearch}
+                    onChange={(e) => setSiteSearch(e.target.value)}
+                    className="w-full text-sm"
+                  />
+                  
+                  {/* Select com sites filtrados */}
+                  <Select value={selectedSite} onValueChange={setSelectedSite}>
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Selecione o site..." />
+                    </SelectTrigger>
+                    <SelectContent className="bg-white border border-gray-200 shadow-lg z-50">
+                      {SITES_LIST
+                        .filter(site => 
+                          !siteSearch || 
+                          site.toLowerCase().includes(siteSearch.toLowerCase())
+                        )
+                        .map((site) => (
+                        <SelectItem key={site} value={site}>
+                          {site}
+                        </SelectItem>
+                      ))}
+                      {siteSearch && !SITES_LIST.some(site => 
+                        site.toLowerCase().includes(siteSearch.toLowerCase())
+                      ) && (
+                        <SelectItem value={siteSearch}>
+                          Usar: {siteSearch}
+                        </SelectItem>
+                      )}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
             </div>
           </div>
