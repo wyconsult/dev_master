@@ -194,20 +194,31 @@ export default function Favorites() {
       let objeto = bidding.objeto || "";
       
       // Debug log para verificar o que está chegando
-      console.log('Debug PDF - Categoria original:', any.category);
-      console.log('Debug PDF - Custom categoria:', any.customCategory);
+      console.log('=== DEBUG PDF OBJETO ===');
+      console.log('Bidding ID:', bidding.id);
+      console.log('Objeto original:', bidding.objeto);
+      console.log('Categoria salva:', any.category);
+      console.log('Custom categoria:', any.customCategory);
+      console.log('=========================');
       
       if (any.customCategory?.trim()) {
         // Se há categoria personalizada, usar ela
         objeto = any.customCategory.trim();
       } else if (any.category?.trim()) {
-        // Extrair apenas a categoria (segundo nível): "Tipo → Categoria → Especialização"
+        // Extrair apenas a categoria (segundo nível)
         const categoryStr = any.category.trim();
-        if (categoryStr.includes(' → ')) {
+        
+        // Verificar se usa separador "|" (dados salvos) ou " → " (exibição)
+        if (categoryStr.includes('|')) {
+          const parts = categoryStr.split('|').map((p: string) => p.trim());
+          // Usar apenas a segunda parte (Categoria): "Alimentação|Auxiliar de Cozinha|Especialização"
+          objeto = parts[1] || parts[0] || objeto;
+          console.log('Debug PDF - Categoria extraída (|):', objeto);
+        } else if (categoryStr.includes(' → ')) {
           const parts = categoryStr.split(' → ').map((p: string) => p.trim());
           // Usar apenas a segunda parte (Categoria)
           objeto = parts[1] || parts[0] || objeto;
-          console.log('Debug PDF - Categoria extraída:', objeto);
+          console.log('Debug PDF - Categoria extraída (→):', objeto);
         } else {
           // Se não tem separador, usar a categoria como está
           objeto = categoryStr;
