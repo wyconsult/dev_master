@@ -190,14 +190,21 @@ export default function Favorites() {
       const orgao = bidding.orgao_nome || "";
       
       // USAR CATEGORIA TABULADA NO LUGAR DO OBJETO ORIGINAL
-      // Mostrar o caminho completo da tabulação hierárquica
+      // Mostrar apenas a categoria (segundo nível da hierarquia)
       let objeto = bidding.objeto || "";
       if (any.customCategory) {
         // Se há categoria personalizada, usar ela
         objeto = any.customCategory;
       } else if (any.category) {
-        // Usar o caminho completo da hierarquia: Tipo de Objeto → Categoria → Especialização
-        objeto = any.category;
+        // Extrair apenas a categoria (segundo nível): "Tipo → Categoria → Especialização"
+        if (any.category.includes(' → ')) {
+          const parts = any.category.split(' → ');
+          // Usar apenas a segunda parte (Categoria)
+          objeto = parts[1] || parts[0] || objeto;
+        } else {
+          // Se não tem separador, usar a categoria como está
+          objeto = any.category;
+        }
       }
       
       const uf = any.uf || bidding.orgao_uf || "";
