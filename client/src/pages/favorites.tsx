@@ -16,6 +16,7 @@ import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { type Bidding } from "@shared/schema";
 import { useAuth } from "@/hooks/use-auth";
+import { useToast } from "@/hooks/use-toast";
 
 
 
@@ -58,6 +59,7 @@ const DATE_FILTER_OPTIONS = [
 
 export default function Favorites() {
   const { user } = useAuth();
+  const { toast } = useToast();
   const [numeroControle, setNumeroControle] = useState("");
   const [selectedOrgaos, setSelectedOrgaos] = useState<string[]>([]);
   const [selectedUFs, setSelectedUFs] = useState<string[]>([]);
@@ -92,9 +94,14 @@ export default function Favorites() {
       let biddingDate: Date;
       
       if (dateFilterType === "favorito") {
-        // Filter by favorite creation date - TODO: Need to get actual createdAt from favorites
-        // For now, using current date as placeholder since we don't have favorite creation date in schema
-        biddingDate = new Date(); // This would need to be actual favorite.createdAt
+        // Filter by favorite creation date
+        const favoriteData = bidding as any;
+        if (favoriteData.createdAt) {
+          biddingDate = new Date(favoriteData.createdAt);
+        } else {
+          // Se não tem data de criação, usar data atual (novo favorito)
+          biddingDate = new Date();
+        }
       } else {
         // Filter by datahora_abertura (data de realização)
         if (!bidding.datahora_abertura) return false; // Skip if no opening date
@@ -140,9 +147,16 @@ export default function Favorites() {
 
   // Função para gerar PDF
   const generatePDF = () => {
-    if (!dateRange.from || !dateRange.to) return;
+    if (!dateRange.from || !dateRange.to) {
+      toast({
+        title: "Erro",
+        description: "Selecione um período de datas para gerar o PDF",
+        variant: "destructive",
+      });
+      return;
+    }
 
-    // Criar conteúdo HTML para o PDF
+    // Criar conteúdo HTML para o PDF usando apenas favoritos filtrados por data
     const htmlContent = createPDFContent();
     
     // Abrir nova janela para impressão/PDF
@@ -196,7 +210,9 @@ export default function Favorites() {
       const uf = any.uf || bidding.orgao_uf || "";
       const site = any.site || "";
       const codigoUnidade = any.codigoUasg || bidding.orgao_codigo || "";
-      const valorEstimado = any.valorEstimado || (bidding.valor_estimado ? `R$ ${bidding.valor_estimado.toLocaleString('pt-BR')}` : "Não Informado");
+      const valorEstimado = any.valorEstimado || (bidding.valor_estimado ? 
+        `R$ ${bidding.valor_estimado.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : 
+        "Não Informado");
       
       htmlRows += `
         <tr>

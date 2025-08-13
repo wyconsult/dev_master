@@ -102,9 +102,9 @@ export function FavoriteTabulationDialog({
   const [subCategoria, setSubCategoria] = useState("");
   const [especializacao, setEspecializacao] = useState("");
   const [selectedSite, setSelectedSite] = useState(currentSite || "");
-  const [siteSearch, setSiteSearch] = useState("");
   const [notes, setNotes] = useState(currentNotes || "");
   const [newCategoryName, setNewCategoryName] = useState(currentCustomCategory || "");
+  const [newSiteName, setNewSiteName] = useState("");
 
   // Carregar dados existentes ao abrir
   useEffect(() => {
@@ -352,42 +352,47 @@ export function FavoriteTabulationDialog({
               
               <div className="space-y-2">
                 <Label className="text-sm font-medium text-gray-700">Site da Licitação:</Label>
-                
-                {/* Campo de pesquisa digitável */}
-                <div className="space-y-2">
+                <Select value={selectedSite} onValueChange={setSelectedSite}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Pesquise ou selecione o site..." />
+                  </SelectTrigger>
+                  <SelectContent className="bg-white border border-gray-200 shadow-lg z-50">
+                    {SITES_LIST.map((site) => (
+                      <SelectItem key={site} value={site}>
+                        {site}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Adicionar Site Personalizado */}
+              <div className="space-y-2 pt-4 border-t border-gray-200">
+                <Label className="text-sm font-medium text-gray-700">Adicionar Site (Opcional):</Label>
+                <div className="flex gap-2">
                   <Input
-                    placeholder="Digite o nome do site ou pesquise..."
-                    value={siteSearch}
-                    onChange={(e) => setSiteSearch(e.target.value)}
-                    className="w-full text-sm"
+                    placeholder="Ex: Portal de Compras SP, BEC/SP, etc."
+                    value={newSiteName}
+                    onChange={(e) => setNewSiteName(e.target.value)}
+                    className="flex-1 text-sm"
                   />
-                  
-                  {/* Select com sites filtrados */}
-                  <Select value={selectedSite} onValueChange={setSelectedSite}>
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Selecione o site..." />
-                    </SelectTrigger>
-                    <SelectContent className="bg-white border border-gray-200 shadow-lg z-50">
-                      {SITES_LIST
-                        .filter(site => 
-                          !siteSearch || 
-                          site.toLowerCase().includes(siteSearch.toLowerCase())
-                        )
-                        .map((site) => (
-                        <SelectItem key={site} value={site}>
-                          {site}
-                        </SelectItem>
-                      ))}
-                      {siteSearch && !SITES_LIST.some(site => 
-                        site.toLowerCase().includes(siteSearch.toLowerCase())
-                      ) && (
-                        <SelectItem value={siteSearch}>
-                          Usar: {siteSearch}
-                        </SelectItem>
-                      )}
-                    </SelectContent>
-                  </Select>
+                  <Button 
+                    onClick={() => {
+                      if (newSiteName.trim()) {
+                        setSelectedSite(newSiteName.trim());
+                        setNewSiteName("");
+                      }
+                    }}
+                    disabled={!newSiteName.trim()}
+                    size="sm"
+                    variant="outline"
+                  >
+                    <Plus className="h-4 w-4" />
+                  </Button>
                 </div>
+                <p className="text-xs text-gray-500">
+                  Use para adicionar um site específico que não está na lista.
+                </p>
               </div>
             </div>
           </div>
