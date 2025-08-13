@@ -210,9 +210,21 @@ export default function Favorites() {
       const uf = any.uf || bidding.orgao_uf || "";
       const site = any.site || "";
       const codigoUnidade = any.codigoUasg || bidding.orgao_codigo || "";
-      const valorEstimado = any.valorEstimado || (bidding.valor_estimado ? 
-        `R$ ${bidding.valor_estimado.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : 
-        "Não Informado");
+      
+      // Formatação correta do valor estimado
+      let valorEstimado = "Não Informado";
+      if (any.valorEstimado) {
+        // Se valor estimado foi preenchido na categorização
+        const numericValue = parseFloat(any.valorEstimado.toString().replace(/[^\d,.-]/g, '').replace(',', '.'));
+        if (!isNaN(numericValue)) {
+          valorEstimado = `R$ ${numericValue.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+        } else {
+          valorEstimado = any.valorEstimado;
+        }
+      } else if (bidding.valor_estimado) {
+        // Se há valor estimado da licitação original
+        valorEstimado = `R$ ${bidding.valor_estimado.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+      }
       
       htmlRows += `
         <tr>

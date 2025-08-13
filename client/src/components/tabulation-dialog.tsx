@@ -53,7 +53,11 @@ export function TabulationDialog({
   const [notes, setNotes] = useState(currentNotes);
   const [newCategoryName, setNewCategoryName] = useState("");
   const [newSiteName, setNewSiteName] = useState("");
-  const [openSiteCombo, setOpenSiteCombo] = useState(false);
+  const [siteSearchTerm, setSiteSearchTerm] = useState("");
+  // Filtrar sites baseado na pesquisa
+  const filteredSites = SITES_LIST.filter(site => 
+    site.toLowerCase().includes(siteSearchTerm.toLowerCase())
+  );
   
   const { user } = useAuth();
   const { toast } = useToast();
@@ -247,48 +251,38 @@ export function TabulationDialog({
             <div className="space-y-4">
               <Label className="text-lg font-semibold text-gray-900">Site</Label>
               
+              {/* Campo de pesquisa para sites */}
+              <div className="space-y-2">
+                <Label className="text-sm font-medium text-gray-700">Pesquisar Site:</Label>
+                <Input
+                  type="text"
+                  placeholder="Digite para pesquisar sites..."
+                  value={siteSearchTerm}
+                  onChange={(e) => setSiteSearchTerm(e.target.value)}
+                  className="w-full"
+                />
+              </div>
+
+              {/* Lista filtrada de sites */}
               <div className="space-y-2">
                 <Label className="text-sm font-medium text-gray-700">Site da Licitação:</Label>
-                <Popover open={openSiteCombo} onOpenChange={setOpenSiteCombo}>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      role="combobox"
-                      aria-expanded={openSiteCombo}
-                      className="w-full justify-between"
-                    >
-                      {selectedSite
-                        ? SITES_LIST.find((site) => site === selectedSite) || selectedSite
-                        : "Pesquise ou selecione o site..."}
-                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-[400px] p-0">
-                    <Command>
-                      <CommandInput placeholder="Digite para pesquisar sites..." />
-                      <CommandEmpty>Nenhum site encontrado.</CommandEmpty>
-                      <CommandGroup className="max-h-60 overflow-auto">
-                        {SITES_LIST.map((site) => (
-                          <CommandItem
-                            key={site}
-                            onSelect={() => {
-                              setSelectedSite(site);
-                              setOpenSiteCombo(false);
-                            }}
-                          >
-                            <Check
-                              className={cn(
-                                "mr-2 h-4 w-4",
-                                selectedSite === site ? "opacity-100" : "opacity-0"
-                              )}
-                            />
-                            {site}
-                          </CommandItem>
-                        ))}
-                      </CommandGroup>
-                    </Command>
-                  </PopoverContent>
-                </Popover>
+                <Select value={selectedSite || ""} onValueChange={setSelectedSite}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Selecione o site..." />
+                  </SelectTrigger>
+                  <SelectContent className="max-h-60">
+                    {filteredSites.map((site) => (
+                      <SelectItem key={site} value={site}>
+                        {site}
+                      </SelectItem>
+                    ))}
+                    {filteredSites.length === 0 && siteSearchTerm && (
+                      <div className="py-2 px-3 text-sm text-gray-500">
+                        Nenhum site encontrado. Use o campo abaixo para adicionar um novo site.
+                      </div>
+                    )}
+                  </SelectContent>
+                </Select>
               </div>
 
               {/* Adicionar Site Personalizado */}
@@ -306,6 +300,7 @@ export function TabulationDialog({
                       if (newSiteName.trim()) {
                         setSelectedSite(newSiteName.trim());
                         setNewSiteName("");
+                        setSiteSearchTerm(""); // Limpa o campo de pesquisa
                       }
                     }}
                     disabled={!newSiteName.trim()}
