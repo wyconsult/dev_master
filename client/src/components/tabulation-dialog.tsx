@@ -51,12 +51,8 @@ export function TabulationDialog({
   const [notes, setNotes] = useState(currentNotes);
   const [newCategoryName, setNewCategoryName] = useState("");
   const [newSiteName, setNewSiteName] = useState("");
-  const [siteSearchTerm, setSiteSearchTerm] = useState("");
-  // Filtrar sites baseado na pesquisa
+  // Sites disponíveis (incluindo o selecionado se não estiver na lista)
   const allSites = [...SITES_LIST, ...(selectedSite && !SITES_LIST.includes(selectedSite) ? [selectedSite] : [])];
-  const filteredSites = allSites.filter(site => 
-    site.toLowerCase().includes(siteSearchTerm.toLowerCase())
-  );
   
   const { user } = useAuth();
   const { toast } = useToast();
@@ -250,19 +246,7 @@ export function TabulationDialog({
             <div className="space-y-4">
               <Label className="text-lg font-semibold text-gray-900">Site</Label>
               
-              {/* Campo de pesquisa para sites */}
-              <div className="space-y-2">
-                <Label className="text-sm font-medium text-gray-700">Pesquisar Site:</Label>
-                <Input
-                  type="text"
-                  placeholder="Digite para pesquisar sites..."
-                  value={siteSearchTerm}
-                  onChange={(e) => setSiteSearchTerm(e.target.value)}
-                  className="w-full"
-                />
-              </div>
-
-              {/* Lista filtrada de sites */}
+              {/* Site da Licitação - Dropdown único */}
               <div className="space-y-2">
                 <Label className="text-sm font-medium text-gray-700">Site da Licitação:</Label>
                 <Select value={selectedSite || ""} onValueChange={setSelectedSite}>
@@ -270,16 +254,11 @@ export function TabulationDialog({
                     <SelectValue placeholder="Selecione o site..." />
                   </SelectTrigger>
                   <SelectContent className="max-h-60 bg-white border border-gray-200 shadow-lg">
-                    {filteredSites.map((site) => (
-                      <SelectItem key={site} value={site}>
+                    {SITES_LIST.map((site, index) => (
+                      <SelectItem key={index} value={site}>
                         {site}
                       </SelectItem>
                     ))}
-                    {filteredSites.length === 0 && siteSearchTerm && (
-                      <div className="py-2 px-3 text-sm text-gray-500">
-                        Nenhum site encontrado. Use o campo abaixo para adicionar um novo site.
-                      </div>
-                    )}
                   </SelectContent>
                 </Select>
               </div>
@@ -299,7 +278,6 @@ export function TabulationDialog({
                       if (newSiteName.trim()) {
                         setSelectedSite(newSiteName.trim());
                         setNewSiteName("");
-                        setSiteSearchTerm(""); // Limpa o campo de pesquisa
                       }
                     }}
                     disabled={!newSiteName.trim()}
