@@ -279,6 +279,12 @@ export function BiddingCard({
             <span className="text-gray-700">
               <strong>Órgão:</strong> {bidding.orgao_codigo ? `${bidding.orgao_codigo} - ${bidding.orgao_nome}` : bidding.orgao_nome}
             </span>
+            <span className="text-gray-700">
+              <strong>Valor Estimado:</strong> {bidding.valor_estimado 
+                ? `R$ ${bidding.valor_estimado.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` 
+                : '--'
+              }
+            </span>
             <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-2 md:gap-0">
               <span className="text-gray-700">
                 <strong>Cidade:</strong> {bidding.orgao_cidade} - {bidding.orgao_uf}
