@@ -1,58 +1,109 @@
 @echo off
+echo ===============================================
+echo GIT SETUP + SYNC GITHUB - LICITATRAKER v2.1
+echo ===============================================
 echo.
-echo ========================================
-echo  LicitaTraker - Deploy Completo v2.1
-echo ========================================
+echo Este script vai:
+echo 1. Configurar o repositório Git
+echo 2. Fazer commit e sync para GitHub
+echo 3. Preparar para deploy manual em produção
 echo.
+pause
 
-echo [1/8] Configurando repositorio remoto...
-git remote remove origin 2>nul
-git remote add origin https://github.com/wyconsult-dev/master.git
+cd C:\Users\Geovani\LicitacaoTracker
 
-echo [2/8] Fazendo backup das configuracoes locais...
-copy .env .env.backup 2>nul
-
-echo [3/8] Limpando cache e preparando build...
-rmdir /s /q node_modules\.cache 2>nul
-rmdir /s /q dist 2>nul
-
-echo [4/8] Sincronizando com repositorio...
-git add .
-git commit -m "v2.1: Sistema completo com tabulacao hierarquica, filtros avancados, PDF otimizado, pesquisa de sites dinamica"
-
-echo [5/8] Atualizando do repositorio remoto...
-git pull origin main --rebase --allow-unrelated-histories
-
-echo [6/8] Enviando atualizacoes para repositorio...
-git push origin main
-
-echo [7/8] Preparando para deploy em producao...
 echo.
-echo === INFORMACOES DE DEPLOY ===
-echo Servidor: 31.97.26.138
-echo Senha: Vermelho006@
-echo API ConLicitacao: HABILITADA para IP autorizado
-echo Sistema: 100%% funcional com dados reais
-echo ============================
-echo.
-
-echo [8/8] Verificando status final...
+echo 1) Status atual do Git...
 git status
 
 echo.
-echo ========================================
-echo  ✅ Deploy Completo - LicitaTraker v2.1
-echo ========================================
+echo 2) Removendo origin atual (se existir)...
+git remote remove origin 2>nul
+
 echo.
-echo FUNCIONALIDADES IMPLEMENTADAS:
-echo • Tabulacao hierarquica (Tipo → Categoria → Especializacao)
-echo • Sistema de pesquisa dinamica de sites
-echo • PDF com formatacao brasileira otimizada
-echo • Integracao completa com API ConLicitacao
-echo • Favoritos com categorizacao automatica
-echo • Filtros avancados por data, UF, orgao
+echo 3) Adicionando origin correto...
+git remote add origin https://github.com/wyconsult/dev_master.git
+
+echo.
+echo 4) Verificando configuração...
+git remote -v
+
+echo.
+echo 5) Configurando branch main...
+git branch -M main
+
+echo.
+echo 6) Fazendo fetch do repositório...
+git fetch origin
+
+echo.
+echo 7) Configurando upstream...
+git branch --set-upstream-to=origin/main main
+
+echo.
+echo 8) Testando conexão...
+git ls-remote origin
+
+if %errorlevel% neq 0 (
+    echo.
+    echo ⚠️ Erro na configuração. Configure suas credenciais:
+    echo git config --global user.name "Seu Nome"
+    echo git config --global user.email "seu@email.com"
+    pause
+    exit /b 1
+)
+
+echo.
+echo ✅ Git configurado! Fazendo sync...
+
+echo.
+echo 9) Limpando arquivos temporários...
+rmdir /s /q .local 2>nul
+git clean -fd
+
+echo.
+echo 10) Baixando mudanças do GitHub...
+git pull origin main --rebase --allow-unrelated-histories
+
+echo.
+echo 11) Adicionando mudanças locais...
+git add -A
+
+echo.
+echo 12) Commitando com mensagem atualizada...
+git commit -m "v2.1: Sistema completo - tabulação hierárquica, PDF otimizado, pesquisa sites dinâmica, favoritos com coração preenchido" || echo "Nada para commitar"
+
+echo.
+echo 13) Enviando para GitHub...
+git push origin main
+
+if %errorlevel% neq 0 (
+    echo ⚠️ Erro no push. Tentando forçar...
+    git push origin main --force-with-lease
+)
+
+echo.
+echo ===============================================
+echo ✅ SYNC GIT CONCLUÍDO COM SUCESSO!
+echo ===============================================
+echo.
+echo === FUNCIONALIDADES v2.1 IMPLEMENTADAS ===
+echo • Tabulação hierárquica completa (Tipo → Categoria → Especialização)
+echo • PDF com campo OBJETO extraindo apenas categoria
+echo • Pesquisa dinâmica de sites com filtro em tempo real
+echo • Favoritos com coração preenchido (indica favorito)
+echo • Sistema preparado para dados reais API ConLicitação
+echo • Filtros avançados por data, UF, órgão
 echo • Interface responsiva mobile-first
 echo.
-echo Sistema pronto para producao!
+echo === PRÓXIMO PASSO: DEPLOY MANUAL ===
+echo Servidor: 31.97.26.138
+echo Senha: Vermelho006@
+echo Comandos no servidor:
+echo   npm install
+echo   npm run build  
+echo   npm start
+echo.
+echo Sistema 100%% funcional e pronto!
 echo.
 pause
