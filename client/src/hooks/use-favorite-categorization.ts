@@ -41,10 +41,19 @@ export function useFavoriteCategorization(userId: number, biddingId: number) {
     },
   });
 
+  const updateCategorization = (categorizationData: FavoriteCategorizationData): Promise<void> => {
+    return new Promise((resolve, reject) => {
+      updateCategorizationMutation.mutate(categorizationData, {
+        onSuccess: () => resolve(),
+        onError: (error) => reject(error)
+      });
+    });
+  };
+
   return {
     isFavorite,
     isFavoriteLoading,
-    updateCategorization: updateCategorizationMutation.mutate,
+    updateCategorization,
     isUpdating: updateCategorizationMutation.isPending,
   };
 }

@@ -71,8 +71,13 @@ export function useFavorites() {
     }
   };
 
-  const addToFavorites = (biddingId: number) => {
-    addFavoriteMutation.mutate(biddingId);
+  const addToFavorites = (biddingId: number): Promise<void> => {
+    return new Promise((resolve, reject) => {
+      addFavoriteMutation.mutate(biddingId, {
+        onSuccess: () => resolve(),
+        onError: (error) => reject(error)
+      });
+    });
   };
 
   return {

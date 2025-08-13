@@ -6,6 +6,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from "@/components/ui/command";
+import { Check, ChevronsUpDown } from "lucide-react";
 import { Tags, Save, Plus } from "lucide-react";
 import { TABULATION_HIERARCHY, SITES_LIST } from "@shared/tabulation-data";
 import { type Bidding } from "@shared/schema";
@@ -50,6 +53,7 @@ export function TabulationDialog({
   const [notes, setNotes] = useState(currentNotes);
   const [newCategoryName, setNewCategoryName] = useState("");
   const [newSiteName, setNewSiteName] = useState("");
+  const [openSiteCombo, setOpenSiteCombo] = useState(false);
   
   const { user } = useAuth();
   const { toast } = useToast();
@@ -84,7 +88,7 @@ export function TabulationDialog({
     setEspecializacao("");
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     const fullCategory = [tipoObjeto, subCategoria, especializacao].filter(Boolean).join('|');
     
     const categorizationData = {
@@ -98,14 +102,22 @@ export function TabulationDialog({
       site: selectedSite || null,
     };
 
-    // Adiciona aos favoritos APENAS quando salvar a categorização
-    addToFavorites(bidding.id);
-    updateCategorization(categorizationData);
+    try {
+      // Primeiro adiciona aos favoritos, depois salva a categorização
+      await addToFavorites(bidding.id);
+      await updateCategorization(categorizationData);
 
-    toast({
-      title: "Categorização salva",
-      description: "Licitação adicionada aos favoritos com categorização completa.",
-    });
+      toast({
+        title: "Categorização salva",
+        description: "Licitação adicionada aos favoritos com categorização completa.",
+      });
+    } catch (error) {
+      toast({
+        title: "Erro",
+        description: "Erro ao salvar categorização.",
+        variant: "destructive",
+      });
+    }
     onClose();
   };
 
@@ -238,18 +250,46 @@ export function TabulationDialog({
               
               <div className="space-y-2">
                 <Label className="text-sm font-medium text-gray-700">Site da Licitação:</Label>
-                <Select value={selectedSite} onValueChange={setSelectedSite}>
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Pesquise ou selecione o site..." />
-                  </SelectTrigger>
-                  <SelectContent className="bg-white border border-gray-200 shadow-lg z-50">
-                    {SITES_LIST.map((site) => (
-                      <SelectItem key={site} value={site}>
-                        {site}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Popover open={openSiteCombo} onOpenChange={setOpenSiteCombo}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      role="combobox"
+                      aria-expanded={openSiteCombo}
+                      className="w-full justify-between"
+                    >
+                      {selectedSite
+                        ? SITES_LIST.find((site) => site === selectedSite) || selectedSite
+                        : "Pesquise ou selecione o site..."}
+                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-full p-0">
+                    <Command>
+                      <CommandInput placeholder="Pesquisar sites..." />
+                      <CommandEmpty>Nenhum site encontrado.</CommandEmpty>
+                      <CommandGroup className="max-h-60 overflow-auto">
+                        {SITES_LIST.map((site) => (
+                          <CommandItem
+                            key={site}
+                            onSelect={() => {
+                              setSelectedSite(site);
+                              setOpenSiteCombo(false);
+                            }}
+                          >
+                            <Check
+                              className={cn(
+                                "mr-2 h-4 w-4",
+                                selectedSite === site ? "opacity-100" : "opacity-0"
+                              )}
+                            />
+                            {site}
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
               </div>
 
               {/* Adicionar Site Personalizado */}
