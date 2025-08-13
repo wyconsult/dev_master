@@ -268,7 +268,7 @@ export function TabulationDialog({
                   <SelectTrigger className="w-full">
                     <SelectValue placeholder="Selecione o site..." />
                   </SelectTrigger>
-                  <SelectContent className="max-h-60">
+                  <SelectContent className="max-h-60 bg-white border border-gray-200 shadow-lg">
                     {filteredSites.map((site) => (
                       <SelectItem key={site} value={site}>
                         {site}
