@@ -53,7 +53,8 @@ export function TabulationDialog({
   const [newSiteName, setNewSiteName] = useState("");
   const [siteSearchTerm, setSiteSearchTerm] = useState("");
   // Filtrar sites baseado na pesquisa
-  const filteredSites = SITES_LIST.filter(site => 
+  const allSites = [...SITES_LIST, ...(selectedSite && !SITES_LIST.includes(selectedSite) ? [selectedSite] : [])];
+  const filteredSites = allSites.filter(site => 
     site.toLowerCase().includes(siteSearchTerm.toLowerCase())
   );
   
