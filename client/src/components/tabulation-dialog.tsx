@@ -258,16 +258,16 @@ export function TabulationDialog({
                       variant="outline"
                       role="combobox"
                       aria-expanded={siteOpen}
-                      className="w-full justify-between"
+                      className="w-full justify-between bg-white"
                     >
                       {selectedSite || "Selecione o site..."}
                       <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                     </Button>
                   </PopoverTrigger>
-                  <PopoverContent className="w-full p-0">
-                    <Command>
+                  <PopoverContent className="w-[400px] p-0 z-[60] bg-white border shadow-lg">
+                    <Command className="bg-white">
                       <CommandInput placeholder="Buscar site..." className="h-9" />
-                      <CommandList>
+                      <CommandList className="max-h-60 overflow-y-auto">
                         <CommandEmpty>Nenhum site encontrado.</CommandEmpty>
                         <CommandGroup>
                           {SITES_LIST.map((site, index) => (
@@ -278,6 +278,7 @@ export function TabulationDialog({
                                 setSelectedSite(currentValue === selectedSite ? "" : currentValue);
                                 setSiteOpen(false);
                               }}
+                              className="cursor-pointer hover:bg-gray-100"
                             >
                               {site}
                               <Check
