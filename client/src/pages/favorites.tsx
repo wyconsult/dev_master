@@ -192,18 +192,25 @@ export default function Favorites() {
       // USAR CATEGORIA TABULADA NO LUGAR DO OBJETO ORIGINAL
       // Mostrar apenas a categoria (segundo nível da hierarquia)
       let objeto = bidding.objeto || "";
-      if (any.customCategory) {
+      
+      // Debug log para verificar o que está chegando
+      console.log('Debug PDF - Categoria original:', any.category);
+      console.log('Debug PDF - Custom categoria:', any.customCategory);
+      
+      if (any.customCategory?.trim()) {
         // Se há categoria personalizada, usar ela
-        objeto = any.customCategory;
-      } else if (any.category) {
+        objeto = any.customCategory.trim();
+      } else if (any.category?.trim()) {
         // Extrair apenas a categoria (segundo nível): "Tipo → Categoria → Especialização"
-        if (any.category.includes(' → ')) {
-          const parts = any.category.split(' → ');
+        const categoryStr = any.category.trim();
+        if (categoryStr.includes(' → ')) {
+          const parts = categoryStr.split(' → ').map(p => p.trim());
           // Usar apenas a segunda parte (Categoria)
           objeto = parts[1] || parts[0] || objeto;
+          console.log('Debug PDF - Categoria extraída:', objeto);
         } else {
           // Se não tem separador, usar a categoria como está
-          objeto = any.category;
+          objeto = categoryStr;
         }
       }
       
