@@ -153,7 +153,7 @@ Application runs on `http://localhost:5000` with full API access when IP is auth
 
 ```
 Changelog:
-- August 13, 2025. Sistema v2.1 - Funcionalidades completas: tabulação hierárquica otimizada, pesquisa dinâmica de sites com filtro em tempo real, PDF com extração correta de categoria (apenas categoria, não hierarquia completa), coração preenchido na tela favoritos, FIX_GIT_SETUP.bat corrigido para PC local, sistema preparado para dados reais da API ConLicitação
+- August 13, 2025. Sistema v2.1 - Funcionalidades completas: tabulação hierárquica otimizada, pesquisa dinâmica de sites com filtro em tempo real, PDF com extração correta de categoria (apenas categoria, não hierarquia completa), coração preenchido na tela favoritos, FIX_GIT_SETUP.bat corrigido para PC local, lista de sites atualizada com 68 sites corretos conforme especificação, sistema preparado para dados reais da API ConLicitação
 - August 11, 2025. Sistema de tabulação hierárquica 100% funcional: estrutura completa Tipo de Objeto → Categoria → Especialização baseada na planilha real, sites atualizados conforme especificação, PDF otimizado sem campos desnecessários, dados salvos e carregados corretamente entre telas, arquivo único FIX_GIT_SETUP.bat para deploy simplificado
 - August 10, 2025. DEPLOY EM PRODUÇÃO REALIZADO COM SUCESSO: Sistema completo funcionando no servidor autorizado 31.97.26.138 com todas as funcionalidades (filtros avançados, tabulação automática, PDF, dados reais da API ConLicitação)
 - August 8, 2025. Sistema 100% preparado para deploy em produção: criado guia completo DEPLOY_PRODUCTION.md com todos os requisitos, configurações e checklist para receber dados reais da API ConLicitação
