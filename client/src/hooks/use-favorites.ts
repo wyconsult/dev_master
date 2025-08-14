@@ -20,9 +20,13 @@ export function useFavorites() {
     },
     onSuccess: (data, biddingId) => {
       if (user) {
-        client.invalidateQueries({ queryKey: [`/api/favorites/${user.id}`] });
-        client.invalidateQueries({ queryKey: [`/api/favorites/${user.id}/${biddingId}`] });
-        client.invalidateQueries({ queryKey: ["/api/favorites", user.id] });
+        // Invalidate all possible favorite-related queries
+        client.invalidateQueries({ 
+          predicate: (query) => {
+            const key = query.queryKey[0]?.toString() || '';
+            return key.includes('/api/favorites');
+          }
+        });
       }
       toast({
         title: "Sucesso",
@@ -45,9 +49,13 @@ export function useFavorites() {
     },
     onSuccess: (data, biddingId) => {
       if (user) {
-        client.invalidateQueries({ queryKey: [`/api/favorites/${user.id}`] });
-        client.invalidateQueries({ queryKey: [`/api/favorites/${user.id}/${biddingId}`] });
-        client.invalidateQueries({ queryKey: ["/api/favorites", user.id] });
+        // Invalidate all possible favorite-related queries
+        client.invalidateQueries({ 
+          predicate: (query) => {
+            const key = query.queryKey[0]?.toString() || '';
+            return key.includes('/api/favorites');
+          }
+        });
       }
       toast({
         title: "Sucesso",
