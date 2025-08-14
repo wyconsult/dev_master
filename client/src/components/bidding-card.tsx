@@ -202,7 +202,7 @@ export function BiddingCard({
       )}
     >
       {/* Header com gradiente verde */}
-      <div className="bg-gradient-to-r from-green-500 to-emerald-600 text-white p-3 md:p-4 relative">
+      <div className="bg-gradient-to-r from-gray-100 to-gray-200 text-black p-3 md:p-4 relative">
         <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-2 md:gap-0">
           <div className="flex-1 pr-0 md:pr-2">
             <p className="text-sm md:text-base font-medium leading-tight">
