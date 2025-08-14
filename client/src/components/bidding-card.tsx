@@ -39,6 +39,8 @@ export function BiddingCard({
   const { data: favoriteStatus } = useQuery<{ isFavorite: boolean }>({
     queryKey: [`/api/favorites/${user?.id}/${bidding.id}`],
     enabled: !!user && showFavoriteIcon,
+    staleTime: 0, // Always consider data stale
+    cacheTime: 0, // Don't cache the result
   });
 
   const isFavorite = favoriteStatus?.isFavorite || showCategorization; // In favorites page, always show as favorited
