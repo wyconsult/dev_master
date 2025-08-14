@@ -96,8 +96,8 @@ export function TabulationDialog({
     
     const categorizationData = {
       category: fullCategory || null,
-      customCategory: newCategoryName.trim() || null,
-      notes: notes.trim() || null,
+      customCategory: newCategoryName ? newCategoryName.trim() || null : null,
+      notes: notes ? notes.trim() || null : null,
       uf: null,
       codigoUasg: null,
       valorEstimado: null,
@@ -124,7 +124,7 @@ export function TabulationDialog({
   };
 
   const handleAddNewCategory = () => {
-    if (newCategoryName.trim()) {
+    if (newCategoryName && newCategoryName.trim()) {
       toast({
         title: "Categoria personalizada adicionada",
         description: `"${newCategoryName}" será salva como categoria personalizada.`,
