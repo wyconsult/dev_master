@@ -234,12 +234,17 @@ export function BiddingCard({
                 onClick={handleFavoriteClick}
                 disabled={isLoading}
                 className={cn(
-                  "transition-colors text-white hover:bg-white/20 p-1 h-auto",
-                  isFavorite && "text-white"
+                  "transition-colors p-1 h-auto",
+                  isFavorite 
+                    ? "text-red-500 hover:text-red-600 hover:bg-red-50" 
+                    : "text-gray-600 hover:text-gray-800 hover:bg-gray-100"
                 )}
               >
                 <Heart
-                  className={cn("h-3 w-3 md:h-4 md:w-4", isFavorite && "fill-current")}
+                  className={cn(
+                    "h-3 w-3 md:h-4 md:w-4 transition-colors", 
+                    isFavorite && "fill-current text-red-500"
+                  )}
                 />
               </Button>
             )}
