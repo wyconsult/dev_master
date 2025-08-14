@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Heart, ArrowRight, FileText } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Heart, ArrowRight, FileText, X, Mail, AlertCircle } from "lucide-react";
 import { type Bidding } from "@shared/schema";
 import { useFavorites } from "@/hooks/use-favorites";
 import { useAuth } from "@/hooks/use-auth";
@@ -33,6 +34,7 @@ export function BiddingCard({
   favoriteData 
 }: BiddingCardProps) {
   const [showTabulationDialog, setShowTabulationDialog] = useState(false);
+  const [showDocumentErrorDialog, setShowDocumentErrorDialog] = useState(false);
   const { user } = useAuth();
   const { toggleFavorite, isLoading } = useFavorites();
 
@@ -183,14 +185,19 @@ export function BiddingCard({
       documentLink = bidding.link_edital;
     }
 
-    if (documentLink && documentLink.trim() !== "") {
-      window.open(documentLink, "_blank", "noopener,noreferrer");
-    } else if (bidding.conlicitacao_id) {
-      const url = `${baseUrl}/licitacao/visualizar/${bidding.conlicitacao_id}`;
-      window.open(url, "_blank", "noopener,noreferrer");
+    // Verificar se é um link de teste/erro que deve mostrar o popup
+    const isTestOrEmptyLink = !documentLink || 
+      documentLink.trim() === "" || 
+      documentLink.includes("auth=teste") || 
+      documentLink.includes("download?auth=") ||
+      documentLink.includes("public/api/download");
+
+    if (isTestOrEmptyLink) {
+      // Mostrar popup de erro ao invés de abrir link inválido
+      setShowDocumentErrorDialog(true);
     } else {
-      const searchUrl = `${baseUrl}/busca?q=${encodeURIComponent(bidding.edital || "")}`;
-      window.open(searchUrl, "_blank", "noopener,noreferrer");
+      // Abrir link válido normalmente
+      window.open(documentLink, "_blank", "noopener,noreferrer");
     }
   };
 
@@ -353,6 +360,52 @@ export function BiddingCard({
         currentValorEstimado={favoriteData?.valorEstimado}
         currentFornecedor={favoriteData?.fornecedor}
       />
+
+      {/* Dialog de Erro de Documento */}
+      <Dialog open={showDocumentErrorDialog} onOpenChange={setShowDocumentErrorDialog}>
+        <DialogContent className="max-w-md bg-white border-0 shadow-2xl">
+          <DialogHeader className="pb-4 border-b border-gray-100">
+            <DialogTitle className="flex items-center gap-3 text-lg font-semibold text-gray-900">
+              <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center">
+                <AlertCircle className="h-5 w-5 text-red-600" />
+              </div>
+              Edital Não Localizado
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="py-6">
+            <div className="text-center space-y-4">
+              <p className="text-gray-700 leading-relaxed">
+                Edital Não Localizado, envie um e-mail para{' '}
+                <a 
+                  href="mailto:licitacao@jlgconsultoria.com.br" 
+                  className="text-blue-600 hover:text-blue-800 underline font-medium"
+                >
+                  licitacao@jlgconsultoria.com.br
+                </a>
+                {' '}solicitando o mesmo.
+              </p>
+              
+              <div className="flex items-center justify-center gap-2 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                <Mail className="h-4 w-4 text-blue-600" />
+                <span className="text-sm font-medium text-blue-800">
+                  licitacao@jlgconsultoria.com.br
+                </span>
+              </div>
+            </div>
+          </div>
+          
+          <div className="flex justify-center pt-4 border-t border-gray-100">
+            <Button
+              onClick={() => setShowDocumentErrorDialog(false)}
+              className="bg-gray-600 hover:bg-gray-700 text-white px-6"
+            >
+              <X className="h-4 w-4 mr-2" />
+              Fechar
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 }
