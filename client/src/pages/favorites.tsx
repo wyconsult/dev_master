@@ -581,7 +581,7 @@ export default function Favorites() {
                           )}
                         >
                           <CalendarIcon className="mr-2 h-4 w-4" />
-                          <span className="truncate">
+                          <span className="text-xs">
                             {dateRange.from ? format(dateRange.from, "dd/MM/yyyy") : "Início"}
                           </span>
                         </Button>
@@ -611,7 +611,7 @@ export default function Favorites() {
                           )}
                         >
                           <CalendarIcon className="mr-2 h-4 w-4" />
-                          <span className="truncate">
+                          <span className="text-xs">
                             {dateRange.to ? format(dateRange.to, "dd/MM/yyyy") : "Fim"}
                           </span>
                         </Button>
