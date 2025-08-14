@@ -46,9 +46,10 @@ export function TabulationDialog({
   currentSite = ""
 }: TabulationDialogProps) {
   // Estados para seleção hierárquica
-  const [tipoObjeto, setTipoObjeto] = useState(currentCategory.split('|')[0] || "");
-  const [subCategoria, setSubCategoria] = useState(currentCategory.split('|')[1] || "");
-  const [especializacao, setEspecializacao] = useState(currentCategory.split('|')[2] || "");
+  const categoryParts = currentCategory ? currentCategory.split('|') : [];
+  const [tipoObjeto, setTipoObjeto] = useState(categoryParts[0] || "");
+  const [subCategoria, setSubCategoria] = useState(categoryParts[1] || "");
+  const [especializacao, setEspecializacao] = useState(categoryParts[2] || "");
   const [selectedSite, setSelectedSite] = useState(currentSite);
   const [notes, setNotes] = useState(currentNotes);
   const [newCategoryName, setNewCategoryName] = useState("");
