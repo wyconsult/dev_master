@@ -223,6 +223,14 @@ export default function Favorites() {
       const site = any.site || "";
       const codigoUnidade = any.codigoUasg || bidding.orgao_codigo || "";
       
+      // Debug log para verificar dados do site no PDF
+      console.log(`🔍 PDF DEBUG - Licitação ID ${bidding.id}:`, {
+        biddingId: bidding.id,
+        siteFromAny: any.site,
+        site: site,
+        allData: any
+      });
+      
       // Formatação correta do valor estimado
       let valorEstimado = "Não Informado";
       if (any.valorEstimado) {

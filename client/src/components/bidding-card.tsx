@@ -36,14 +36,14 @@ export function BiddingCard({
   const { user } = useAuth();
   const { toggleFavorite, isLoading } = useFavorites();
 
-  const { data: favoriteStatus } = useQuery<{ isFavorite: boolean }>({
+  const { data: favoriteStatus } = useQuery({
     queryKey: [`/api/favorites/${user?.id}/${bidding.id}`],
     enabled: !!user && showFavoriteIcon,
     staleTime: 0, // Always consider data stale
-    cacheTime: 0, // Don't cache the result
+    gcTime: 0, // Don't cache the result (cacheTime renamed to gcTime in v5)
   });
 
-  const isFavorite = favoriteStatus?.isFavorite || showCategorization; // In favorites page, always show as favorited
+  const isFavorite = (favoriteStatus as any)?.isFavorite || showCategorization; // In favorites page, always show as favorited
 
   // Função para expandir status truncados da API
   const expandTruncatedStatus = (status: string) => {
