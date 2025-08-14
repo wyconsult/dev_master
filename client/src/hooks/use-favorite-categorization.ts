@@ -36,8 +36,15 @@ export function useFavoriteCategorization(userId: number, biddingId: number) {
       return response.json();
     },
     onSuccess: () => {
-      // Invalidate favorites cache to refresh data
-      queryClient.invalidateQueries({ queryKey: ['/api/favorites'] });
+      // Invalidate ALL favorite-related cache to refresh data
+      queryClient.invalidateQueries({ 
+        predicate: (query) => {
+          const key = query.queryKey[0]?.toString() || '';
+          return key.includes('/api/favorites');
+        }
+      });
+      // Also explicitly refresh the favorites list
+      queryClient.refetchQueries({ queryKey: ['/api/favorites'] });
     },
   });
 

@@ -228,7 +228,9 @@ export default function Favorites() {
         biddingId: bidding.id,
         siteFromAny: any.site,
         site: site,
-        allData: any
+        categoria: any.category,
+        customCategory: any.customCategory,
+        todasPropriedades: Object.keys(any)
       });
       
       // Formatação correta do valor estimado
