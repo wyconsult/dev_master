@@ -18,6 +18,15 @@ export function useFavorites() {
       });
       return response.json();
     },
+    onMutate: async (biddingId) => {
+      if (!user) return;
+      
+      // Cancel any outgoing refetches
+      await client.cancelQueries({ queryKey: [`/api/favorites/${user.id}/${biddingId}`] });
+      
+      // Optimistically update the favorite status
+      client.setQueryData([`/api/favorites/${user.id}/${biddingId}`], { isFavorite: true });
+    },
     onSuccess: (data, biddingId) => {
       if (user) {
         // Invalidate all possible favorite-related queries
@@ -46,6 +55,15 @@ export function useFavorites() {
     mutationFn: async (biddingId: number) => {
       if (!user) throw new Error("User not authenticated");
       await apiRequest("DELETE", `/api/favorites/${user.id}/${biddingId}`);
+    },
+    onMutate: async (biddingId) => {
+      if (!user) return;
+      
+      // Cancel any outgoing refetches
+      await client.cancelQueries({ queryKey: [`/api/favorites/${user.id}/${biddingId}`] });
+      
+      // Optimistically update the favorite status
+      client.setQueryData([`/api/favorites/${user.id}/${biddingId}`], { isFavorite: false });
     },
     onSuccess: (data, biddingId) => {
       if (user) {
