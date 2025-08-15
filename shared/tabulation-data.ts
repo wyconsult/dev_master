@@ -34,7 +34,7 @@ export const TABULATION_HIERARCHY = {
     ],
     "Preparo de Refeição": [
       "Preparo Local",
-      "Preparo Terceirizado",
+      "Transportadora",
       "Preparo Misto"
     ],
     "Produção de Refeição Local": [
