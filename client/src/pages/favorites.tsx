@@ -184,9 +184,62 @@ export default function Favorites() {
       
       // Extrair dados do bidding
       const controle = bidding.conlicitacao_id || "";
-      const data = bidding.datahora_abertura ? format(new Date(bidding.datahora_abertura), "dd/MM/yyyy") : "";
+      
+      // Função para extrair data com prioridade P1-P5
+      const getDateWithPriority = (bidding: any) => {
+        // P1 = Abertura, P2 = Prazo, P3 = Documento, P4 = Retirada, P5 = Visita
+        const datePriorities = [
+          { key: 'datahora_abertura', label: 'Abertura' },
+          { key: 'datahora_prazo', label: 'Prazo' },
+          { key: 'datahora_documento', label: 'Documento' },
+          { key: 'datahora_retirada', label: 'Retirada' },
+          { key: 'datahora_visita', label: 'Visita' }
+        ];
+
+        for (const priority of datePriorities) {
+          const dateValue = bidding[priority.key];
+          if (dateValue && dateValue.trim() !== "") {
+            try {
+              const formattedDate = format(new Date(dateValue), "dd/MM/yyyy");
+              const formattedTime = format(new Date(dateValue), "HH:mm");
+              return {
+                dateLabel: `${priority.label} – ${formattedDate}`,
+                time: formattedTime,
+                rawDate: dateValue
+              };
+            } catch (error) {
+              // Se houver erro na formatação, continua para próxima data
+              continue;
+            }
+          }
+        }
+
+        // Se nenhuma data foi encontrada
+        return {
+          dateLabel: "Não informado",
+          time: "",
+          rawDate: null
+        };
+      };
+
+      const dateInfo = getDateWithPriority(bidding);
+      const data = dateInfo.dateLabel;
       const pregao = bidding.edital || "";
-      const hora = bidding.datahora_abertura ? format(new Date(bidding.datahora_abertura), "HH:mm") : "";
+      const hora = dateInfo.time;
+      
+      // Debug log para verificar extração de data com prioridade
+      console.log(`📅 PDF DATE DEBUG - Licitação ID ${bidding.id}:`, {
+        biddingId: bidding.id,
+        extractedDate: data,
+        extractedTime: hora,
+        availableDates: {
+          abertura: bidding.datahora_abertura,
+          prazo: bidding.datahora_prazo,
+          documento: bidding.datahora_documento,
+          retirada: bidding.datahora_retirada,
+          visita: bidding.datahora_visita
+        }
+      });
       const orgao = bidding.orgao_nome || "";
       
       // USAR CATEGORIA TABULADA NO LUGAR DO OBJETO ORIGINAL
