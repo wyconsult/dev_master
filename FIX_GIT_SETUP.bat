@@ -71,7 +71,7 @@ git add -A
 
 echo.
 echo 12) Commitando com mensagem atualizada...
-git commit -m "Sistema v2.2 - Sistema de memória otimizado com timestamps precisos para filtros PDF, hierarquia atualizada (Transportadora), domínio jlglicitacoes.com.br configurado com SSL/HTTPS, favicon personalizado implementado" || echo "Nada para commitar"
+git commit -m "Sistema v2.2 - Sistema de memória otimizado com timestamps precisos para filtros PDF, hierarquia atualizada (Transportadora), domínio jlglicitacoes.com.br configurado com SSL/HTTPS, favicon martelo implementado igual tela login" || echo "Nada para commitar"
 
 echo.
 echo 13) Enviando para GitHub...
@@ -92,7 +92,7 @@ echo • Sistema de memória com timestamps precisos para filtros PDF
 echo • Hierarquia atualizada: Transportadora (substituiu Preparo Terceirizado)
 echo • Domínio personalizado: https://jlglicitacoes.com.br
 echo • SSL/HTTPS configurado com certificado Let's Encrypt
-echo • Favicon personalizado implementado
+echo • Favicon martelo implementado (mesmo ícone da tela login)
 echo • Tabulação hierárquica completa (Tipo → Categoria → Especialização)
 echo • PDF com filtros de data funcionais baseados em timestamps reais
 echo • Sistema 100%% compatível com deploy sem banco de dados
