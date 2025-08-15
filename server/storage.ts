@@ -12,6 +12,8 @@ import {
   type Boletim,
   type InsertBoletim
 } from "@shared/schema";
+import { db } from "./db";
+import { eq, and, gte, lte } from "drizzle-orm";
 
 export interface IStorage {
   // Users
@@ -39,6 +41,144 @@ export interface IStorage {
   getBoletinsByDate(date: string): Promise<Boletim[]>;
   getBoletim(id: number): Promise<Boletim | undefined>;
   markBoletimAsViewed(id: number): Promise<void>;
+}
+
+export class DatabaseStorage implements IStorage {
+  async getUser(id: number): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user || undefined;
+  }
+
+  async getUserByEmail(email: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.email, email));
+    return user || undefined;
+  }
+
+  async createUser(insertUser: InsertUser): Promise<User> {
+    const [user] = await db
+      .insert(users)
+      .values(insertUser)
+      .returning();
+    return user;
+  }
+
+  async getBiddings(filters?: { 
+    conlicitacao_id?: string; 
+    orgao?: string[]; 
+    uf?: string[];
+    numero_controle?: string;
+  }): Promise<Bidding[]> {
+    // Para manter compatibilidade, retorna dados do ConLicitacaoStorage
+    return [];
+  }
+
+  async getBidding(id: number): Promise<Bidding | undefined> {
+    const [bidding] = await db.select().from(biddings).where(eq(biddings.id, id));
+    return bidding || undefined;
+  }
+
+  async getFavorites(userId: number, date?: string, dateFrom?: string, dateTo?: string): Promise<Bidding[]> {
+    let query = db.select().from(favorites).where(eq(favorites.userId, userId));
+
+    // Aplicar filtros de data na data de criação do favorito
+    if (date) {
+      const startDate = new Date(date + "T00:00:00");
+      const endDate = new Date(date + "T23:59:59");
+      query = query.where(
+        and(
+          eq(favorites.userId, userId),
+          gte(favorites.createdAt, startDate),
+          lte(favorites.createdAt, endDate)
+        )
+      );
+    } else if (dateFrom || dateTo) {
+      let conditions = [eq(favorites.userId, userId)];
+      
+      if (dateFrom) {
+        const startDate = new Date(dateFrom + "T00:00:00");
+        conditions.push(gte(favorites.createdAt, startDate));
+      }
+      
+      if (dateTo) {
+        const endDate = new Date(dateTo + "T23:59:59");
+        conditions.push(lte(favorites.createdAt, endDate));
+      }
+      
+      query = query.where(and(...conditions));
+    }
+
+    const favoritesList = await query;
+    
+    // Buscar dados das licitações do ConLicitacaoStorage
+    const biddingsWithFavoriteData: Bidding[] = [];
+    const { storage: conLicitacaoStorage } = await import("./conlicitacao-storage");
+    
+    for (const fav of favoritesList) {
+      const bidding = await conLicitacaoStorage.getBidding(fav.biddingId);
+      if (bidding) {
+        // Incluir dados de categorização no bidding
+        const biddingWithCategorization = {
+          ...bidding,
+          category: fav.category,
+          customCategory: fav.customCategory,
+          notes: fav.notes,
+          uf: fav.uf,
+          codigoUasg: fav.codigoUasg,
+          valorEstimado: fav.valorEstimado,
+          fornecedor: fav.fornecedor,
+          site: fav.site,
+          createdAt: fav.createdAt
+        } as any;
+        
+        biddingsWithFavoriteData.push(biddingWithCategorization);
+      }
+    }
+    
+    return biddingsWithFavoriteData;
+  }
+
+  async addFavorite(favorite: InsertFavorite): Promise<Favorite> {
+    const [newFavorite] = await db
+      .insert(favorites)
+      .values(favorite)
+      .returning();
+    return newFavorite;
+  }
+
+  async removeFavorite(userId: number, biddingId: number): Promise<void> {
+    await db
+      .delete(favorites)
+      .where(and(eq(favorites.userId, userId), eq(favorites.biddingId, biddingId)));
+  }
+
+  async isFavorite(userId: number, biddingId: number): Promise<boolean> {
+    const [favorite] = await db
+      .select()
+      .from(favorites)
+      .where(and(eq(favorites.userId, userId), eq(favorites.biddingId, biddingId)));
+    return !!favorite;
+  }
+
+  async getBoletins(): Promise<Boletim[]> {
+    return await db.select().from(boletins);
+  }
+
+  async getBoletinsByDate(date: string): Promise<Boletim[]> {
+    // Implementar filtro por data se necessário
+    return await db.select().from(boletins);
+  }
+
+  async getBoletim(id: number): Promise<Boletim | undefined> {
+    const [boletim] = await db.select().from(boletins).where(eq(boletins.id, id));
+    return boletim || undefined;
+  }
+
+  async markBoletimAsViewed(id: number): Promise<void> {
+    await db
+      .update(boletins)
+      .set({ visualizado: true })
+      .where(eq(boletins.id, id));
+  }
 }
 
 export class MemStorage implements IStorage {
@@ -150,4 +290,4 @@ export class MemStorage implements IStorage {
   }
 }
 
-export const storage = new MemStorage();
+export const storage = new DatabaseStorage();
