@@ -1,14 +1,16 @@
 <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <!-- Background circle -->
-  <circle cx="16" cy="16" r="16" fill="#5B78F0"/>
+  <!-- Background circle with gradient -->
+  <defs>
+    <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#667EEA;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#764BA2;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  <circle cx="16" cy="16" r="16" fill="url(#grad1)"/>
   
-  <!-- Document icon -->
-  <rect x="9" y="7" width="14" height="18" rx="1" fill="white"/>
-  <rect x="11" y="10" width="10" height="1" fill="#5B78F0"/>
-  <rect x="11" y="13" width="8" height="1" fill="#5B78F0"/>
-  <rect x="11" y="16" width="6" height="1" fill="#5B78F0"/>
-  
-  <!-- Arrow/tracking symbol -->
-  <path d="M20 19L22 21L20 23" stroke="#5B78F0" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-  <path d="M9 21H22" stroke="#5B78F0" stroke-width="1.5" stroke-linecap="round"/>
+  <!-- Hammer/Gavel icon (same as login screen) -->
+  <g transform="translate(8, 8)">
+    <path d="M14.5 2.134L12.866 3.768L11.5 2.402L9.866 4.036L11.232 5.402L2.134 14.5L3.768 16.134L12.866 7.036L14.232 8.402L15.866 6.768L14.5 5.402L16.134 3.768L14.5 2.134Z" fill="white"/>
+    <rect x="1" y="13" width="3" height="4" rx="0.5" fill="white"/>
+  </g>
 </svg>
