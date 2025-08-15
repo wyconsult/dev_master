@@ -188,6 +188,7 @@ export default function Favorites() {
       // Função para extrair data com prioridade P1-P5
       const getDateWithPriority = (bidding: any) => {
         // P1 = Abertura, P2 = Prazo, P3 = Documento, P4 = Retirada, P5 = Visita
+        // Nomes dos campos conforme documentação oficial da API ConLicitação
         const datePriorities = [
           { key: 'datahora_abertura', label: 'Abertura' },
           { key: 'datahora_prazo', label: 'Prazo' },
