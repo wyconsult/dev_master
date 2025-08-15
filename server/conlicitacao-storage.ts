@@ -1,5 +1,7 @@
 import { conLicitacaoAPI } from './conlicitacao-api';
-import { Bidding, Boletim, Filtro, Acompanhamento, User, InsertUser, Favorite, InsertFavorite } from '../shared/schema';
+import { Bidding, Boletim, Filtro, Acompanhamento, User, InsertUser, Favorite, InsertFavorite, favorites } from '../shared/schema';
+import { db } from "./db";
+import { eq, and } from "drizzle-orm";
 
 export interface IConLicitacaoStorage {
   // Users (mantemos localmente)
@@ -586,6 +588,12 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
 
   // Métodos de favoritos (mantemos localmente)
   async getFavorites(userId: number, date?: string, dateFrom?: string, dateTo?: string): Promise<Bidding[]> {
+    // Delegar para o DatabaseStorage para gestão correta de datas
+    const { storage } = await import("./storage");
+    return await storage.getFavorites(userId, date, dateFrom, dateTo);
+  }
+
+  async getFavoritesOld(userId: number, date?: string, dateFrom?: string, dateTo?: string): Promise<Bidding[]> {
     let userFavorites = Array.from(this.favorites.values())
       .filter(fav => fav.userId === userId);
 
@@ -639,44 +647,21 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
   }
 
   async addFavorite(insertFavorite: InsertFavorite): Promise<Favorite> {
-    const id = this.currentFavoriteId++;
-    const favorite: Favorite = { 
-      ...insertFavorite, 
-      id, 
-      createdAt: new Date(),
-      category: null,
-      customCategory: null,
-      notes: null,
-      uf: null,
-      codigoUasg: null,
-      valorEstimado: null,
-      fornecedor: null,
-      site: null,
-    };
-    this.favorites.set(id, favorite);
-    return favorite;
+    // Delegar para o DatabaseStorage para persistência real
+    const { storage } = await import("./storage");
+    return await storage.addFavorite(insertFavorite);
   }
 
   async removeFavorite(userId: number, biddingId: number): Promise<void> {
-    let keyToDelete: number | undefined;
-    this.favorites.forEach((favorite, id) => {
-      if (favorite.userId === userId && favorite.biddingId === biddingId) {
-        keyToDelete = id;
-      }
-    });
-    if (keyToDelete !== undefined) {
-      this.favorites.delete(keyToDelete);
-    }
+    // Delegar para o DatabaseStorage
+    const { storage } = await import("./storage");
+    return await storage.removeFavorite(userId, biddingId);
   }
 
   async isFavorite(userId: number, biddingId: number): Promise<boolean> {
-    let found = false;
-    this.favorites.forEach(favorite => {
-      if (favorite.userId === userId && favorite.biddingId === biddingId) {
-        found = true;
-      }
-    });
-    return found;
+    // Delegar para o DatabaseStorage
+    const { storage } = await import("./storage");
+    return await storage.isFavorite(userId, biddingId);
   }
 
   async updateFavoriteCategorization(userId: number, biddingId: number, data: {
@@ -689,48 +674,40 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
     fornecedor?: string;
     site?: string;
   }): Promise<void> {
-    // Buscar o favorito existente
-    let foundFavoriteId: number | undefined;
-    let foundFavorite: Favorite | undefined;
+    // Delegar para o DatabaseStorage e atualizar no banco
+    const { storage } = await import("./storage");
     
-    this.favorites.forEach((favorite, id) => {
-      if (favorite.userId === userId && favorite.biddingId === biddingId) {
-        foundFavorite = favorite;
-        foundFavoriteId = id;
-      }
-    });
+    // Verificar se já existe favorito
+    const isFav = await storage.isFavorite(userId, biddingId);
     
-    if (foundFavorite && foundFavoriteId !== undefined) {
-      // Atualizar favorito existente
-      this.favorites.set(foundFavoriteId, {
-        ...foundFavorite,
-        category: data.category ?? null,
-        customCategory: data.customCategory ?? null,
-        notes: data.notes ?? null,
-        uf: data.uf ?? null,
-        codigoUasg: data.codigoUasg ?? null,
-        valorEstimado: data.valorEstimado ?? null,
-        fornecedor: data.fornecedor ?? null,
-        site: data.site ?? null,
-      });
+    if (isFav) {
+      // Atualizar favorito existente no banco
+      await db.update(favorites)
+        .set({
+          category: data.category || null,
+          customCategory: data.customCategory || null,
+          notes: data.notes || null,
+          uf: data.uf || null,
+          codigoUasg: data.codigoUasg || null,
+          valorEstimado: data.valorEstimado || null,
+          fornecedor: data.fornecedor || null,
+          site: data.site || null,
+        })
+        .where(and(eq(favorites.userId, userId), eq(favorites.biddingId, biddingId)));
     } else {
       // Criar novo favorito com categorização
-      const id = this.currentFavoriteId++;
-      const favorite: Favorite = { 
+      await storage.addFavorite({
         userId,
         biddingId,
-        id, 
-        createdAt: new Date(),
-        category: data.category ?? null,
-        customCategory: data.customCategory ?? null,
-        notes: data.notes ?? null,
-        uf: data.uf ?? null,
-        codigoUasg: data.codigoUasg ?? null,
-        valorEstimado: data.valorEstimado ?? null,
-        fornecedor: data.fornecedor ?? null,
-        site: data.site ?? null,
-      };
-      this.favorites.set(id, favorite);
+        category: data.category || null,
+        customCategory: data.customCategory || null,
+        notes: data.notes || null,
+        uf: data.uf || null,
+        codigoUasg: data.codigoUasg || null,
+        valorEstimado: data.valorEstimado || null,
+        fornecedor: data.fornecedor || null,
+        site: data.site || null,
+      });
     }
   }
 }
