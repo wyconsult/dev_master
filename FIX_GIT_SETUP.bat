@@ -1,6 +1,6 @@
 @echo off
 echo ===============================================
-echo GIT SETUP + SYNC GITHUB - LICITATRAKER v2.1
+echo GIT SETUP + SYNC GITHUB - LICITATRAKER v2.2
 echo ===============================================
 echo.
 echo Este script vai:
@@ -71,7 +71,7 @@ git add -A
 
 echo.
 echo 12) Commitando com mensagem atualizada...
-git commit -m "v2.1: Site com busca integrada, layout corrigido, footer copyright profissional" || echo "Nada para commitar"
+git commit -m "Sistema v2.2 - Sistema de memória otimizado com timestamps precisos para filtros PDF, hierarquia atualizada (Transportadora), domínio jlglicitacoes.com.br configurado com SSL/HTTPS, favicon personalizado implementado" || echo "Nada para commitar"
 
 echo.
 echo 13) Enviando para GitHub...
@@ -87,21 +87,22 @@ echo ===============================================
 echo ✅ SYNC GIT CONCLUÍDO COM SUCESSO!
 echo ===============================================
 echo.
-echo === FUNCIONALIDADES v2.1 IMPLEMENTADAS ===
+echo === FUNCIONALIDADES v2.2 IMPLEMENTADAS ===
+echo • Sistema de memória com timestamps precisos para filtros PDF
+echo • Hierarquia atualizada: Transportadora (substituiu Preparo Terceirizado)
+echo • Domínio personalizado: https://jlglicitacoes.com.br
+echo • SSL/HTTPS configurado com certificado Let's Encrypt
+echo • Favicon personalizado implementado
 echo • Tabulação hierárquica completa (Tipo → Categoria → Especialização)
-echo • Campo de site com busca integrada (padrão Estado UF)
-echo • PDF com campo OBJETO extraindo apenas categoria
-echo • Pesquisa dinâmica de sites com filtro em tempo real (72 sites)
-echo • Favoritos com coração preenchido (indica favorito)
-echo • Layout transparente do campo site corrigido
-echo • Footer de copyright profissional na tela login
-echo • Sistema preparado para dados reais API ConLicitação
-echo • Filtros avançados por data, UF, órgão
-echo • Interface responsiva mobile-first
+echo • PDF com filtros de data funcionais baseados em timestamps reais
+echo • Sistema 100%% compatível com deploy sem banco de dados
+echo • Nginx configurado como proxy reverso
+echo • Renovação automática do certificado SSL
 echo.
-echo === PRÓXIMO PASSO: DEPLOY MANUAL ===
+echo === DEPLOY E ACESSO ===
 echo Servidor: 31.97.26.138
 echo Senha: Vermelho006@
+echo Domínio: https://jlglicitacoes.com.br
 echo Comandos no servidor:
 echo   npm install
 echo   npm run build  
