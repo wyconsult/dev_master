@@ -105,9 +105,9 @@ export default function Boletins() {
         case 'manha':
           return hour >= 6 && hour < 12;
         case 'tarde':
-          return hour >= 12 && hour < 18;
+          return hour >= 12 && hour < 17;
         case 'noite':
-          return hour >= 18 || hour < 6;
+          return hour >= 17 || hour < 6;
         default:
           return false;
       }
@@ -136,7 +136,7 @@ export default function Boletins() {
     try {
       const hora = new Date(datahora).getHours();
       if (hora >= 6 && hora < 12) return "M";
-      if (hora >= 12 && hora < 18) return "T";
+      if (hora >= 12 && hora < 17) return "T";
       return "N";
     } catch {
       return "M";
@@ -149,7 +149,7 @@ export default function Boletins() {
       const hora = data.getHours();
       let turno = "";
       if (hora >= 6 && hora < 12) turno = "Manhã";
-      else if (hora >= 12 && hora < 18) turno = "Tarde";
+      else if (hora >= 12 && hora < 17) turno = "Tarde";
       else turno = "Noite";
       return `${turno} - ${data.toLocaleDateString('pt-BR')}`;
     } catch {
