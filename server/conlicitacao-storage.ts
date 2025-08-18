@@ -188,41 +188,70 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
       // Dados de teste para desenvolvimento enquanto IP não está autorizado
       
       const boletinsTeste: Boletim[] = [
+        // Teste de horários específicos para validar correção 17:00 vs 18:00
         {
           id: 1,
-          numero_edicao: 341,
-          datahora_fechamento: "2025-07-09T08:30:00.000Z", // Manhã do dia 9 de julho
+          numero_edicao: 422,
+          datahora_fechamento: "2025-08-15T17:51:08.000Z", // 17:51:08 - deve ser NOITE agora
           filtro_id: filtroId,
-          quantidade_licitacoes: 132,
-          quantidade_acompanhamentos: 49,
+          quantidade_licitacoes: 139,
+          quantidade_acompanhamentos: 48,
           visualizado: this.viewedBoletins.has(1)
         },
         {
           id: 2,
-          numero_edicao: 340,
-          datahora_fechamento: "2025-07-09T13:01:00.000Z", // Tarde do dia 9 de julho
+          numero_edicao: 421,
+          datahora_fechamento: "2025-08-15T13:01:34.000Z", // 13:01:34 - TARDE
           filtro_id: filtroId,
-          quantidade_licitacoes: 223,
-          quantidade_acompanhamentos: 64,
+          quantidade_licitacoes: 212,
+          quantidade_acompanhamentos: 72,
           visualizado: this.viewedBoletins.has(2)
         },
         {
           id: 3,
-          numero_edicao: 339,
-          datahora_fechamento: "2025-07-09T20:36:00.000Z", // Noite do dia 9 de julho
+          numero_edicao: 420,
+          datahora_fechamento: "2025-08-15T09:31:33.000Z", // 09:31:33 - MANHÃ
           filtro_id: filtroId,
-          quantidade_licitacoes: 170,
-          quantidade_acompanhamentos: 81,
+          quantidade_licitacoes: 111,
+          quantidade_acompanhamentos: 57,
           visualizado: this.viewedBoletins.has(3)
         },
+        // Mais casos limite para teste
         {
           id: 4,
-          numero_edicao: 338,
-          datahora_fechamento: "2025-07-31T15:00:00.000Z", // Hoje para teste
+          numero_edicao: 419,
+          datahora_fechamento: "2025-08-15T16:59:59.000Z", // 16:59:59 - último minuto TARDE
           filtro_id: filtroId,
-          quantidade_licitacoes: 95,
+          quantidade_licitacoes: 85,
           quantidade_acompanhamentos: 23,
           visualizado: this.viewedBoletins.has(4)
+        },
+        {
+          id: 5,
+          numero_edicao: 418,
+          datahora_fechamento: "2025-08-15T17:00:00.000Z", // 17:00:00 - primeiro minuto NOITE
+          filtro_id: filtroId,
+          quantidade_licitacoes: 94,
+          quantidade_acompanhamentos: 31,
+          visualizado: this.viewedBoletins.has(5)
+        },
+        {
+          id: 6,
+          numero_edicao: 417,
+          datahora_fechamento: "2025-08-15T11:59:59.000Z", // 11:59:59 - último minuto MANHÃ
+          filtro_id: filtroId,
+          quantidade_licitacoes: 67,
+          quantidade_acompanhamentos: 19,
+          visualizado: this.viewedBoletins.has(6)
+        },
+        {
+          id: 7,
+          numero_edicao: 416,
+          datahora_fechamento: "2025-08-15T12:00:00.000Z", // 12:00:00 - primeiro minuto TARDE
+          filtro_id: filtroId,
+          quantidade_licitacoes: 123,
+          quantidade_acompanhamentos: 45,
+          visualizado: this.viewedBoletins.has(7)
         }
       ];
 
