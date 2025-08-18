@@ -193,7 +193,7 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
         {
           id: 1,
           numero_edicao: 422,
-          datahora_fechamento: "2025-08-15T17:51:08.000Z", // NOITE - 17:51:08
+          datahora_fechamento: "2025-08-15T17:00:00.000Z", // NOITE - 17:00:00
           filtro_id: filtroId,
           quantidade_licitacoes: 139,
           quantidade_acompanhamentos: 48,
@@ -202,7 +202,7 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
         {
           id: 2,
           numero_edicao: 421,
-          datahora_fechamento: "2025-08-15T13:01:34.000Z", // TARDE - 13:01:34  
+          datahora_fechamento: "2025-08-15T12:30:00.000Z", // TARDE - 12:30:00  
           filtro_id: filtroId,
           quantidade_licitacoes: 212,
           quantidade_acompanhamentos: 72,
@@ -211,7 +211,7 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
         {
           id: 3,
           numero_edicao: 420,
-          datahora_fechamento: "2025-08-15T09:31:33.000Z", // MANHÃ - 09:31:33
+          datahora_fechamento: "2025-08-15T09:00:00.000Z", // MANHÃ - 09:00:00
           filtro_id: filtroId,
           quantidade_licitacoes: 111,
           quantidade_acompanhamentos: 57,
