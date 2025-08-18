@@ -185,14 +185,26 @@ export function BiddingCard({
       documentLink = bidding.link_edital;
     }
 
-    // Verificar se é um link de teste/erro que deve mostrar o popup
-    const isTestOrEmptyLink = !documentLink || 
+    // Verificar se é um link inválido que deve mostrar o popup
+    const isInvalidLink = !documentLink || 
       documentLink.trim() === "" || 
       documentLink.includes("auth=teste") || 
-      documentLink.includes("download?auth=") ||
-      documentLink.includes("public/api/download");
+      documentLink === "https://consultaonline.conlicitacao.com.br" ||
+      documentLink === "https://consultaonline.conlicitacao.com.br/" ||
+      documentLink.includes("/public/api/download?auth=") && documentLink.includes("undefined") ||
+      bidding.documento_url === "" ||
+      bidding.documento_url === null ||
+      bidding.documento_url === undefined;
 
-    if (isTestOrEmptyLink) {
+    // Log para debug em desenvolvimento
+    console.log(`🔗 DEBUG LINK - Licitação ${bidding.id}:`, {
+      documento_url: bidding.documento_url,
+      link_edital: bidding.link_edital,
+      documentLink: documentLink,
+      isInvalidLink: isInvalidLink
+    });
+
+    if (isInvalidLink) {
       // Mostrar popup de erro ao invés de abrir link inválido
       setShowDocumentErrorDialog(true);
     } else {
