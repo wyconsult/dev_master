@@ -204,7 +204,7 @@ export default function Favorites() {
               const formattedDate = format(new Date(dateValue), "dd/MM/yyyy");
               const formattedTime = format(new Date(dateValue), "HH:mm");
               return {
-                dateLabel: `${priority.label} – ${formattedDate}`,
+                dateLabel: formattedDate, // Remover prefixo, manter apenas data
                 time: formattedTime,
                 rawDate: dateValue
               };
@@ -228,19 +228,7 @@ export default function Favorites() {
       const pregao = bidding.edital || "";
       const hora = dateInfo.time;
       
-      // Debug log para verificar extração de data com prioridade
-      console.log(`📅 PDF DATE DEBUG - Licitação ID ${bidding.id}:`, {
-        biddingId: bidding.id,
-        extractedDate: data,
-        extractedTime: hora,
-        availableDates: {
-          abertura: bidding.datahora_abertura,
-          prazo: bidding.datahora_prazo,
-          documento: bidding.datahora_documento,
-          retirada: bidding.datahora_retirada,
-          visita: bidding.datahora_visita
-        }
-      });
+      // Data extraída seguindo prioridade P1-P5 sem prefixos
       const orgao = bidding.orgao_nome || "";
       
       // USAR CATEGORIA TABULADA NO LUGAR DO OBJETO ORIGINAL
