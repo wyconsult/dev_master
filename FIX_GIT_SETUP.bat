@@ -1,6 +1,6 @@
 @echo off
 echo ===============================================
-echo GIT SETUP + SYNC GITHUB - LICITATRAKER v2.2
+echo GIT SETUP + SYNC GITHUB - LICITATRAKER v2.3
 echo ===============================================
 echo.
 echo Este script vai:
@@ -71,7 +71,7 @@ git add -A
 
 echo.
 echo 12) Commitando com mensagem atualizada...
-git commit -m "Sistema v2.2 - Sistema de memória otimizado com timestamps precisos para filtros PDF, hierarquia atualizada (Transportadora), domínio jlglicitacoes.com.br configurado com SSL/HTTPS, favicon martelo implementado igual tela login" || echo "Nada para commitar"
+git commit -m "Sistema v2.3 - Melhorias visuais: PDF sem prefixos de data (mantém prioridade P1-P5), borda cinza dupla no cabeçalho dos cards para separação visual em objetos longos, boletins com lógica noturna 17h ajustada" || echo "Nada para commitar"
 
 echo.
 echo 13) Enviando para GitHub...
@@ -87,17 +87,19 @@ echo ===============================================
 echo ✅ SYNC GIT CONCLUÍDO COM SUCESSO!
 echo ===============================================
 echo.
-echo === FUNCIONALIDADES v2.2 IMPLEMENTADAS ===
+echo === FUNCIONALIDADES v2.3 IMPLEMENTADAS ===
+echo • PDF MELHORADO: Datas sem prefixos (P1-, P2-), apenas "15/07/2025"
+echo • CARDS: Borda cinza dupla (superior e inferior) no cabeçalho
+echo • BOLETINS: Lógica noturna ajustada de 18h para 17h
+echo • Sistema de prioridade P1-P5 mantido (Abertura→Prazo→Documento→Retirada→Visita)
+echo • Melhor separação visual para objetos com texto longo
 echo • Sistema de memória com timestamps precisos para filtros PDF
 echo • Hierarquia atualizada: Transportadora (substituiu Preparo Terceirizado)
 echo • Domínio personalizado: https://jlglicitacoes.com.br
 echo • SSL/HTTPS configurado com certificado Let's Encrypt
 echo • Favicon martelo implementado (mesmo ícone da tela login)
 echo • Tabulação hierárquica completa (Tipo → Categoria → Especialização)
-echo • PDF com filtros de data funcionais baseados em timestamps reais
 echo • Sistema 100%% compatível com deploy sem banco de dados
-echo • Nginx configurado como proxy reverso
-echo • Renovação automática do certificado SSL
 echo.
 echo === DEPLOY E ACESSO ===
 echo Servidor: 31.97.26.138
