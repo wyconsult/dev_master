@@ -147,12 +147,10 @@ export default function Boletins() {
     try {
       const data = new Date(datahora);
       const hora = data.getHours();
-      console.log(`Debug getTurnoCompleto - Input: ${datahora}, Hora: ${hora}`); // DEBUG temporário
       let turno = "";
       if (hora >= 6 && hora < 12) turno = "Manhã";
       else if (hora >= 12 && hora < 17) turno = "Tarde";
       else turno = "Noite";
-      console.log(`Debug getTurnoCompleto - Turno: ${turno}`); // DEBUG temporário
       return `${turno} - ${data.toLocaleDateString('pt-BR')}`;
     } catch {
       return "Manhã";
