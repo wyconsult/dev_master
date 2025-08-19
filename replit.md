@@ -1,7 +1,14 @@
 # LicitaTraker - Bidding Management System
 
 ## Overview
-LicitaTraker is a full-stack bidding management application designed to streamline the process of managing bidding opportunities (licitações). It enables users to browse, filter, and favorite biddings, manage bulletins, and authenticate securely. The system integrates with the real ConLicitação API for up-to-date data, with a robust fallback system for development environments. Its core purpose is to provide a comprehensive and efficient platform for tracking and managing public tenders.
+LicitaTraker is a full-stack bidding management application designed to streamline the process of managing bidding opportunities (licitações). It enables users to browse, filter, and favorite biddings, manage bulletins, and authenticate securely. The system integrates with the real ConLicitação API for up-to-date data, featuring a hybrid performance system that combines fast loading with accurate counting. Its core purpose is to provide a comprehensive and efficient platform for tracking and managing public tenders.
+
+## Recent Changes (v2.7 - August 2025)
+- **CRITICAL FIX**: Accurate counting system implemented - displays real numbers of licitações and acompanhamentos
+- **Hybrid Performance**: Combines fast API basic data with detailed count retrieval via intelligent caching
+- **Parallel Processing**: Counts fetched simultaneously for optimal performance
+- **Smart Caching**: First load precise, subsequent loads instant via 5-minute cache
+- **Error Recovery**: Robust timeout and retry mechanisms for API stability
 
 ## User Preferences
 Preferred communication style: Simple, everyday language.

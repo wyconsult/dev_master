@@ -1,6 +1,6 @@
 @echo off
 echo ===============================================
-echo GIT SETUP + SYNC GITHUB - LICITATRAKER v2.6
+echo GIT SETUP + SYNC GITHUB - LICITATRAKER v2.7
 echo ===============================================
 echo.
 echo Este script vai:
@@ -71,7 +71,7 @@ git add -A
 
 echo.
 echo 12) Commitando com mensagem atualizada...
-git commit -m "Sistema v2.6 - OTIMIZAÇÃO PERFORMANCE: API lenta resolvida - cache 5min, timeout 15s+retry, carregamento rápido dados básicos, pré-carregamento segundo plano, frontend timeout 30s+retry, keep-alive conexões, 502 Bad Gateway corrigido" || echo "Nada para commitar"
+git commit -m "Sistema v2.7 - CONTAGEM CORRIGIDA: Sistema híbrido performance+precisão - cache inteligente, contagens reais via API detalhada, processamento paralelo, primeiro load preciso, subsequentes instantâneos via cache" || echo "Nada para commitar"
 
 echo.
 echo 13) Enviando para GitHub...
@@ -87,12 +87,12 @@ echo ===============================================
 echo ✅ SYNC GIT CONCLUÍDO COM SUCESSO!
 echo ===============================================
 echo.
-echo === FUNCIONALIDADES v2.6 IMPLEMENTADAS ===
-echo • OTIMIZAÇÃO PERFORMANCE: API lenta totalmente resolvida
-echo • Cache inteligente de 5 minutos evita chamadas desnecessárias
+echo === FUNCIONALIDADES v2.7 IMPLEMENTADAS ===
+echo • CONTAGEM CORRIGIDA: Números reais de licitações/acompanhamentos
+echo • Sistema híbrido: performance + precisão de dados
+echo • Cache inteligente: primeiro load preciso, subsequentes instantâneos
+echo • Processamento paralelo das contagens via API detalhada
 echo • Timeout 15s + retry com backoff exponencial no backend
-echo • Carregamento instantâneo com dados básicos da API
-echo • Pré-carregamento em segundo plano dos boletins recentes
 echo • Frontend: timeout 30s + retry automático para 502/timeouts
 echo • Keep-alive nas conexões para melhor performance de rede
 echo • CORREÇÃO: Dados trocados entre boletins resolvido
