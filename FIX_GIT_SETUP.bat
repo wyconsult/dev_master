@@ -1,6 +1,6 @@
 @echo off
 echo ===============================================
-echo GIT SETUP + SYNC GITHUB - LICITATRAKER v2.5
+echo GIT SETUP + SYNC GITHUB - LICITATRAKER v2.6
 echo ===============================================
 echo.
 echo Este script vai:
@@ -71,7 +71,7 @@ git add -A
 
 echo.
 echo 12) Commitando com mensagem atualizada...
-git commit -m "Sistema v2.5 - CORREÇÃO CRÍTICA: Dados trocados entre boletins resolvido - processamento sequencial evita condições de corrida, validação de consistência garante integridade dos dados, logs detalhados para monitoramento em produção" || echo "Nada para commitar"
+git commit -m "Sistema v2.6 - OTIMIZAÇÃO PERFORMANCE: API lenta resolvida - cache 5min, timeout 15s+retry, carregamento rápido dados básicos, pré-carregamento segundo plano, frontend timeout 30s+retry, keep-alive conexões, 502 Bad Gateway corrigido" || echo "Nada para commitar"
 
 echo.
 echo 13) Enviando para GitHub...
@@ -87,19 +87,20 @@ echo ===============================================
 echo ✅ SYNC GIT CONCLUÍDO COM SUCESSO!
 echo ===============================================
 echo.
-echo === FUNCIONALIDADES v2.5 IMPLEMENTADAS ===
-echo • CORREÇÃO CRÍTICA: Dados trocados entre boletins resolvido
-echo • Processamento sequencial evita condições de corrida na API
+echo === FUNCIONALIDADES v2.6 IMPLEMENTADAS ===
+echo • OTIMIZAÇÃO PERFORMANCE: API lenta totalmente resolvida
+echo • Cache inteligente de 5 minutos evita chamadas desnecessárias
+echo • Timeout 15s + retry com backoff exponencial no backend
+echo • Carregamento instantâneo com dados básicos da API
+echo • Pré-carregamento em segundo plano dos boletins recentes
+echo • Frontend: timeout 30s + retry automático para 502/timeouts
+echo • Keep-alive nas conexões para melhor performance de rede
+echo • CORREÇÃO: Dados trocados entre boletins resolvido
 echo • Validação de consistência garante integridade dos dados
-echo • Logs detalhados para monitoramento em produção
-echo • Cada boletim agora recebe os dados corretos (420, 421, 422)
 echo • CORREÇÃO: Links editais funcionando corretamente
-echo • Detecção inteligente: Popup só para links inexistentes/inválidos
 echo • PDF MELHORADO: Datas sem prefixos (P1-, P2-), apenas "15/07/2025"
 echo • CARDS: Borda cinza dupla (superior e inferior) no cabeçalho
-echo • BOLETINS: Lógica noturna ajustada de 18h para 17h
 echo • Sistema de prioridade P1-P5 mantido (Abertura→Prazo→Documento→Retirada→Visita)
-echo • Sistema de memória com timestamps precisos para filtros PDF
 echo • Domínio personalizado: https://jlglicitacoes.com.br
 echo • SSL/HTTPS configurado com certificado Let's Encrypt
 echo • Sistema 100%% compatível com deploy sem banco de dados
