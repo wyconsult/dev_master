@@ -1,6 +1,6 @@
 @echo off
 echo ===============================================
-echo GIT SETUP + SYNC GITHUB - LICITATRAKER v2.4
+echo GIT SETUP + SYNC GITHUB - LICITATRAKER v2.5
 echo ===============================================
 echo.
 echo Este script vai:
@@ -71,7 +71,7 @@ git add -A
 
 echo.
 echo 12) Commitando com mensagem atualizada...
-git commit -m "Sistema v2.4 - CORREÇÃO CRÍTICA: Sistema detecção links editais corrigido - popup apenas para links inválidos, links reais da API funcionam corretamente, lógica mais precisa para distinguir documentos válidos vs inexistentes" || echo "Nada para commitar"
+git commit -m "Sistema v2.5 - CORREÇÃO CRÍTICA: Dados trocados entre boletins resolvido - processamento sequencial evita condições de corrida, validação de consistência garante integridade dos dados, logs detalhados para monitoramento em produção" || echo "Nada para commitar"
 
 echo.
 echo 13) Enviando para GitHub...
@@ -87,20 +87,21 @@ echo ===============================================
 echo ✅ SYNC GIT CONCLUÍDO COM SUCESSO!
 echo ===============================================
 echo.
-echo === FUNCIONALIDADES v2.4 IMPLEMENTADAS ===
-echo • CORREÇÃO CRÍTICA: Links editais funcionando corretamente
+echo === FUNCIONALIDADES v2.5 IMPLEMENTADAS ===
+echo • CORREÇÃO CRÍTICA: Dados trocados entre boletins resolvido
+echo • Processamento sequencial evita condições de corrida na API
+echo • Validação de consistência garante integridade dos dados
+echo • Logs detalhados para monitoramento em produção
+echo • Cada boletim agora recebe os dados corretos (420, 421, 422)
+echo • CORREÇÃO: Links editais funcionando corretamente
 echo • Detecção inteligente: Popup só para links inexistentes/inválidos
-echo • Links reais da API ConLicitação abrem documentos normalmente
-echo • Debug logs adicionados para análise em tempo real
 echo • PDF MELHORADO: Datas sem prefixos (P1-, P2-), apenas "15/07/2025"
 echo • CARDS: Borda cinza dupla (superior e inferior) no cabeçalho
 echo • BOLETINS: Lógica noturna ajustada de 18h para 17h
 echo • Sistema de prioridade P1-P5 mantido (Abertura→Prazo→Documento→Retirada→Visita)
 echo • Sistema de memória com timestamps precisos para filtros PDF
-echo • Hierarquia atualizada: Transportadora (substituiu Preparo Terceirizado)
 echo • Domínio personalizado: https://jlglicitacoes.com.br
 echo • SSL/HTTPS configurado com certificado Let's Encrypt
-echo • Favicon martelo implementado (mesmo ícone da tela login)
 echo • Sistema 100%% compatível com deploy sem banco de dados
 echo.
 echo === DEPLOY E ACESSO ===
