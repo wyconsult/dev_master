@@ -47,9 +47,20 @@ export const getQueryFn: <T>(options: {
       }
     }
 
+    // Configuração otimizada para API lenta
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30s timeout
+    
     const res = await fetch(url, {
       credentials: "include",
+      signal: controller.signal,
+      headers: {
+        'Connection': 'keep-alive',
+        'Cache-Control': 'no-cache',
+      },
     });
+    
+    clearTimeout(timeoutId);
 
     if (unauthorizedBehavior === "returnNull" && res.status === 401) {
       return null;
@@ -63,10 +74,21 @@ export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       queryFn: getQueryFn({ on401: "throw" }),
+      retry: (failureCount, error: any) => {
+        // Não tentar novamente em erros 401/403/404
+        if (error?.message?.includes('401') || 
+            error?.message?.includes('403') || 
+            error?.message?.includes('404')) {
+          return false;
+        }
+        // Tentar até 2 vezes para outros erros (timeouts, 502, etc)
+        return failureCount < 2;
+      },
+      retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 5000), // Exponential backoff
+      staleTime: 2 * 60 * 1000, // Considerar dados válidos por 2 minutos
+      gcTime: 5 * 60 * 1000, // Manter cache por 5 minutos
       refetchInterval: false,
       refetchOnWindowFocus: false,
-      staleTime: 1000 * 60 * 5, // 5 minutes
-      retry: false,
     },
     mutations: {
       retry: false,
