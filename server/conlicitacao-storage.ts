@@ -142,25 +142,62 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
     try {
       const response = await conLicitacaoAPI.getBoletins(filtroId, page, perPage);
       
-      // OTIMIZAÇÃO: Usar dados básicos da API principal quando disponíveis
-      // Só buscar dados detalhados quando realmente necessário (ao visualizar boletim)
-      const boletins: Boletim[] = response.boletins.map((boletim: any) => ({
-        id: boletim.id,
-        numero_edicao: boletim.numero_edicao,
-        datahora_fechamento: boletim.datahora_fechamento,
-        filtro_id: boletim.filtro_id,
-        quantidade_licitacoes: boletim.quantidade_licitacoes || 0,
-        quantidade_acompanhamentos: boletim.quantidade_acompanhamentos || 0,
-        visualizado: this.viewedBoletins.has(boletim.id),
-      }));
+      // CORREÇÃO: A API básica não retorna quantidades, precisamos buscar de forma híbrida
+      console.log(`📡 Buscando quantidades para ${response.boletins.length} boletins...`);
       
-      console.log(`✅ Carregados ${boletins.length} boletins rapidamente usando dados básicos da API`);
+      // Buscar contagens em paralelo usando cache para performance
+      const boletinsWithCounts = await Promise.all(
+        response.boletins.map(async (boletim: any) => {
+          try {
+            // Verificar cache primeiro
+            const cached = this.boletimCache.get(boletim.id);
+            let quantidade_licitacoes = 0;
+            let quantidade_acompanhamentos = 0;
+            
+            if (cached && (Date.now() - cached.timestamp < this.CACHE_TTL)) {
+              // Usar cache válido
+              quantidade_licitacoes = cached.data.licitacoes?.length || 0;
+              quantidade_acompanhamentos = cached.data.acompanhamentos?.length || 0;
+              console.log(`🎯 Cache hit para contagem do boletim ${boletim.id}: ${quantidade_licitacoes} licitações, ${quantidade_acompanhamentos} acompanhamentos`);
+            } else {
+              // Buscar dados frescos
+              const data = await conLicitacaoAPI.getBoletimData(boletim.id);
+              quantidade_licitacoes = data.licitacoes?.length || 0;
+              quantidade_acompanhamentos = data.acompanhamentos?.length || 0;
+              
+              // Cachear para próximas requisições
+              this.boletimCache.set(boletim.id, { data, timestamp: Date.now() });
+              console.log(`📊 Boletim ${boletim.id}: ${quantidade_licitacoes} licitações, ${quantidade_acompanhamentos} acompanhamentos`);
+            }
+            
+            return {
+              id: boletim.id,
+              numero_edicao: boletim.numero_edicao,
+              datahora_fechamento: boletim.datahora_fechamento,
+              filtro_id: boletim.filtro_id,
+              quantidade_licitacoes,
+              quantidade_acompanhamentos,
+              visualizado: this.viewedBoletins.has(boletim.id),
+            };
+          } catch (error) {
+            console.warn(`⚠️ Erro ao buscar contagem do boletim ${boletim.id}, usando valores padrão`);
+            return {
+              id: boletim.id,
+              numero_edicao: boletim.numero_edicao,
+              datahora_fechamento: boletim.datahora_fechamento,
+              filtro_id: boletim.filtro_id,
+              quantidade_licitacoes: 0,
+              quantidade_acompanhamentos: 0,
+              visualizado: this.viewedBoletins.has(boletim.id),
+            };
+          }
+        })
+      );
       
-      // Pré-carregar alguns boletins em segundo plano se necessário (opcional)
-      this.preloadRecentBoletins(boletins.slice(0, 3)); // Só os 3 mais recentes
+      console.log(`✅ Carregados ${boletinsWithCounts.length} boletins com contagens corretas!`);
 
       return {
-        boletins,
+        boletins: boletinsWithCounts,
         total: response.filtro.total_boletins
       };
     } catch (error: any) {
@@ -209,33 +246,6 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
 
       return { boletins: boletinsTeste, total: boletinsTeste.length };
     }
-  }
-
-  // Método para pré-carregamento otimizado em segundo plano
-  private async preloadRecentBoletins(boletins: Boletim[]): Promise<void> {
-    // Executa em segundo plano sem bloquear resposta principal
-    setTimeout(async () => {
-      console.log(`🚀 Iniciando pré-carregamento de ${boletins.length} boletins em segundo plano...`);
-      
-      const promises = boletins.map(async (boletim) => {
-        try {
-          // Verificar se já está em cache
-          const cached = this.boletimCache.get(boletim.id);
-          if (cached && (Date.now() - cached.timestamp < this.CACHE_TTL)) {
-            return; // Já em cache válido
-          }
-          
-          const data = await conLicitacaoAPI.getBoletimData(boletim.id);
-          this.boletimCache.set(boletim.id, { data, timestamp: Date.now() });
-          console.log(`✅ Boletim ${boletim.id} pré-carregado e cacheado`);
-        } catch (error) {
-          console.warn(`⚠️ Falha ao pré-carregar boletim ${boletim.id}`);
-        }
-      });
-      
-      await Promise.allSettled(promises);
-      console.log(`🎯 Pré-carregamento concluído`);
-    }, 100); // Pequeno delay para não interferir na resposta principal
   }
 
   // Método otimizado para obter dados de boletim com cache
