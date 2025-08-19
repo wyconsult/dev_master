@@ -142,34 +142,46 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
       
       // Implementação simplificada: usar dados da API quando disponível
       // Para contagem dinâmica em produção, será necessário fazer chamadas adicionais
-      const boletins: Boletim[] = await Promise.all(
-        response.boletins.map(async (boletim: any) => {
-          try {
-            // Tentar buscar contagem real apenas quando necessário
-            const boletimDetalhado = await conLicitacaoAPI.getBoletimData(boletim.id);
-            return {
-              id: boletim.id,
-              numero_edicao: boletim.numero_edicao,
-              datahora_fechamento: boletim.datahora_fechamento,
-              filtro_id: boletim.filtro_id,
-              quantidade_licitacoes: (boletimDetalhado.licitacoes || []).length,
-              quantidade_acompanhamentos: (boletimDetalhado.acompanhamentos || []).length,
-              visualizado: this.viewedBoletins.has(boletim.id),
-            };
-          } catch (error) {
-            // Em caso de erro, usar dados básicos
-            return {
-              id: boletim.id,
-              numero_edicao: boletim.numero_edicao,
-              datahora_fechamento: boletim.datahora_fechamento,
-              filtro_id: boletim.filtro_id,
-              quantidade_licitacoes: boletim.quantidade_licitacoes || 0,
-              quantidade_acompanhamentos: boletim.quantidade_acompanhamentos || 0,
-              visualizado: this.viewedBoletins.has(boletim.id),
-            };
+      // Processar boletins sequencialmente para evitar condições de corrida
+      const boletins: Boletim[] = [];
+      for (const boletim of response.boletins) {
+        try {
+          // Buscar dados detalhados específicos para este boletim
+          console.log(`📥 Processando boletim ${boletim.id} (edição ${boletim.numero_edicao})...`);
+          const boletimDetalhado = await conLicitacaoAPI.getBoletimData(boletim.id);
+          
+          // Validar que os dados correspondem ao boletim correto
+          if (boletimDetalhado.boletim && boletimDetalhado.boletim.id !== boletim.id) {
+            console.warn(`⚠️ Dados inconsistentes: esperado boletim ${boletim.id}, recebido ${boletimDetalhado.boletim.id}`);
           }
-        })
-      );
+          
+          const boletimProcessado = {
+            id: boletim.id,
+            numero_edicao: boletim.numero_edicao,
+            datahora_fechamento: boletim.datahora_fechamento,
+            filtro_id: boletim.filtro_id,
+            quantidade_licitacoes: (boletimDetalhado.licitacoes || []).length,
+            quantidade_acompanhamentos: (boletimDetalhado.acompanhamentos || []).length,
+            visualizado: this.viewedBoletins.has(boletim.id),
+          };
+          
+          console.log(`✅ Boletim ${boletim.id} (edição ${boletim.numero_edicao}): ${boletimProcessado.quantidade_licitacoes} licitações, ${boletimProcessado.quantidade_acompanhamentos} acompanhamentos`);
+          boletins.push(boletimProcessado);
+          
+        } catch (error) {
+          console.warn(`⚠️ Erro ao processar boletim ${boletim.id}, usando dados básicos`);
+          // Em caso de erro, usar dados básicos
+          boletins.push({
+            id: boletim.id,
+            numero_edicao: boletim.numero_edicao,
+            datahora_fechamento: boletim.datahora_fechamento,
+            filtro_id: boletim.filtro_id,
+            quantidade_licitacoes: boletim.quantidade_licitacoes || 0,
+            quantidade_acompanhamentos: boletim.quantidade_acompanhamentos || 0,
+            visualizado: this.viewedBoletins.has(boletim.id),
+          });
+        }
+      }
 
       return {
         boletins,
