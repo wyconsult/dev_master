@@ -47,6 +47,8 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
   private cachedBiddings: Map<number, Bidding>; // Cache das licitações
   private lastCacheUpdate: number;
   private readonly CACHE_DURATION = 10 * 60 * 1000; // 10 minutos
+  private boletimCache = new Map<number, { data: any, timestamp: number }>();
+  private readonly CACHE_TTL = 5 * 60 * 1000; // 5 minutos
 
   constructor() {
     this.users = new Map();
@@ -140,48 +142,22 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
     try {
       const response = await conLicitacaoAPI.getBoletins(filtroId, page, perPage);
       
-      // Implementação simplificada: usar dados da API quando disponível
-      // Para contagem dinâmica em produção, será necessário fazer chamadas adicionais
-      // Processar boletins sequencialmente para evitar condições de corrida
-      const boletins: Boletim[] = [];
-      for (const boletim of response.boletins) {
-        try {
-          // Buscar dados detalhados específicos para este boletim
-          console.log(`📥 Processando boletim ${boletim.id} (edição ${boletim.numero_edicao})...`);
-          const boletimDetalhado = await conLicitacaoAPI.getBoletimData(boletim.id);
-          
-          // Validar que os dados correspondem ao boletim correto
-          if (boletimDetalhado.boletim && boletimDetalhado.boletim.id !== boletim.id) {
-            console.warn(`⚠️ Dados inconsistentes: esperado boletim ${boletim.id}, recebido ${boletimDetalhado.boletim.id}`);
-          }
-          
-          const boletimProcessado = {
-            id: boletim.id,
-            numero_edicao: boletim.numero_edicao,
-            datahora_fechamento: boletim.datahora_fechamento,
-            filtro_id: boletim.filtro_id,
-            quantidade_licitacoes: (boletimDetalhado.licitacoes || []).length,
-            quantidade_acompanhamentos: (boletimDetalhado.acompanhamentos || []).length,
-            visualizado: this.viewedBoletins.has(boletim.id),
-          };
-          
-          console.log(`✅ Boletim ${boletim.id} (edição ${boletim.numero_edicao}): ${boletimProcessado.quantidade_licitacoes} licitações, ${boletimProcessado.quantidade_acompanhamentos} acompanhamentos`);
-          boletins.push(boletimProcessado);
-          
-        } catch (error) {
-          console.warn(`⚠️ Erro ao processar boletim ${boletim.id}, usando dados básicos`);
-          // Em caso de erro, usar dados básicos
-          boletins.push({
-            id: boletim.id,
-            numero_edicao: boletim.numero_edicao,
-            datahora_fechamento: boletim.datahora_fechamento,
-            filtro_id: boletim.filtro_id,
-            quantidade_licitacoes: boletim.quantidade_licitacoes || 0,
-            quantidade_acompanhamentos: boletim.quantidade_acompanhamentos || 0,
-            visualizado: this.viewedBoletins.has(boletim.id),
-          });
-        }
-      }
+      // OTIMIZAÇÃO: Usar dados básicos da API principal quando disponíveis
+      // Só buscar dados detalhados quando realmente necessário (ao visualizar boletim)
+      const boletins: Boletim[] = response.boletins.map((boletim: any) => ({
+        id: boletim.id,
+        numero_edicao: boletim.numero_edicao,
+        datahora_fechamento: boletim.datahora_fechamento,
+        filtro_id: boletim.filtro_id,
+        quantidade_licitacoes: boletim.quantidade_licitacoes || 0,
+        quantidade_acompanhamentos: boletim.quantidade_acompanhamentos || 0,
+        visualizado: this.viewedBoletins.has(boletim.id),
+      }));
+      
+      console.log(`✅ Carregados ${boletins.length} boletins rapidamente usando dados básicos da API`);
+      
+      // Pré-carregar alguns boletins em segundo plano se necessário (opcional)
+      this.preloadRecentBoletins(boletins.slice(0, 3)); // Só os 3 mais recentes
 
       return {
         boletins,
@@ -235,11 +211,53 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
     }
   }
 
+  // Método para pré-carregamento otimizado em segundo plano
+  private async preloadRecentBoletins(boletins: Boletim[]): Promise<void> {
+    // Executa em segundo plano sem bloquear resposta principal
+    setTimeout(async () => {
+      console.log(`🚀 Iniciando pré-carregamento de ${boletins.length} boletins em segundo plano...`);
+      
+      const promises = boletins.map(async (boletim) => {
+        try {
+          // Verificar se já está em cache
+          const cached = this.boletimCache.get(boletim.id);
+          if (cached && (Date.now() - cached.timestamp < this.CACHE_TTL)) {
+            return; // Já em cache válido
+          }
+          
+          const data = await conLicitacaoAPI.getBoletimData(boletim.id);
+          this.boletimCache.set(boletim.id, { data, timestamp: Date.now() });
+          console.log(`✅ Boletim ${boletim.id} pré-carregado e cacheado`);
+        } catch (error) {
+          console.warn(`⚠️ Falha ao pré-carregar boletim ${boletim.id}`);
+        }
+      });
+      
+      await Promise.allSettled(promises);
+      console.log(`🎯 Pré-carregamento concluído`);
+    }, 100); // Pequeno delay para não interferir na resposta principal
+  }
+
+  // Método otimizado para obter dados de boletim com cache
+  private async getCachedBoletimData(id: number): Promise<any> {
+    // Verificar cache primeiro
+    const cached = this.boletimCache.get(id);
+    if (cached && (Date.now() - cached.timestamp < this.CACHE_TTL)) {
+      console.log(`🎯 Cache hit para boletim ${id}`);
+      return cached.data;
+    }
+    
+    console.log(`📡 Buscando dados frescos para boletim ${id}`);
+    const data = await conLicitacaoAPI.getBoletimData(id);
+    this.boletimCache.set(id, { data, timestamp: Date.now() });
+    return data;
+  }
+
 
 
   async getBoletim(id: number): Promise<{ boletim: Boletim, licitacoes: Bidding[], acompanhamentos: Acompanhamento[] } | undefined> {
     try {
-      const response = await conLicitacaoAPI.getBoletimData(id);
+      const response = await this.getCachedBoletimData(id);
       
       // Transformar licitações e acompanhamentos primeiro para contar corretamente
       const licitacoes: Bidding[] = (response.licitacoes || []).map((licitacao: any) => this.transformLicitacaoFromAPI(licitacao, id));
