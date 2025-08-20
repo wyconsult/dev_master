@@ -367,7 +367,7 @@ export default function Boletins() {
                         <div className="flex flex-col h-full pt-3 md:pt-4 px-1 md:px-0.5 pb-0.5 pointer-events-none gap-0.5 md:gap-0.5">
                           {/* Manhã */}
                           <div className={cn(
-                            "h-2.5 md:h-5 flex items-center justify-center text-[6px] md:text-[10px] font-bold text-white rounded-sm text-center w-full",
+                            "flex-1 md:h-5 flex items-center justify-center text-[8px] md:text-[10px] font-bold text-white rounded-sm text-center w-full",
                             manhaBoletins.length > 0 
                               ? manhaBoletins.some(b => !b.visualizado) 
                                 ? "bg-green-500" 
@@ -376,12 +376,12 @@ export default function Boletins() {
                           )}
                           title={manhaBoletins.length > 0 ? `${manhaBoletins.length} boletim(s) - Manhã` : ''}
                           >
-                            <span className="w-full text-center truncate px-0.5 md:px-1 leading-none">{manhaBoletins.length > 0 ? (isMobile ? 'M' : 'Manhã') : ''}</span>
+                            <span className="truncate px-0.5 md:px-1 leading-none">{manhaBoletins.length > 0 ? (isMobile ? 'M' : 'Manhã') : ''}</span>
                           </div>
 
                           {/* Tarde */}
                           <div className={cn(
-                            "h-2.5 md:h-5 flex items-center justify-center text-[6px] md:text-[10px] font-bold text-white rounded-sm text-center w-full",
+                            "flex-1 md:h-5 flex items-center justify-center text-[8px] md:text-[10px] font-bold text-white rounded-sm text-center w-full",
                             tardeBoletins.length > 0 
                               ? tardeBoletins.some(b => !b.visualizado) 
                                 ? "bg-green-500" 
@@ -390,12 +390,12 @@ export default function Boletins() {
                           )}
                           title={tardeBoletins.length > 0 ? `${tardeBoletins.length} boletim(s) - Tarde` : ''}
                           >
-                            <span className="w-full text-center truncate px-0.5 md:px-1 leading-none">{tardeBoletins.length > 0 ? (isMobile ? 'T' : 'Tarde') : ''}</span>
+                            <span className="truncate px-0.5 md:px-1 leading-none">{tardeBoletins.length > 0 ? (isMobile ? 'T' : 'Tarde') : ''}</span>
                           </div>
 
                           {/* Noite */}
                           <div className={cn(
-                            "h-2.5 md:h-5 flex items-center justify-center text-[6px] md:text-[10px] font-bold text-white rounded-sm text-center w-full",
+                            "flex-1 md:h-5 flex items-center justify-center text-[8px] md:text-[10px] font-bold text-white rounded-sm text-center w-full",
                             noiteBoletins.length > 0 
                               ? noiteBoletins.some(b => !b.visualizado) 
                                 ? "bg-green-500" 
@@ -404,7 +404,7 @@ export default function Boletins() {
                           )}
                           title={noiteBoletins.length > 0 ? `${noiteBoletins.length} boletim(s) - Noite` : ''}
                           >
-                            <span className="w-full text-center truncate px-0.5 md:px-1 leading-none">{noiteBoletins.length > 0 ? (isMobile ? 'N' : 'Noite') : ''}</span>
+                            <span className="truncate px-0.5 md:px-1 leading-none">{noiteBoletins.length > 0 ? (isMobile ? 'N' : 'Noite') : ''}</span>
                           </div>
                         </div>
                       </div>
