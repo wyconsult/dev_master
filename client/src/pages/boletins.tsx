@@ -363,58 +363,92 @@ export default function Boletins() {
                           {date.getDate()}
                         </div>
 
-                        {/* Área das tarjas (mobile: divide igualmente; desktop: mantém altura fixa) */}
-                        <div
-                          className="absolute inset-x-1 md:inset-x-0.5 top-4 md:top-5 bottom-1 flex flex-col gap-[1px] md:gap-0.5 pointer-events-none"
-                        >
+                        {/* TARJAS — MOBILE (empilhadas com "pill", ocupando bem o espaço) */}
+                        <div className="absolute inset-x-1 top-5 bottom-2 flex flex-col gap-2 pointer-events-none md:hidden">
                           {/* Manhã */}
                           <div
                             className={cn(
-                              "flex-1 md:flex-none md:h-5 flex items-center justify-center text-[7px] md:text-[10px] font-bold text-white rounded-[2px] md:rounded-sm text-center w-full overflow-hidden min-h-0",
+                              "flex-1 w-full flex items-center justify-center rounded-xl text-white font-bold text-[10px] overflow-hidden",
                               manhaBoletins.length > 0
-                                ? manhaBoletins.some(b => !b.visualizado)
-                                  ? "bg-green-500"
-                                  : "bg-gray-400"
+                                ? (manhaBoletins.some(b => !b.visualizado) ? "bg-green-500" : "bg-gray-400")
                                 : "bg-gray-100 text-gray-400"
                             )}
                             title={manhaBoletins.length > 0 ? `${manhaBoletins.length} boletim(s) - Manhã` : ""}
                           >
-                            <span className="truncate px-0.5 md:px-1 leading-none">
-                              {manhaBoletins.length > 0 ? (isMobile ? "M" : "Manhã") : ""}
+                            <span className="truncate px-1 leading-none">
+                              {manhaBoletins.length > 0 ? "Manhã" : ""}
                             </span>
                           </div>
 
                           {/* Tarde */}
                           <div
                             className={cn(
-                              "flex-1 md:flex-none md:h-5 flex items-center justify-center text-[7px] md:text-[10px] font-bold text-white rounded-[2px] md:rounded-sm text-center w-full overflow-hidden min-h-0",
+                              "flex-1 w-full flex items-center justify-center rounded-xl text-white font-bold text-[10px] overflow-hidden",
                               tardeBoletins.length > 0
-                                ? tardeBoletins.some(b => !b.visualizado)
-                                  ? "bg-green-500"
-                                  : "bg-gray-400"
+                                ? (tardeBoletins.some(b => !b.visualizado) ? "bg-green-500" : "bg-gray-400")
                                 : "bg-gray-100 text-gray-400"
                             )}
                             title={tardeBoletins.length > 0 ? `${tardeBoletins.length} boletim(s) - Tarde` : ""}
                           >
-                            <span className="truncate px-0.5 md:px-1 leading-none">
-                              {tardeBoletins.length > 0 ? (isMobile ? "T" : "Tarde") : ""}
+                            <span className="truncate px-1 leading-none">
+                              {tardeBoletins.length > 0 ? "Tarde" : ""}
                             </span>
                           </div>
 
                           {/* Noite */}
                           <div
                             className={cn(
-                              "flex-1 md:flex-none md:h-5 flex items-center justify-center text-[7px] md:text-[10px] font-bold text-white rounded-[2px] md:rounded-sm text-center w-full overflow-hidden min-h-0",
+                              "flex-1 w-full flex items-center justify-center rounded-xl text-white font-bold text-[10px] overflow-hidden",
                               noiteBoletins.length > 0
-                                ? noiteBoletins.some(b => !b.visualizado)
-                                  ? "bg-green-500"
-                                  : "bg-gray-400"
+                                ? (noiteBoletins.some(b => !b.visualizado) ? "bg-green-500" : "bg-gray-400")
                                 : "bg-gray-100 text-gray-400"
                             )}
                             title={noiteBoletins.length > 0 ? `${noiteBoletins.length} boletim(s) - Noite` : ""}
                           >
-                            <span className="truncate px-0.5 md:px-1 leading-none">
-                              {noiteBoletins.length > 0 ? (isMobile ? "N" : "Noite") : ""}
+                            <span className="truncate px-1 leading-none">
+                              {noiteBoletins.length > 0 ? "Noite" : ""}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* TARJAS — DESKTOP (seu layout atual, intacto) */}
+                        <div className="hidden md:flex md:flex-col md:h-full md:pt-4 md:px-0.5 md:pb-0.5 md:gap-0.5 pointer-events-none">
+                          <div
+                            className={cn(
+                              "md:h-5 flex items-center justify-center text-[10px] font-bold text-white rounded-sm w-full overflow-hidden",
+                              manhaBoletins.length > 0
+                                ? (manhaBoletins.some(b => !b.visualizado) ? "bg-green-500" : "bg-gray-400")
+                                : "bg-gray-100 text-gray-400"
+                            )}
+                          >
+                            <span className="truncate px-1 leading-none">
+                              {manhaBoletins.length > 0 ? "Manhã" : ""}
+                            </span>
+                          </div>
+
+                          <div
+                            className={cn(
+                              "md:h-5 flex items-center justify-center text-[10px] font-bold text-white rounded-sm w-full overflow-hidden",
+                              tardeBoletins.length > 0
+                                ? (tardeBoletins.some(b => !b.visualizado) ? "bg-green-500" : "bg-gray-400")
+                                : "bg-gray-100 text-gray-400"
+                            )}
+                          >
+                            <span className="truncate px-1 leading-none">
+                              {tardeBoletins.length > 0 ? "Tarde" : ""}
+                            </span>
+                          </div>
+
+                          <div
+                            className={cn(
+                              "md:h-5 flex items-center justify-center text-[10px] font-bold text-white rounded-sm w-full overflow-hidden",
+                              noiteBoletins.length > 0
+                                ? (noiteBoletins.some(b => !b.visualizado) ? "bg-green-500" : "bg-gray-400")
+                                : "bg-gray-100 text-gray-400"
+                            )}
+                          >
+                            <span className="truncate px-1 leading-none">
+                              {noiteBoletins.length > 0 ? "Noite" : ""}
                             </span>
                           </div>
                         </div>
