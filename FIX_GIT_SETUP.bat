@@ -1,6 +1,6 @@
 @echo off
 echo ===============================================
-echo GIT SETUP + SYNC GITHUB - LICITATRAKER v2.7
+echo GIT SETUP + SYNC GITHUB - LICITATRAKER v2.8
 echo ===============================================
 echo.
 echo Este script vai:
@@ -71,7 +71,7 @@ git add -A
 
 echo.
 echo 12) Commitando com mensagem atualizada...
-git commit -m "Sistema v2.7 - CONTAGEM CORRIGIDA: Sistema híbrido performance+precisão - cache inteligente, contagens reais via API detalhada, processamento paralelo, primeiro load preciso, subsequentes instantâneos via cache" || echo "Nada para commitar"
+git commit -m "Sistema v2.8 - PDF ORDENAÇÃO CRONOLÓGICA: Datas em ordem crescente 22/08→04/09→12/09, Não informado sempre por último, sistema P1-P5 mantido (Abertura→Prazo→Documento→Retirada→Visita)" || echo "Nada para commitar"
 
 echo.
 echo 13) Enviando para GitHub...
@@ -87,7 +87,10 @@ echo ===============================================
 echo ✅ SYNC GIT CONCLUÍDO COM SUCESSO!
 echo ===============================================
 echo.
-echo === FUNCIONALIDADES v2.7 IMPLEMENTADAS ===
+echo === FUNCIONALIDADES v2.8 IMPLEMENTADAS ===
+echo • PDF ORDENAÇÃO CRONOLÓGICA: Datas em ordem crescente corrigida
+echo • Sequência: 22/08/2025 → 04/09/2025 → 12/09/2025
+echo • "Não informado" sempre aparece por último no PDF
 echo • CONTAGEM CORRIGIDA: Números reais de licitações/acompanhamentos
 echo • Sistema híbrido: performance + precisão de dados
 echo • Cache inteligente: primeiro load preciso, subsequentes instantâneos

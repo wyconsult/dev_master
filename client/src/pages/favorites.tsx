@@ -177,9 +177,50 @@ export default function Favorites() {
     const dateToStr = dateRange.to ? format(dateRange.to, "dd/MM/yyyy") : "";
     const filterTypeLabel = dateFilterType === "favorito" ? "Data de inclusão favorito" : "Data de realização";
     
+    // CORREÇÃO: Ordenar favoritos por data cronológica crescente antes de gerar PDF
+    // "Não informado" sempre por último
+    const sortedFavorites = [...filteredFavorites].sort((a, b) => {
+      // Função para extrair data com prioridade P1-P5
+      const getEarliestDate = (bidding: any) => {
+        const datePriorities = [
+          'datahora_abertura',
+          'datahora_prazo', 
+          'datahora_documento',
+          'datahora_retirada',
+          'datahora_visita'
+        ];
+
+        for (const dateKey of datePriorities) {
+          const dateValue = bidding[dateKey];
+          if (dateValue && dateValue.trim() !== "") {
+            try {
+              return new Date(dateValue);
+            } catch (error) {
+              continue;
+            }
+          }
+        }
+        return null; // Não informado
+      };
+
+      const dateA = getEarliestDate(a);
+      const dateB = getEarliestDate(b);
+
+      // Lógica de ordenação: datas válidas primeiro (crescente), "Não informado" por último
+      if (dateA && dateB) {
+        return dateA.getTime() - dateB.getTime(); // Ordem cronológica crescente
+      } else if (dateA && !dateB) {
+        return -1; // A tem data, B não - A vem primeiro
+      } else if (!dateA && dateB) {
+        return 1; // A não tem data, B tem - B vem primeiro
+      } else {
+        return 0; // Ambos "Não informado" - manter ordem original
+      }
+    });
+    
     let htmlRows = "";
     
-    filteredFavorites.forEach((bidding) => {
+    sortedFavorites.forEach((bidding) => {
       const any = bidding as any;
       
       // Extrair dados do bidding
@@ -363,7 +404,7 @@ export default function Favorites() {
         <div class="info">
           <p><strong>Filtro aplicado:</strong> ${filterTypeLabel}</p>
           <p><strong>Período:</strong> ${dateFromStr} até ${dateToStr}</p>
-          <p><strong>Total de registros:</strong> ${filteredFavorites.length}</p>
+          <p><strong>Total de registros:</strong> ${sortedFavorites.length}</p>
         </div>
         
         <table class="no-break">
