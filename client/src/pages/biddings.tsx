@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import * as React from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Navbar } from "@/components/navbar";
 import { Button } from "@/components/ui/button";
@@ -87,6 +88,18 @@ export default function Biddings() {
     enabled: true,
     refetchInterval: false,
   });
+
+  // Debug específico para mobile
+  React.useEffect(() => {
+    if (typeof window !== 'undefined') {
+      console.log('[MOBILE DEBUG] Biddings page loaded');
+      console.log('[MOBILE DEBUG] Window width:', window.innerWidth);
+      console.log('[MOBILE DEBUG] User agent:', navigator.userAgent.includes('Mobile'));
+      console.log('[MOBILE DEBUG] Biddings data:', allBiddings?.length || 0);
+      console.log('[MOBILE DEBUG] Loading state:', isLoading);
+      if (error) console.error('[MOBILE DEBUG] Biddings error:', error);
+    }
+  }, [allBiddings, isLoading, error]);
 
   // Debug para verificar o estado
   console.log("Biddings Query State:", { isLoading, error, dataLength: allBiddings.length });
