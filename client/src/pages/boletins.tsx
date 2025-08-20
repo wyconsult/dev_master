@@ -326,7 +326,7 @@ export default function Boletins() {
                 {/* Grade do calendário com design fixo */}
                 <div className="grid grid-cols-7 gap-1">
                   {Array.from({ length: monthStart.getDay() }).map((_, index) => (
-                    <div key={`empty-${index}`} className="h-20 md:h-24"></div>
+                    <div key={`empty-${index}`} className="h-24 md:h-24"></div>
                   ))}
                   
                   {daysInMonth.map((date, index) => {
@@ -343,7 +343,7 @@ export default function Boletins() {
                       <div
                         key={index}
                         className={cn(
-                          "relative w-full h-20 md:h-24 border rounded-lg overflow-hidden cursor-pointer transition-all",
+                          "relative w-full h-24 md:h-24 border rounded-lg overflow-hidden cursor-pointer transition-all",
                           isCurrentMonth ? "bg-white" : "bg-gray-50/50",
                           isCurrentDay && "ring-2 ring-blue-500",
                           isSelectedDate && "ring-2 ring-green-500 bg-green-50",
@@ -355,7 +355,7 @@ export default function Boletins() {
                       >
                         {/* Número do dia */}
                         <div className={cn(
-                          "absolute top-1 left-1 text-xs font-bold z-10",
+                          "absolute top-0.5 left-0.5 text-xs font-bold z-10",
                           isCurrentMonth ? "text-gray-900" : "text-gray-400",
                           isCurrentDay && "text-blue-600",
                           isSelectedDate && "text-green-600"
@@ -363,11 +363,11 @@ export default function Boletins() {
                           {date.getDate()}
                         </div>
 
-                        {/* Três seções: Manhã, Tarde, Noite */}
-                        <div className="flex flex-col h-full pt-5 px-1 pb-1 pointer-events-none">
+                        {/* Três seções: Manhã, Tarde, Noite - Mobile otimizado */}
+                        <div className="flex flex-col h-full pt-4 px-0.5 pb-0.5 pointer-events-none">
                           {/* Manhã */}
                           <div className={cn(
-                            "h-4 md:h-5 flex items-center justify-center text-[9px] md:text-[10px] font-bold text-white rounded-sm mx-0.5 mb-0.5 text-center w-full",
+                            "h-4 md:h-5 flex items-center justify-center text-[8px] md:text-[10px] font-bold text-white rounded-sm mb-0.5 text-center w-full",
                             manhaBoletins.length > 0 
                               ? manhaBoletins.some(b => !b.visualizado) 
                                 ? "bg-green-500" 
@@ -376,12 +376,12 @@ export default function Boletins() {
                           )}
                           title={manhaBoletins.length > 0 ? `${manhaBoletins.length} boletim(s) - Manhã` : ''}
                           >
-                            <span className="w-full text-center">{manhaBoletins.length > 0 ? 'Manhã' : ''}</span>
+                            <span className="w-full text-center truncate px-1">{manhaBoletins.length > 0 ? (isMobile ? 'M' : 'Manhã') : ''}</span>
                           </div>
 
                           {/* Tarde */}
                           <div className={cn(
-                            "h-4 md:h-5 flex items-center justify-center text-[9px] md:text-[10px] font-bold text-white rounded-sm mx-0.5 mb-0.5 text-center w-full",
+                            "h-4 md:h-5 flex items-center justify-center text-[8px] md:text-[10px] font-bold text-white rounded-sm mb-0.5 text-center w-full",
                             tardeBoletins.length > 0 
                               ? tardeBoletins.some(b => !b.visualizado) 
                                 ? "bg-green-500" 
@@ -390,12 +390,12 @@ export default function Boletins() {
                           )}
                           title={tardeBoletins.length > 0 ? `${tardeBoletins.length} boletim(s) - Tarde` : ''}
                           >
-                            <span className="w-full text-center">{tardeBoletins.length > 0 ? 'Tarde' : ''}</span>
+                            <span className="w-full text-center truncate px-1">{tardeBoletins.length > 0 ? (isMobile ? 'T' : 'Tarde') : ''}</span>
                           </div>
 
                           {/* Noite */}
                           <div className={cn(
-                            "h-4 md:h-5 flex items-center justify-center text-[9px] md:text-[10px] font-bold text-white rounded-sm mx-0.5 text-center w-full",
+                            "h-4 md:h-5 flex items-center justify-center text-[8px] md:text-[10px] font-bold text-white rounded-sm text-center w-full",
                             noiteBoletins.length > 0 
                               ? noiteBoletins.some(b => !b.visualizado) 
                                 ? "bg-green-500" 
@@ -404,7 +404,7 @@ export default function Boletins() {
                           )}
                           title={noiteBoletins.length > 0 ? `${noiteBoletins.length} boletim(s) - Noite` : ''}
                           >
-                            <span className="w-full text-center">{noiteBoletins.length > 0 ? 'Noite' : ''}</span>
+                            <span className="w-full text-center truncate px-1">{noiteBoletins.length > 0 ? (isMobile ? 'N' : 'Noite') : ''}</span>
                           </div>
                         </div>
                       </div>

@@ -1,6 +1,6 @@
 @echo off
 echo ===============================================
-echo GIT SETUP + SYNC GITHUB - LICITATRAKER v2.8
+echo GIT SETUP + SYNC GITHUB - LICITATRAKER v2.9
 echo ===============================================
 echo.
 echo Este script vai:
@@ -71,7 +71,7 @@ git add -A
 
 echo.
 echo 12) Commitando com mensagem atualizada...
-git commit -m "Sistema v2.8 - PDF ORDENAÇÃO CRONOLÓGICA: Datas em ordem crescente 22/08→04/09→12/09, Não informado sempre por último, sistema P1-P5 mantido (Abertura→Prazo→Documento→Retirada→Visita)" || echo "Nada para commitar"
+git commit -m "Sistema v2.9 - MOBILE RESPONSIVO: Calendário otimizado tarjas M/T/N, Categorização scroll/busca funcionando, PopoverContent responsivo 100vw, Touch scroll CSS otimizado" || echo "Nada para commitar"
 
 echo.
 echo 13) Enviando para GitHub...
@@ -87,7 +87,12 @@ echo ===============================================
 echo ✅ SYNC GIT CONCLUÍDO COM SUCESSO!
 echo ===============================================
 echo.
-echo === FUNCIONALIDADES v2.8 IMPLEMENTADAS ===
+echo === FUNCIONALIDADES v2.9 IMPLEMENTADAS ===
+echo • MOBILE RESPONSIVO: Calendário e categorização otimizados
+echo • Calendário: Tarjas M/T/N compactas, altura 24px consistente
+echo • Categorização: Barra busca funcionando + scroll touch corrigido
+echo • PopoverContent: Largura responsiva calc(100vw-2rem)
+echo • Touch scroll: CSS otimizado com -webkit-overflow-scrolling
 echo • PDF ORDENAÇÃO CRONOLÓGICA: Datas em ordem crescente corrigida
 echo • Sequência: 22/08/2025 → 04/09/2025 → 12/09/2025
 echo • "Não informado" sempre aparece por último no PDF

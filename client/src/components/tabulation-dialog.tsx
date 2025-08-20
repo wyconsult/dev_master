@@ -272,13 +272,18 @@ export function TabulationDialog({
                       <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                     </Button>
                   </PopoverTrigger>
-                  <PopoverContent className="w-[400px] p-0 z-[60] bg-white border shadow-lg">
+                  <PopoverContent className="w-[calc(100vw-2rem)] md:w-[400px] p-0 z-[60] bg-white border shadow-lg">
                     <Command className="bg-white">
-                      <CommandInput placeholder="Buscar site..." className="h-9" />
-                      <CommandList className="max-h-60 overflow-y-auto">
-                        <CommandEmpty>Nenhum site encontrado.</CommandEmpty>
+                      <CommandInput 
+                        placeholder="Buscar site..." 
+                        className="h-9 border-0 focus:ring-0 text-base md:text-sm" 
+                      />
+                      <CommandList className="max-h-48 md:max-h-60 overflow-y-auto touch-scroll overscroll-contain">
+                        <CommandEmpty className="py-6 text-sm text-gray-500">
+                          Nenhum site encontrado.
+                        </CommandEmpty>
                         <CommandGroup>
-                          {SITES_LIST.map((site, index) => (
+                          {allSites.map((site, index) => (
                             <CommandItem
                               key={index}
                               value={site}
@@ -286,12 +291,12 @@ export function TabulationDialog({
                                 setSelectedSite(currentValue === selectedSite ? "" : currentValue);
                                 setSiteOpen(false);
                               }}
-                              className="cursor-pointer hover:bg-gray-100"
+                              className="cursor-pointer hover:bg-gray-100 py-3 px-3 text-sm touch-manipulation"
                             >
-                              {site}
+                              <span className="truncate pr-2">{site}</span>
                               <Check
                                 className={cn(
-                                  "ml-auto h-4 w-4",
+                                  "ml-auto h-4 w-4 shrink-0",
                                   selectedSite === site ? "opacity-100" : "opacity-0"
                                 )}
                               />

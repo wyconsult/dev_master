@@ -3,6 +3,27 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Mobile touch scroll optimization */
+@layer base {
+  /* Melhoria para scroll touch em mobile */
+  .touch-scroll {
+    -webkit-overflow-scrolling: touch;
+    overflow-scrolling: touch;
+    overscroll-behavior: contain;
+  }
+  
+  /* Command List mobile otimizado */
+  [cmdk-list] {
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-y;
+  }
+  
+  /* PopoverContent mobile responsivo */
+  [data-radix-popper-content-wrapper] {
+    z-index: 60 !important;
+  }
+}
+
 @layer base {
   :root {
     --background: 0 0% 100%;
