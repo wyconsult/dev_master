@@ -71,7 +71,7 @@ git add -A
 
 echo.
 echo 12) Commitando com mensagem atualizada...
-git commit -m "Sistema v2.9 - MOBILE RESPONSIVO: Calendário otimizado tarjas M/T/N, Categorização scroll/busca funcionando, PopoverContent responsivo 100vw, Touch scroll CSS otimizado" || echo "Nada para commitar"
+git commit -m "Sistema v2.9 - MOBILE RESPONSIVO FINAL: Tarjas calendário posição absoluta bottom, altura 3px, só aparecem quando há boletins, M/T/N compacto mobile, scroll categorização corrigido" || echo "Nada para commitar"
 
 echo.
 echo 13) Enviando para GitHub...
