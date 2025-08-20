@@ -376,7 +376,7 @@ export default function Boletins() {
                             title={manhaBoletins.length > 0 ? `${manhaBoletins.length} boletim(s) - Manhã` : ""}
                           >
                             <span className="truncate px-1 leading-none">
-                              {manhaBoletins.length > 0 ? "Manhã" : ""}
+                              {manhaBoletins.length > 0 ? "M" : ""}
                             </span>
                           </div>
 
@@ -391,7 +391,7 @@ export default function Boletins() {
                             title={tardeBoletins.length > 0 ? `${tardeBoletins.length} boletim(s) - Tarde` : ""}
                           >
                             <span className="truncate px-1 leading-none">
-                              {tardeBoletins.length > 0 ? "Tarde" : ""}
+                              {tardeBoletins.length > 0 ? "T" : ""}
                             </span>
                           </div>
 
@@ -406,7 +406,7 @@ export default function Boletins() {
                             title={noiteBoletins.length > 0 ? `${noiteBoletins.length} boletim(s) - Noite` : ""}
                           >
                             <span className="truncate px-1 leading-none">
-                              {noiteBoletins.length > 0 ? "Noite" : ""}
+                              {noiteBoletins.length > 0 ? "N" : ""}
                             </span>
                           </div>
                         </div>
