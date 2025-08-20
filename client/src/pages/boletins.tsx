@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import * as React from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Navbar } from "@/components/navbar";
 import { Button } from "@/components/ui/button";
@@ -21,9 +22,21 @@ export default function Boletins() {
   const queryClient = useQueryClient();
   const isMobile = useIsMobile();
 
-  const { data: boletins = [], isLoading } = useQuery<Boletim[]>({
+  const { data: boletins = [], isLoading, error } = useQuery<Boletim[]>({
     queryKey: ["/api/boletins"],
+    retry: 3,
+    staleTime: 5 * 60 * 1000, // 5 minutos
   });
+
+  // Debug para mobile
+  React.useEffect(() => {
+    if (typeof window !== 'undefined') {
+      console.log('[MOBILE DEBUG] Boletins page loaded - isMobile:', isMobile);
+      console.log('[MOBILE DEBUG] Boletins data:', boletins?.length || 0);
+      console.log('[MOBILE DEBUG] Loading state:', isLoading);
+      if (error) console.error('[MOBILE DEBUG] Error:', error);
+    }
+  }, [isMobile, boletins, isLoading, error]);
 
   // Query para buscar dados específicos do boletim selecionado
   const { data: boletimData, isLoading: isLoadingBoletimData } = useQuery<{
