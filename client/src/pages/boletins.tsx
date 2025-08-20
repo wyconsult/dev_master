@@ -364,7 +364,7 @@ export default function Boletins() {
                         </div>
 
                         {/* TARJAS — MOBILE (empilhadas com "pill", ocupando bem o espaço) */}
-                        <div className="absolute left-4 right-4 top-5 bottom-3 flex flex-col gap-0.5 pointer-events-none md:hidden">
+                        <div className="absolute left-4 right-0 top-5 bottom-3 flex flex-col gap-0.5 pointer-events-none md:hidden">
                           {/* Manhã */}
                           {manhaBoletins.length > 0 && (
                             <div
