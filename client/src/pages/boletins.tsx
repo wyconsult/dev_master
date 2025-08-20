@@ -365,12 +365,12 @@ export default function Boletins() {
 
                         {/* Área das tarjas (mobile: divide igualmente; desktop: mantém altura fixa) */}
                         <div
-                          className="absolute inset-x-0 top-4 md:top-5 bottom-1 px-0.5 md:px-0.5 flex flex-col gap-[2px] md:gap-0.5 pointer-events-none"
+                          className="absolute inset-x-1 md:inset-x-0.5 top-4 md:top-5 bottom-1 flex flex-col gap-[1px] md:gap-0.5 pointer-events-none"
                         >
                           {/* Manhã */}
                           <div
                             className={cn(
-                              "flex-1 md:flex-none md:h-5 flex items-center justify-center text-[8px] md:text-[10px] font-bold text-white rounded-sm text-center w-full overflow-hidden",
+                              "flex-1 md:flex-none md:h-5 flex items-center justify-center text-[7px] md:text-[10px] font-bold text-white rounded-[2px] md:rounded-sm text-center w-full overflow-hidden min-h-0",
                               manhaBoletins.length > 0
                                 ? manhaBoletins.some(b => !b.visualizado)
                                   ? "bg-green-500"
@@ -387,7 +387,7 @@ export default function Boletins() {
                           {/* Tarde */}
                           <div
                             className={cn(
-                              "flex-1 md:flex-none md:h-5 flex items-center justify-center text-[8px] md:text-[10px] font-bold text-white rounded-sm text-center w-full overflow-hidden",
+                              "flex-1 md:flex-none md:h-5 flex items-center justify-center text-[7px] md:text-[10px] font-bold text-white rounded-[2px] md:rounded-sm text-center w-full overflow-hidden min-h-0",
                               tardeBoletins.length > 0
                                 ? tardeBoletins.some(b => !b.visualizado)
                                   ? "bg-green-500"
@@ -404,7 +404,7 @@ export default function Boletins() {
                           {/* Noite */}
                           <div
                             className={cn(
-                              "flex-1 md:flex-none md:h-5 flex items-center justify-center text-[8px] md:text-[10px] font-bold text-white rounded-sm text-center w-full overflow-hidden",
+                              "flex-1 md:flex-none md:h-5 flex items-center justify-center text-[7px] md:text-[10px] font-bold text-white rounded-[2px] md:rounded-sm text-center w-full overflow-hidden min-h-0",
                               noiteBoletins.length > 0
                                 ? noiteBoletins.some(b => !b.visualizado)
                                   ? "bg-green-500"
