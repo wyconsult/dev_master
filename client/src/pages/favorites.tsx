@@ -320,7 +320,23 @@ export default function Favorites() {
       let valorEstimado = "Não Informado";
       if (any.valorEstimado) {
         // Se valor estimado foi preenchido na categorização
-        const numericValue = parseFloat(any.valorEstimado.toString().replace(/[^\d,.-]/g, '').replace(',', '.'));
+        let cleanValue = any.valorEstimado.toString().replace(/[^\d,.]/g, '');
+        
+        // Tratar formato brasileiro: R$ 65.000,00 ou R$ 65.000 ou R$ 65000
+        if (cleanValue.includes('.') && cleanValue.includes(',')) {
+          // Formato: 65.000,00 - ponto é separador de milhares, vírgula é decimal
+          cleanValue = cleanValue.replace(/\./g, '').replace(',', '.');
+        } else if (cleanValue.includes('.') && !cleanValue.includes(',')) {
+          // Formato: 65.000 - assumir que ponto é separador de milhares se valor >= 1000
+          const parts = cleanValue.split('.');
+          if (parts.length === 2 && parts[1].length === 3) {
+            // Provável separador de milhares (ex: 65.000)
+            cleanValue = cleanValue.replace('.', '');
+          }
+          // Se for formato decimal americano (ex: 65.50), manter como está
+        }
+        
+        const numericValue = parseFloat(cleanValue);
         if (!isNaN(numericValue)) {
           valorEstimado = `R$ ${numericValue.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
         } else {
