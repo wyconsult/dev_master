@@ -45,7 +45,7 @@ export default function Dashboard() {
     const situacao = b.situacao?.toUpperCase();
     return situacao === "NOVA" || situacao === "ABERTA" || situacao === "ATIVA" || situacao === "URGENTE";
   }).length;
-  
+
   const totalBoletins = boletins.length;
   const boletinsNaoVisualizados = boletins.filter(b => !b.visualizado).length;
   const totalFavoritos = favorites.length;
@@ -88,7 +88,7 @@ export default function Dashboard() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
       <Navbar />
-      
+
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="mb-8 md:mb-12 text-center px-4">
@@ -96,7 +96,7 @@ export default function Dashboard() {
             <Gavel className="h-8 w-8 md:h-10 md:w-10" />
           </div>
           <h1 className="text-2xl md:text-4xl font-bold bg-gradient-to-r from-gray-900 to-blue-700 bg-clip-text text-transparent mb-2 md:mb-3">
-            Bem-vindo ao LicitaTraker
+            Bem-vindo ao JLG Consultoria
           </h1>
           <p className="text-lg md:text-xl text-gray-600 mb-1 md:mb-2">
             Olá, {user?.email?.split('@')[0]}! 👋
@@ -116,25 +116,25 @@ export default function Dashboard() {
                   <div className="absolute inset-0 opacity-5">
                     <div className="w-full h-full bg-gradient-to-br from-transparent to-black/10"></div>
                   </div>
-                  
+
                   <div className="flex flex-col items-center flex-grow">
                     <div className={`inline-flex items-center justify-center w-16 h-16 md:w-20 md:h-20 rounded-2xl ${card.gradient} ${card.hoverGradient} text-white mb-4 group-hover:scale-110 group-hover:rotate-3 transition-all duration-500 shadow-lg`}>
                       <card.icon className="h-8 w-8 md:h-10 md:w-10" />
                     </div>
-                    
+
                     <h3 className="text-xl md:text-2xl font-bold text-gray-900 mb-3">
                       {card.title}
                     </h3>
-                    
+
                     <p className="text-sm md:text-base text-gray-600 mb-4 leading-relaxed">
                       {card.description}
                     </p>
-                    
+
                     <div className="inline-flex items-center justify-center px-3 md:px-4 py-1.5 md:py-2 rounded-full bg-white/80 backdrop-blur-sm text-xs md:text-sm font-semibold text-gray-700 shadow-md border border-gray-200/50 mb-4">
                       {card.count}
                     </div>
                   </div>
-                  
+
                   <div className="mt-auto pt-4">
                     <Button 
                       variant="ghost" 

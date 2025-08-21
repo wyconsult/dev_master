@@ -17,49 +17,54 @@ import { useFavoriteCategorization } from "@/hooks/use-favorite-categorization";
 
 interface FavoriteCategorizationProps {
   bidding: Bidding;
-  currentCategory?: string;
-  currentCustomCategory?: string;
-  currentNotes?: string;
-  currentUf?: string;
-  currentCodigoUasg?: string;
-  currentValorEstimado?: string;
-  currentFornecedor?: string;
-  currentSite?: string;
+  isOpen: boolean;
+  onClose: () => void;
+  onSave: (data: {
+    category: string;
+    customCategory?: string;
+    notes?: string;
+    site?: string;
+    estimatedValue?: string;
+  }) => void;
+  initialCategory?: string;
+  initialCustomCategory?: string;
+  initialNotes?: string;
+  initialSite?: string;
+  initialEstimatedValue?: string;
 }
 
-export function FavoriteCategorization({ 
-  bidding, 
-  currentCategory = "outros",
-  currentCustomCategory = "",
-  currentNotes = "",
-  currentUf = "",
-  currentCodigoUasg = "",
-  currentValorEstimado = "",
-  currentFornecedor = "",
-  currentSite = ""
+export function FavoriteCategorization({
+  bidding,
+  isOpen,
+  onClose,
+  onSave,
+  initialCategory = "outros",
+  initialCustomCategory,
+  initialNotes,
+  initialSite,
+  initialEstimatedValue
 }: FavoriteCategorizationProps) {
-  const [isOpen, setIsOpen] = useState(false);
-  const [selectedCategory, setSelectedCategory] = useState(currentCategory);
-  const [customCategory, setCustomCategory] = useState(currentCustomCategory);
-  const [notes, setNotes] = useState(currentNotes);
+  const [selectedCategory, setSelectedCategory] = useState(initialCategory);
+  const [customCategory, setCustomCategory] = useState(initialCustomCategory || "");
+  const [notes, setNotes] = useState(initialNotes || "");
   const [activeTab, setActiveTab] = useState("category");
   const [searchTerm, setSearchTerm] = useState("");
   const [newCategoryName, setNewCategoryName] = useState("");
   const [newSiteUrl, setNewSiteUrl] = useState("");
-  const [uf, setUf] = useState(currentUf || bidding.orgao_uf || "");
-  const [codigoUasg, setCodigoUasg] = useState(currentCodigoUasg || bidding.orgao_codigo || "");
+  const [uf, setUf] = useState(bidding.orgao_uf || "");
+  const [codigoUasg, setCodigoUasg] = useState(bidding.orgao_codigo || "");
   const [valorEstimado, setValorEstimado] = useState(
-    currentValorEstimado || (bidding.valor_estimado ? `R$ ${bidding.valor_estimado.toLocaleString('pt-BR')}` : "")
+    initialEstimatedValue || (bidding.valor_estimado ? `R$ ${bidding.valor_estimado.toLocaleString('pt-BR')}` : "")
   );
-  const [fornecedor, setFornecedor] = useState(currentFornecedor);
-  const [selectedSite, setSelectedSite] = useState(currentSite);
-  
+  const [fornecedor, setFornecedor] = useState("");
+  const [selectedSite, setSelectedSite] = useState(initialSite);
+
   const { user } = useAuth();
   const { toast } = useToast();
-  
+
   // Usar hook de categorização
   const { updateCategorization, isUpdating } = useFavoriteCategorization(
-    user?.id || 1, 
+    user?.id || 1,
     bidding.id
   );
 
@@ -124,16 +129,16 @@ export function FavoriteCategorization({
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <Button 
-          variant="outline" 
-          size="sm" 
+        <Button
+          variant="outline"
+          size="sm"
           className="h-8 px-3 text-xs border-gray-300 hover:border-blue-400 hover:bg-blue-50 transition-colors"
         >
           <Tags className="h-3 w-3 mr-1.5" />
           Editar Categorização
         </Button>
       </DialogTrigger>
-      
+
       <DialogContent className="max-w-2xl max-h-[85vh] bg-white border-0 shadow-2xl flex flex-col">
         <DialogHeader className="pb-4 border-b border-gray-100">
           <div className="flex items-center justify-between">
@@ -165,20 +170,20 @@ export function FavoriteCategorization({
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="grid w-full grid-cols-3 bg-gray-100 rounded-lg p-1">
-              <TabsTrigger 
-                value="category" 
+              <TabsTrigger
+                value="category"
                 className="data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:text-blue-600 font-medium"
               >
                 Categoria
               </TabsTrigger>
-              <TabsTrigger 
-                value="examples" 
+              <TabsTrigger
+                value="examples"
                 className="data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:text-blue-600 font-medium"
               >
                 Exemplos
               </TabsTrigger>
-              <TabsTrigger 
-                value="notes" 
+              <TabsTrigger
+                value="notes"
                 className="data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:text-blue-600 font-medium"
               >
                 Notas
@@ -189,7 +194,7 @@ export function FavoriteCategorization({
               {/* Tipo de Objeto - Busca */}
               <div className="space-y-3">
                 <Label className="text-sm font-semibold text-gray-800">Tipo de Objeto:</Label>
-                
+
                 <div className="relative">
                   <Input
                     placeholder="Buscar tipo de objeto..."
@@ -228,8 +233,8 @@ export function FavoriteCategorization({
                             </span>
                           </div>
                           {/* Badge com quantidade de exemplos */}
-                          <Badge 
-                            variant="secondary" 
+                          <Badge
+                            variant="secondary"
                             className="text-xs px-1.5 py-0.5 bg-gray-100 text-gray-600"
                           >
                             {CATEGORIZATION_DATA[category.id as keyof typeof CATEGORIZATION_DATA]?.length || 0}
@@ -254,7 +259,7 @@ export function FavoriteCategorization({
                       className="flex-1 text-sm"
                       onKeyPress={(e) => e.key === 'Enter' && handleAddNewCategory()}
                     />
-                    <Button 
+                    <Button
                       onClick={handleAddNewCategory}
                       disabled={!newCategoryName.trim()}
                       size="sm"
@@ -276,9 +281,9 @@ export function FavoriteCategorization({
                         Sugestão Automática: {MAIN_CATEGORIES.find(c => c.id === suggestedCategory)?.name}
                       </span>
                     </div>
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
+                    <Button
+                      variant="ghost"
+                      size="sm"
                       onClick={handleSuggestCategory}
                       className="text-yellow-700 hover:bg-yellow-100 text-xs"
                     >
@@ -308,7 +313,7 @@ export function FavoriteCategorization({
                     </div>
                   </div>
                 )}
-                
+
                 {selectedCategory === 'outros' && (
                   <div className="text-center py-12 text-gray-500">
                     <BookOpen className="h-16 w-16 mx-auto mb-4 opacity-30" />
@@ -361,7 +366,7 @@ export function FavoriteCategorization({
                         ))}
                       </SelectContent>
                     </Select>
-                    
+
                     {/* Adicionar novo site */}
                     <div className="border-2 border-dashed border-gray-300 rounded-lg p-3 space-y-2">
                       <div className="text-center">
@@ -376,7 +381,7 @@ export function FavoriteCategorization({
                           className="flex-1 text-xs"
                           onKeyPress={(e) => e.key === 'Enter' && handleAddNewSite()}
                         />
-                        <Button 
+                        <Button
                           onClick={handleAddNewSite}
                           disabled={!newSiteUrl.trim()}
                           size="sm"
@@ -445,15 +450,15 @@ export function FavoriteCategorization({
         </div>
 
         <DialogFooter className="pt-4 border-t border-gray-100 flex gap-2">
-          <Button 
-            variant="outline" 
-            onClick={() => setIsOpen(false)}
+          <Button
+            variant="outline"
+            onClick={onClose}
             className="border-gray-300 text-gray-700 hover:bg-gray-50"
           >
             Cancelar
           </Button>
-          <Button 
-            onClick={handleSave} 
+          <Button
+            onClick={handleSave}
             disabled={isUpdating}
             className="bg-blue-600 hover:bg-blue-700 text-white"
           >

@@ -86,6 +86,16 @@ export const TABULATION_HIERARCHY = {
       "Buffet Simples",
       "Buffet Completo",
       "Buffet Premium"
+    ],
+    "Merenda Escolar Completa": [
+      "Educação Infantil",
+      "Ensino Fundamental",
+      "Ensino Médio"
+    ],
+    "Refeição Presidio": [
+      "Refeição Básica",
+      "Refeição Completa",
+      "Refeição Especial"
     ]
   },
   "Concessão": {

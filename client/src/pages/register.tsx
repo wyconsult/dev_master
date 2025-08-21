@@ -48,11 +48,11 @@ export default function Register() {
           <div className="mx-auto w-20 h-20 rounded-full bg-gradient-to-r from-green-500 to-emerald-600 flex items-center justify-center mb-6 shadow-lg">
             <UserPlus className="text-white h-10 w-10" />
           </div>
-          <h2 className="text-4xl font-bold bg-gradient-to-r from-gray-900 to-green-700 bg-clip-text text-transparent mb-3">LicitaTraker</h2>
+          <h2 className="text-4xl font-bold bg-gradient-to-r from-gray-900 to-green-700 bg-clip-text text-transparent mb-3">JLG Consultoria</h2>
           <p className="text-xl text-gray-600 mb-2">Junte-se a nós! 🚀</p>
           <p className="text-gray-500">Crie sua conta para começar</p>
         </div>
-        
+
         <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm">
           <CardContent className="pt-8 pb-8 px-8">
             <Form {...form}>
@@ -93,7 +93,7 @@ export default function Register() {
                     </FormItem>
                   )}
                 />
-                
+
                 <FormField
                   control={form.control}
                   name="name"
@@ -130,7 +130,7 @@ export default function Register() {
                     </FormItem>
                   )}
                 />
-                
+
                 <FormField
                   control={form.control}
                   name="password"

@@ -39,7 +39,9 @@ export const CATEGORIZATION_DATA = {
     { id: 36, tipo: "Alimentação", objeto: "Refeições UPA e Hospital Dia" },
     { id: 37, tipo: "Alimentação", objeto: "Restaurante do Trabalhador" },
     { id: 38, tipo: "Alimentação", objeto: "Restaurante Popular" },
-    { id: 39, tipo: "Alimentação", objeto: "Serviço de Alimentação Buffet" }
+    { id: 39, tipo: "Alimentação", objeto: "Serviço de Alimentação Buffet" },
+    { id: 40, tipo: "Alimentação", objeto: "Merenda Escolar Completa" },
+    { id: 41, tipo: "Alimentação", objeto: "Refeição Presidio" }
   ],
   
   limpeza: [
