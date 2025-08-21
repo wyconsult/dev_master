@@ -25,12 +25,18 @@ interface FavoriteCategorizationProps {
     notes?: string;
     site?: string;
     estimatedValue?: string;
+    uf?: string;
+    codigoUasg?: string;
+    fornecedor?: string;
   }) => void;
   initialCategory?: string;
   initialCustomCategory?: string;
   initialNotes?: string;
   initialSite?: string;
   initialEstimatedValue?: string;
+  initialUf?: string;
+  initialCodigoUasg?: string;
+  initialFornecedor?: string;
 }
 
 export function FavoriteCategorization({
@@ -42,7 +48,10 @@ export function FavoriteCategorization({
   initialCustomCategory,
   initialNotes,
   initialSite,
-  initialEstimatedValue
+  initialEstimatedValue,
+  initialUf,
+  initialCodigoUasg,
+  initialFornecedor
 }: FavoriteCategorizationProps) {
   const [selectedCategory, setSelectedCategory] = useState(initialCategory);
   const [customCategory, setCustomCategory] = useState(initialCustomCategory || "");
@@ -51,12 +60,12 @@ export function FavoriteCategorization({
   const [searchTerm, setSearchTerm] = useState("");
   const [newCategoryName, setNewCategoryName] = useState("");
   const [newSiteUrl, setNewSiteUrl] = useState("");
-  const [uf, setUf] = useState(bidding.orgao_uf || "");
-  const [codigoUasg, setCodigoUasg] = useState(bidding.orgao_codigo || "");
+  const [uf, setUf] = useState(initialUf || bidding.orgao_uf || "");
+  const [codigoUasg, setCodigoUasg] = useState(initialCodigoUasg || bidding.orgao_codigo || "");
   const [valorEstimado, setValorEstimado] = useState(
     initialEstimatedValue || (bidding.valor_estimado ? `R$ ${bidding.valor_estimado.toLocaleString('pt-BR')}` : "")
   );
-  const [fornecedor, setFornecedor] = useState("");
+  const [fornecedor, setFornecedor] = useState(initialFornecedor || "");
   const [selectedSite, setSelectedSite] = useState(initialSite);
 
   const { user } = useAuth();
@@ -127,7 +136,7 @@ export function FavoriteCategorization({
   );
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+    <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogTrigger asChild>
         <Button
           variant="outline"
