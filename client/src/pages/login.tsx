@@ -65,7 +65,7 @@ export default function Login() {
       <div className="flex-1 flex items-center justify-center px-4">
         <div className="max-w-md w-full space-y-8">
         <div className="text-center">
-          <div className="mx-auto mb-8">
+          <div className="mx-auto mb-8 flex justify-center">
             <img 
               src="/logo.jpeg" 
               alt="JLG Consultoria" 
