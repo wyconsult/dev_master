@@ -340,23 +340,35 @@ export function FavoriteCategorization({
                     <div className="w-2 h-2 rounded-full bg-blue-500"></div>
                     <span>Os campos abaixo são editáveis para fins de geração do PDF e não alteram os dados originais da API</span>
                   </div>
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-3 gap-4">
                     <div>
                       <Label className="text-sm font-semibold text-gray-800">UF:</Label>
                       <Input
-                        placeholder="Ex: BA, SP, RJ..."
+                        placeholder="Ex: AM"
                         value={uf}
                         onChange={(e) => setUf(e.target.value)}
-                        className="mt-1 border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                        className="mt-1 border-2 border-blue-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 bg-white"
+                        style={{ cursor: 'text' }}
                       />
                     </div>
                     <div>
-                      <Label className="text-sm font-semibold text-gray-800">Código UASG/Gestora:</Label>
+                      <Label className="text-sm font-semibold text-gray-800">Código UASG:</Label>
                       <Input
-                        placeholder="Ex: 123456"
+                        placeholder="Ex: UASG123"
                         value={codigoUasg}
                         onChange={(e) => setCodigoUasg(e.target.value)}
-                        className="mt-1 border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                        className="mt-1 border-2 border-blue-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 bg-white"
+                        style={{ cursor: 'text' }}
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-sm font-semibold text-gray-800">Valor Estimado:</Label>
+                      <Input
+                        placeholder="Ex: R$ 50.000"
+                        value={valorEstimado}
+                        onChange={(e) => setValorEstimado(e.target.value)}
+                        className="mt-1 border-2 border-blue-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 bg-white"
+                        style={{ cursor: 'text' }}
                       />
                     </div>
                   </div>
@@ -409,26 +421,16 @@ export function FavoriteCategorization({
                   </div>
                 </div>
 
-                {/* Informações Financeiras */}
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label className="text-sm font-semibold text-gray-800">Valor Estimado/Contratado:</Label>
-                    <Input
-                      placeholder="Ex: R$ 50.000,00"
-                      value={valorEstimado}
-                      onChange={(e) => setValorEstimado(e.target.value)}
-                      className="mt-1 border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
-                    />
-                  </div>
-                  <div>
-                    <Label className="text-sm font-semibold text-gray-800">Fornecedor/UASG do Fornecedor:</Label>
-                    <Input
-                      placeholder="Nome do fornecedor"
-                      value={fornecedor}
-                      onChange={(e) => setFornecedor(e.target.value)}
-                      className="mt-1 border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
-                    />
-                  </div>
+                {/* Campo do Fornecedor */}
+                <div>
+                  <Label className="text-sm font-semibold text-gray-800">Fornecedor/UASG do Fornecedor:</Label>
+                  <Input
+                    placeholder="Nome do fornecedor"
+                    value={fornecedor}
+                    onChange={(e) => setFornecedor(e.target.value)}
+                    className="mt-1 border-2 border-blue-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 bg-white"
+                    style={{ cursor: 'text' }}
+                  />
                 </div>
 
                 {/* Categoria Personalizada */}
