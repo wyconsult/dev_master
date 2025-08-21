@@ -8,7 +8,7 @@ export function useFavorites() {
   const { user } = useAuth();
   const { toast } = useToast();
   const client = useQueryClient();
-  
+
   const addFavoriteMutation = useMutation({
     mutationFn: async (biddingId: number) => {
       if (!user) throw new Error("User not authenticated");
@@ -20,7 +20,7 @@ export function useFavorites() {
     },
     onMutate: async (biddingId) => {
       if (!user) return;
-      
+
       // Cancel any outgoing refetches
       await client.cancelQueries({ 
         predicate: (query) => {
@@ -28,10 +28,10 @@ export function useFavorites() {
           return key.includes('/api/favorites');
         }
       });
-      
+
       // Optimistically update the favorite status for all related queries
       client.setQueryData([`/api/favorites/${user.id}/${biddingId}`], { isFavorite: true });
-      
+
       // Force immediate refetch and update
       setTimeout(() => {
         client.invalidateQueries({ 
@@ -73,7 +73,7 @@ export function useFavorites() {
     },
     onMutate: async (biddingId) => {
       if (!user) return;
-      
+
       // Cancel any outgoing refetches
       await client.cancelQueries({ 
         predicate: (query) => {
@@ -81,10 +81,10 @@ export function useFavorites() {
           return key.includes('/api/favorites');
         }
       });
-      
+
       // Optimistically update the favorite status for all related queries
       client.setQueryData([`/api/favorites/${user.id}/${biddingId}`], { isFavorite: false });
-      
+
       // Force immediate refetch and update
       setTimeout(() => {
         client.invalidateQueries({ 

@@ -31,11 +31,15 @@ export function Navbar() {
         <div className="flex justify-between items-center h-16 md:h-20">
           {/* Logo */}
           <div className="flex items-center space-x-2 md:space-x-4">
-            <div className="w-10 h-10 md:w-12 md:h-12 bg-gradient-to-r from-blue-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
-              <Gavel className="text-white h-5 w-5 md:h-6 md:w-6" />
+            <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl overflow-hidden shadow-lg">
+              <img 
+                src="/logo.jpeg" 
+                alt="JLG Consultoria" 
+                className="w-full h-full object-cover"
+              />
             </div>
             <h1 className="text-lg md:text-2xl font-bold bg-gradient-to-r from-gray-900 to-blue-700 bg-clip-text text-transparent">
-              LicitaTraker
+              JLG Consultoria
             </h1>
           </div>
           

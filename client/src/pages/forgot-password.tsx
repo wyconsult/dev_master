@@ -51,7 +51,7 @@ export default function ForgotPassword() {
           <p className="text-xl text-gray-600 mb-2">Esqueceu sua senha? 🔐</p>
           <p className="text-gray-500">Vamos te ajudar a recuperar</p>
         </div>
-        
+
         <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm">
           <CardContent className="pt-8 pb-8 px-8">
             <Form {...form}>
@@ -73,7 +73,7 @@ export default function ForgotPassword() {
                     </FormItem>
                   )}
                 />
-                
+
                 <FormField
                   control={form.control}
                   name="newPassword"
