@@ -82,7 +82,7 @@ export function FavoriteCategorization({
       codigoUasg: codigoUasg.trim() || null,
       valorEstimado: valorEstimado.trim() || null,
       fornecedor: fornecedor.trim() || null,
-      site: selectedSite.trim() || null,
+      site: selectedSite || null,
     };
 
     updateCategorization(categorizationData);
@@ -91,7 +91,7 @@ export function FavoriteCategorization({
       title: "Categorização atualizada",
       description: "Todas as informações foram salvas com sucesso.",
     });
-    setIsOpen(false);
+    onClose();
   };
 
   const handleAddNewCategory = () => {
@@ -326,24 +326,30 @@ export function FavoriteCategorization({
             <TabsContent value="notes" className="space-y-4 mt-6 overflow-y-auto max-h-96">
               <div className="space-y-4 pb-4">
                 {/* Informações de Tabulação */}
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label className="text-sm font-semibold text-gray-800">UF:</Label>
-                    <Input
-                      placeholder="Ex: BA, SP, RJ..."
-                      value={uf}
-                      onChange={(e) => setUf(e.target.value)}
-                      className="mt-1 border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
-                    />
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2 text-xs text-blue-600 bg-blue-50 p-2 rounded-lg">
+                    <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+                    <span>Os campos abaixo são editáveis para fins de geração do PDF e não alteram os dados originais da API</span>
                   </div>
-                  <div>
-                    <Label className="text-sm font-semibold text-gray-800">Código UASG/Gestora:</Label>
-                    <Input
-                      placeholder="Ex: 123456"
-                      value={codigoUasg}
-                      onChange={(e) => setCodigoUasg(e.target.value)}
-                      className="mt-1 border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
-                    />
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label className="text-sm font-semibold text-gray-800">UF:</Label>
+                      <Input
+                        placeholder="Ex: BA, SP, RJ..."
+                        value={uf}
+                        onChange={(e) => setUf(e.target.value)}
+                        className="mt-1 border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-sm font-semibold text-gray-800">Código UASG/Gestora:</Label>
+                      <Input
+                        placeholder="Ex: 123456"
+                        value={codigoUasg}
+                        onChange={(e) => setCodigoUasg(e.target.value)}
+                        className="mt-1 border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                      />
+                    </div>
                   </div>
                 </div>
 

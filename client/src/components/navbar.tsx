@@ -31,11 +31,11 @@ export function Navbar() {
         <div className="flex justify-between items-center h-16 md:h-20">
           {/* Logo */}
           <div className="flex items-center space-x-2 md:space-x-4">
-            <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl overflow-hidden shadow-lg">
+            <div className="w-12 h-8 md:w-16 md:h-10 rounded-lg overflow-hidden shadow-lg">
               <img 
                 src="/logo.jpeg" 
                 alt="JLG Consultoria" 
-                className="w-full h-full object-cover"
+                className="w-full h-full object-contain"
               />
             </div>
             <h1 className="text-lg md:text-2xl font-bold bg-gradient-to-r from-gray-900 to-blue-700 bg-clip-text text-transparent">
