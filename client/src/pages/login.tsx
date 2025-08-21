@@ -65,11 +65,11 @@ export default function Login() {
       <div className="flex-1 flex items-center justify-center px-4">
         <div className="max-w-md w-full space-y-8">
         <div className="text-center">
-          <div className="mx-auto w-20 h-20 rounded-full overflow-hidden shadow-xl mb-8">
+          <div className="mx-auto w-24 h-16 rounded-lg overflow-hidden shadow-xl mb-8">
             <img 
               src="/logo.jpeg" 
               alt="JLG Consultoria" 
-              className="w-full h-full object-cover"
+              className="w-full h-full object-contain"
             />
           </div>
           <h2 className="text-4xl font-bold bg-gradient-to-r from-gray-900 to-blue-700 bg-clip-text text-transparent mb-3">JLG Consultoria</h2>
