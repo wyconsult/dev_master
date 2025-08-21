@@ -92,8 +92,12 @@ export default function Dashboard() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="mb-8 md:mb-12 text-center px-4">
-          <div className="inline-flex items-center justify-center w-16 h-16 md:w-20 md:h-20 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 text-white mb-4 md:mb-6 shadow-lg">
-            <Gavel className="h-8 w-8 md:h-10 md:w-10" />
+          <div className="mb-4 md:mb-6">
+            <img 
+              src="/logo.jpeg" 
+              alt="JLG Consultoria" 
+              className="w-16 h-12 md:w-20 md:h-14 object-contain mx-auto"
+            />
           </div>
           <h1 className="text-2xl md:text-4xl font-bold bg-gradient-to-r from-gray-900 to-blue-700 bg-clip-text text-transparent mb-2 md:mb-3">
             Bem-vindo ao JLG Consultoria
