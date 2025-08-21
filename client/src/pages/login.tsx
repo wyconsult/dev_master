@@ -69,7 +69,7 @@ export default function Login() {
             <img 
               src="/logo.jpeg" 
               alt="JLG Consultoria" 
-              className="w-32 h-24 object-contain"
+              className="w-48 h-36 object-contain"
             />
           </div>
           <h2 className="text-4xl font-bold bg-gradient-to-r from-gray-900 to-blue-700 bg-clip-text text-transparent mb-3">JLG Consultoria</h2>
