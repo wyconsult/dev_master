@@ -96,7 +96,7 @@ export default function Dashboard() {
             <img 
               src="/logo.jpeg" 
               alt="JLG Consultoria" 
-              className="w-24 h-18 md:w-32 md:h-24 object-contain mx-auto"
+              className="w-28 h-21 md:w-36 md:h-28 object-contain mx-auto"
             />
           </div>
           <h1 className="text-2xl md:text-4xl font-bold bg-gradient-to-r from-gray-900 to-blue-700 bg-clip-text text-transparent mb-2 md:mb-3">
