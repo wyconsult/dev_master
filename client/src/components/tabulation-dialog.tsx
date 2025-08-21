@@ -55,6 +55,9 @@ export function TabulationDialog({
   const [newCategoryName, setNewCategoryName] = useState("");
   const [newSiteName, setNewSiteName] = useState("");
   const [siteOpen, setSiteOpen] = useState(false);
+  const [uf, setUf] = useState(currentUf);
+  const [codigoUasg, setCodigoUasg] = useState(currentCodigoUasg);
+  const [valorEstimado, setValorEstimado] = useState(currentValorEstimado);
   // Sites disponíveis (incluindo o selecionado se não estiver na lista)
   const allSites = [...SITES_LIST, ...(selectedSite && !SITES_LIST.includes(selectedSite) ? [selectedSite] : [])];
   
@@ -98,9 +101,9 @@ export function TabulationDialog({
       category: fullCategory || null,
       customCategory: newCategoryName ? newCategoryName.trim() || null : null,
       notes: notes ? notes.trim() || null : null,
-      uf: null,
-      codigoUasg: null,
-      valorEstimado: null,
+      uf: uf?.trim() || null,
+      codigoUasg: codigoUasg?.trim() || null,
+      valorEstimado: valorEstimado?.trim() || null,
       fornecedor: null,
       site: selectedSite?.trim() || null,
     };
@@ -350,25 +353,28 @@ export function TabulationDialog({
                 <div>
                   <Label className="text-xs font-medium text-gray-600">UF:</Label>
                   <Input 
-                    value={bidding.orgao_uf || ''} 
-                    disabled 
-                    className="text-xs h-8 bg-white border-gray-200"
+                    value={currentUf || bidding.orgao_uf || ''} 
+                    onChange={(e) => setUf(e.target.value)}
+                    placeholder="Ex: AM, SP, RJ..."
+                    className="text-xs h-8 bg-white border-2 border-blue-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
                   />
                 </div>
                 <div>
                   <Label className="text-xs font-medium text-gray-600">Código UASG:</Label>
                   <Input 
-                    value={bidding.orgao_codigo || ''} 
-                    disabled 
-                    className="text-xs h-8 bg-white border-gray-200"
+                    value={currentCodigoUasg || bidding.orgao_codigo || ''} 
+                    onChange={(e) => setCodigoUasg(e.target.value)}
+                    placeholder="Ex: UASG123"
+                    className="text-xs h-8 bg-white border-2 border-blue-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
                   />
                 </div>
                 <div>
                   <Label className="text-xs font-medium text-gray-600">Valor Estimado:</Label>
                   <Input 
-                    value={bidding.valor_estimado ? `R$ ${bidding.valor_estimado.toLocaleString('pt-BR')}` : 'Não informado'} 
-                    disabled 
-                    className="text-xs h-8 bg-white border-gray-200"
+                    value={currentValorEstimado || (bidding.valor_estimado ? `R$ ${bidding.valor_estimado.toLocaleString('pt-BR')}` : '')}
+                    onChange={(e) => setValorEstimado(e.target.value)}
+                    placeholder="Ex: R$ 50.000"
+                    className="text-xs h-8 bg-white border-2 border-blue-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
                   />
                 </div>
               </div>
