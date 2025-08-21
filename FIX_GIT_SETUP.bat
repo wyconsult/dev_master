@@ -1,6 +1,6 @@
 @echo off
 echo ===============================================
-echo GIT SETUP + SYNC GITHUB - LICITATRAKER v2.9
+echo GIT SETUP + SYNC GITHUB - LICITATRAKER v2.10
 echo ===============================================
 echo.
 echo Este script vai:
@@ -71,7 +71,7 @@ git add -A
 
 echo.
 echo 12) Commitando com mensagem atualizada...
-git commit -m "Sistema v2.9 - MOBILE RESPONSIVO: Calendário otimizado tarjas M/T/N, Categorização scroll/busca funcionando, PopoverContent responsivo 100vw, Touch scroll CSS otimizado" || echo "Nada para commitar"
+git commit -m "Sistema v2.10 - UI MELHORIAS: Logo JLG posicionamento corrigido + Campos editáveis nas Notas (UF, Código UASG, Valor Estimado) + Correção formatação valor monetário PDF" || echo "Nada para commitar"
 
 echo.
 echo 13) Enviando para GitHub...
@@ -87,7 +87,10 @@ echo ===============================================
 echo ✅ SYNC GIT CONCLUÍDO COM SUCESSO!
 echo ===============================================
 echo.
-echo === FUNCIONALIDADES v2.9 IMPLEMENTADAS ===
+echo === FUNCIONALIDADES v2.10 IMPLEMENTADAS ===
+echo • LOGO JLG CONSULTORIA: Posicionamento corrigido (mb-2) mais próximo do texto
+echo • CAMPOS EDITÁVEIS NAS NOTAS: UF, Código UASG e Valor Estimado 100%% funcionais
+echo • PDF FORMATAÇÃO: Correção valor monetário R$ 65.000 → R$ 65.000,00 correto
 echo • MOBILE RESPONSIVO: Calendário e categorização otimizados
 echo • Calendário: Tarjas M/T/N compactas, altura 24px consistente
 echo • Categorização: Barra busca funcionando + scroll touch corrigido
