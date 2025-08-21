@@ -55,9 +55,9 @@ export function TabulationDialog({
   const [newCategoryName, setNewCategoryName] = useState("");
   const [newSiteName, setNewSiteName] = useState("");
   const [siteOpen, setSiteOpen] = useState(false);
-  const [uf, setUf] = useState(currentUf);
-  const [codigoUasg, setCodigoUasg] = useState(currentCodigoUasg);
-  const [valorEstimado, setValorEstimado] = useState(currentValorEstimado);
+  const [uf, setUf] = useState(currentUf || bidding.orgao_uf || '');
+  const [codigoUasg, setCodigoUasg] = useState(currentCodigoUasg || bidding.orgao_codigo || '');
+  const [valorEstimado, setValorEstimado] = useState(currentValorEstimado || (bidding.valor_estimado ? `R$ ${bidding.valor_estimado.toLocaleString('pt-BR')}` : ''));
   // Sites disponíveis (incluindo o selecionado se não estiver na lista)
   const allSites = [...SITES_LIST, ...(selectedSite && !SITES_LIST.includes(selectedSite) ? [selectedSite] : [])];
   
@@ -353,7 +353,7 @@ export function TabulationDialog({
                 <div>
                   <Label className="text-xs font-medium text-gray-600">UF:</Label>
                   <Input 
-                    value={currentUf || bidding.orgao_uf || ''} 
+                    value={uf} 
                     onChange={(e) => setUf(e.target.value)}
                     placeholder="Ex: AM, SP, RJ..."
                     className="text-xs h-8 bg-white border-2 border-blue-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
@@ -362,7 +362,7 @@ export function TabulationDialog({
                 <div>
                   <Label className="text-xs font-medium text-gray-600">Código UASG:</Label>
                   <Input 
-                    value={currentCodigoUasg || bidding.orgao_codigo || ''} 
+                    value={codigoUasg} 
                     onChange={(e) => setCodigoUasg(e.target.value)}
                     placeholder="Ex: UASG123"
                     className="text-xs h-8 bg-white border-2 border-blue-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
@@ -371,7 +371,7 @@ export function TabulationDialog({
                 <div>
                   <Label className="text-xs font-medium text-gray-600">Valor Estimado:</Label>
                   <Input 
-                    value={currentValorEstimado || (bidding.valor_estimado ? `R$ ${bidding.valor_estimado.toLocaleString('pt-BR')}` : '')}
+                    value={valorEstimado}
                     onChange={(e) => setValorEstimado(e.target.value)}
                     placeholder="Ex: R$ 50.000"
                     className="text-xs h-8 bg-white border-2 border-blue-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
