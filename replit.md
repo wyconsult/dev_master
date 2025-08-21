@@ -3,7 +3,11 @@
 ## Overview
 LicitaTraker is a full-stack bidding management application designed to streamline the process of managing bidding opportunities (licitações). It enables users to browse, filter, and favorite biddings, manage bulletins, and authenticate securely. The system integrates with the real ConLicitação API for up-to-date data, featuring a hybrid performance system that combines fast loading with accurate counting. Its core purpose is to provide a comprehensive and efficient platform for tracking and managing public tenders.
 
-## Recent Changes (v2.7 - August 2025)
+## Recent Changes (v2.10 - August 2025)
+- **UI IMPROVEMENTS**: Logo JLG Consultoria positioning corrected (mb-2) - closer to text
+- **EDITABLE FIELDS**: UF, Código UASG, and Valor Estimado fields in "Notas" section fully editable
+- **PDF FORMATTING**: Fixed monetary value formatting - "R$ 65.000" now correctly displays as "R$ 65.000,00" in reports
+- **PRODUCTION READY**: Editable fields work seamlessly with real ConLicitação API data
 - **CRITICAL FIX**: Accurate counting system implemented - displays real numbers of licitações and acompanhamentos
 - **Hybrid Performance**: Combines fast API basic data with detailed count retrieval via intelligent caching
 - **Parallel Processing**: Counts fetched simultaneously for optimal performance
