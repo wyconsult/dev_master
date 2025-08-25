@@ -47,7 +47,7 @@ export default function ForgotPassword() {
           <div className="mx-auto w-20 h-20 rounded-full bg-gradient-to-r from-orange-500 to-red-600 flex items-center justify-center mb-6 shadow-lg">
             <Key className="text-white h-10 w-10" />
           </div>
-          <h2 className="text-4xl font-bold bg-gradient-to-r from-gray-900 to-orange-700 bg-clip-text text-transparent mb-3">LicitaTraker</h2>
+          <h2 className="text-4xl font-bold bg-gradient-to-r from-gray-900 to-orange-700 bg-clip-text text-transparent mb-3">JLG Consultoria</h2>
           <p className="text-xl text-gray-600 mb-2">Esqueceu sua senha? 🔐</p>
           <p className="text-gray-500">Vamos te ajudar a recuperar</p>
         </div>

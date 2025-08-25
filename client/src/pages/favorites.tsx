@@ -368,7 +368,7 @@ export default function Favorites() {
       <html>
       <head>
         <meta charset="UTF-8">
-        <title>Relatório de Favoritos - LicitaTraker</title>
+        <title>Relatório de Favoritos - JLG Consultoria</title>
         <style>
           body { 
             font-family: Arial, sans-serif; 
@@ -413,7 +413,7 @@ export default function Favorites() {
       </head>
       <body>
         <div class="header">
-          <h1>LicitaTraker - Relatório de Favoritos</h1>
+          <h1>JLG Consultoria - Relatório de Favoritos</h1>
           <p>Gerado em: ${format(new Date(), "dd/MM/yyyy 'às' HH:mm")}</p>
         </div>
         

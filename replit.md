@@ -1,7 +1,7 @@
-# LicitaTraker - Bidding Management System
+# JLG Consultoria - Bidding Management System
 
 ## Overview
-LicitaTraker is a full-stack bidding management application designed to streamline the process of managing bidding opportunities (licitações). It enables users to browse, filter, and favorite biddings, manage bulletins, and authenticate securely. The system integrates with the real ConLicitação API for up-to-date data, featuring a hybrid performance system that combines fast loading with accurate counting. Its core purpose is to provide a comprehensive and efficient platform for tracking and managing public tenders.
+JLG Consultoria is a full-stack bidding management application designed to streamline the process of managing bidding opportunities (licitações). It enables users to browse, filter, and favorite biddings, manage bulletins, and authenticate securely. The system integrates with the real ConLicitação API for up-to-date data, featuring a hybrid performance system that combines fast loading with accurate counting. Its core purpose is to provide a comprehensive and efficient platform for tracking and managing public tenders.
 
 ## Recent Changes (v2.10 - August 2025)
 - **UI IMPROVEMENTS**: Logo JLG Consultoria positioning corrected (mb-2) - closer to text
