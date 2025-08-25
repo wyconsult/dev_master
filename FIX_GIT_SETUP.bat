@@ -1,6 +1,6 @@
 @echo off
 echo ===============================================
-echo GIT SETUP + SYNC GITHUB - LICITATRAKER v2.10
+echo GIT SETUP + SYNC GITHUB - JLG CONSULTORIA v2.11
 echo ===============================================
 echo.
 echo Este script vai:
@@ -71,7 +71,7 @@ git add -A
 
 echo.
 echo 12) Commitando com mensagem atualizada...
-git commit -m "Sistema v2.10 - UI MELHORIAS: Logo JLG posicionamento corrigido + Campos editáveis nas Notas (UF, Código UASG, Valor Estimado) + Correção formatação valor monetário PDF" || echo "Nada para commitar"
+git commit -m "Sistema v2.11 - BRANDING JLG CONSULTORIA: LicitaTraker → JLG Consultoria em todos os títulos + PDF + Páginas + Documentação atualizada" || echo "Nada para commitar"
 
 echo.
 echo 13) Enviando para GitHub...
@@ -87,8 +87,13 @@ echo ===============================================
 echo ✅ SYNC GIT CONCLUÍDO COM SUCESSO!
 echo ===============================================
 echo.
-echo === FUNCIONALIDADES v2.10 IMPLEMENTADAS ===
-echo • LOGO JLG CONSULTORIA: Posicionamento corrigido (mb-2) mais próximo do texto
+echo === FUNCIONALIDADES v2.11 IMPLEMENTADAS ===
+echo • BRANDING JLG CONSULTORIA: Substituição completa "LicitaTraker" → "JLG Consultoria"
+echo • TÍTULO NAVEGADOR: "JLG Consultoria - Sistema de Licitações"
+echo • PDF RELATÓRIOS: "JLG Consultoria - Relatório de Favoritos"
+echo • PÁGINA RECUPERAÇÃO: Título "JLG Consultoria" implementado
+echo • DOCUMENTAÇÃO: Arquivos atualizados com novo nome
+echo • LOGO POSICIONAMENTO: (mb-2) mais próximo do texto mantido
 echo • CAMPOS EDITÁVEIS NAS NOTAS: UF, Código UASG e Valor Estimado 100%% funcionais
 echo • PDF FORMATAÇÃO: Correção valor monetário R$ 65.000 → R$ 65.000,00 correto
 echo • MOBILE RESPONSIVO: Calendário e categorização otimizados
