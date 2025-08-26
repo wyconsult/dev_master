@@ -3,16 +3,21 @@
 ## Overview
 JLG Consultoria is a full-stack bidding management application designed to streamline the process of managing bidding opportunities (licitações). It enables users to browse, filter, and favorite biddings, manage bulletins, and authenticate securely. The system integrates with the real ConLicitação API for up-to-date data, featuring a hybrid performance system that combines fast loading with accurate counting. Its core purpose is to provide a comprehensive and efficient platform for tracking and managing public tenders.
 
-## Recent Changes (v2.10 - August 2025)
+## Recent Changes (v2.11 - August 2025)
+- **BRANDING**: Complete rebrand from "LicitaTraker" to "JLG Consultoria" across all interfaces
+- **CRITICAL SEARCH FIX**: Fixed "Nº Controle" search dependency on bulletin visualization
+- **COMPLETE DATA LOADING**: All bulletins are now pre-loaded automatically for independent searching
+- **PRODUCTION SEARCH**: Search by control number now works regardless of bulletin access history
+- **PAGINATION IMPROVEMENT**: Added intelligent pagination for comprehensive data coverage (max 500 bulletins per filter)
 - **UI IMPROVEMENTS**: Logo JLG Consultoria positioning corrected (mb-2) - closer to text
 - **EDITABLE FIELDS**: UF, Código UASG, and Valor Estimado fields in "Notas" section fully editable
 - **PDF FORMATTING**: Fixed monetary value formatting - "R$ 65.000" now correctly displays as "R$ 65.000,00" in reports
 - **PRODUCTION READY**: Editable fields work seamlessly with real ConLicitação API data
-- **CRITICAL FIX**: Accurate counting system implemented - displays real numbers of licitações and acompanhamentos
-- **Hybrid Performance**: Combines fast API basic data with detailed count retrieval via intelligent caching
-- **Parallel Processing**: Counts fetched simultaneously for optimal performance
-- **Smart Caching**: First load precise, subsequent loads instant via 5-minute cache
-- **Error Recovery**: Robust timeout and retry mechanisms for API stability
+- **ACCURATE COUNTING**: Real numbers of licitações and acompanhamentos displayed correctly
+- **HYBRID PERFORMANCE**: Combines fast API basic data with detailed count retrieval via intelligent caching
+- **PARALLEL PROCESSING**: Counts fetched simultaneously for optimal performance
+- **SMART CACHING**: First load precise, subsequent loads instant via 5-minute cache
+- **ERROR RECOVERY**: Robust timeout and retry mechanisms for API stability
 
 ## User Preferences
 Preferred communication style: Simple, everyday language.

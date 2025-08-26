@@ -578,26 +578,55 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
       
       for (const filtro of filtros) {
         try {
-          // Buscar boletins do filtro (pegando mais boletins para garantir cobertura completa)
-          const boletinsResponse = await this.getBoletins(filtro.id, 1, 20);
+          // Buscar TODOS os boletins do filtro para garantir cobertura completa
+          console.log(`🔍 Carregando todos os boletins do filtro ${filtro.id}...`);
+          let page = 1;
+          let totalLoaded = 0;
+          let hasMoreBoletins = true;
           
-          for (const boletim of boletinsResponse.boletins) {
-            try {
-              // Buscar licitações de cada boletim e adicionar ao cache
-              console.log(`📥 Carregando licitações do boletim ${boletim.id}...`);
-              const boletimData = await conLicitacaoAPI.getBoletimData(boletim.id);
-              
-              if (boletimData.licitacoes) {
-                boletimData.licitacoes.forEach((licitacao: any) => {
-                  const transformedLicitacao = this.transformLicitacaoFromAPI(licitacao, boletim.id);
-                  // Sempre adicionar/atualizar no cache para garantir dados mais recentes
-                  this.cachedBiddings.set(transformedLicitacao.id, transformedLicitacao);
-                });
+          while (hasMoreBoletins) {
+            const boletinsResponse = await this.getBoletins(filtro.id, page, 50);
+            console.log(`📄 Página ${page}: ${boletinsResponse.boletins.length} boletins encontrados`);
+            
+            if (boletinsResponse.boletins.length === 0) {
+              hasMoreBoletins = false;
+              break;
+            }
+            
+            for (const boletim of boletinsResponse.boletins) {
+              try {
+                // Buscar licitações de cada boletim e adicionar ao cache
+                console.log(`📥 Carregando licitações do boletim ${boletim.id}...`);
+                const boletimData = await conLicitacaoAPI.getBoletimData(boletim.id);
+                
+                if (boletimData.licitacoes) {
+                  boletimData.licitacoes.forEach((licitacao: any) => {
+                    const transformedLicitacao = this.transformLicitacaoFromAPI(licitacao, boletim.id);
+                    // Sempre adicionar/atualizar no cache para garantir dados mais recentes
+                    this.cachedBiddings.set(transformedLicitacao.id, transformedLicitacao);
+                  });
+                }
+              } catch (error) {
+                console.log(`⚠️ Erro ao carregar boletim ${boletim.id}, continuando...`);
               }
-            } catch (error) {
-              console.log(`⚠️ Erro ao carregar boletim ${boletim.id}, continuando...`);
+            }
+            
+            totalLoaded += boletinsResponse.boletins.length;
+            page++;
+            
+            // Evitar loop infinito - se encontramos menos boletins que o esperado, provavelmente chegamos ao fim
+            if (boletinsResponse.boletins.length < 50) {
+              hasMoreBoletins = false;
+            }
+            
+            // Limite de segurança para evitar carregar dados excessivos
+            if (totalLoaded >= 500) {
+              console.log(`⚠️ Limite de ${totalLoaded} boletins atingido para filtro ${filtro.id}`);
+              hasMoreBoletins = false;
             }
           }
+          
+          console.log(`✅ Carregados ${totalLoaded} boletins do filtro ${filtro.id}`);
         } catch (error) {
           console.log(`⚠️ Erro ao processar filtro ${filtro.id}, continuando...`);
         }
