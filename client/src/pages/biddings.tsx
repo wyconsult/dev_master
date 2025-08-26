@@ -49,7 +49,8 @@ const UF_OPTIONS = [
 
 export default function Biddings() {
   // Estados existentes
-  const [numeroControle, setNumeroControle] = useState("");
+  const [numeroControle, setNumeroControle] = useState(""); // Input do usuário
+  const [numeroControlePesquisado, setNumeroControlePesquisado] = useState(""); // Valor efetivamente pesquisado
   const [selectedOrgaos, setSelectedOrgaos] = useState<string[]>([]);
   const [selectedUFs, setSelectedUFs] = useState<string[]>([]);
   const [orgaoPopoverOpen, setOrgaoPopoverOpen] = useState(false);
@@ -74,18 +75,23 @@ export default function Biddings() {
 
   const buildFilters = () => {
     const filters: any = {};
-    if (numeroControle) filters.numero_controle = numeroControle;
+    if (numeroControlePesquisado) filters.numero_controle = numeroControlePesquisado;
     if (selectedOrgaos.length > 0) filters.orgao = selectedOrgaos;
     if (selectedUFs.length > 0) filters.uf = selectedUFs;
     return filters;
   };
 
-  // Query otimizada - carrega dados inteligentemente
+  // Função para executar pesquisa por número de controle
+  const executarPesquisa = () => {
+    setNumeroControlePesquisado(numeroControle);
+  };
+
+  // Query otimizada - SÓ busca quando há numero_controle pesquisado ou filtros
   const { data: allBiddings = [], isLoading, error, isFetching } = useQuery<Bidding[]>({
-    queryKey: ["/api/biddings", numeroControle, selectedOrgaos, selectedUFs],
+    queryKey: ["/api/biddings", numeroControlePesquisado, selectedOrgaos, selectedUFs],
     queryFn: async () => {
       const params = new URLSearchParams();
-      if (numeroControle) params.append('numero_controle', numeroControle);
+      if (numeroControlePesquisado) params.append('numero_controle', numeroControlePesquisado);
       if (selectedOrgaos.length) selectedOrgaos.forEach(orgao => params.append('orgao', orgao));
       if (selectedUFs.length) selectedUFs.forEach(uf => params.append('uf', uf));
       
@@ -220,6 +226,7 @@ export default function Biddings() {
 
   const clearFilters = () => {
     setNumeroControle("");
+    setNumeroControlePesquisado(""); // Limpar também o valor pesquisado
     setSelectedOrgaos([]);
     setSelectedUFs([]);
     setCidade("");
@@ -310,6 +317,11 @@ export default function Biddings() {
                   placeholder="Ex. 13157470"
                   value={numeroControle}
                   onChange={(e) => setNumeroControle(e.target.value)}
+                  onKeyPress={(e) => {
+                    if (e.key === 'Enter') {
+                      executarPesquisa();
+                    }
+                  }}
                   className="border-gray-300 text-gray-700 placeholder:text-gray-400 h-10"
                 />
               </div>
@@ -448,7 +460,10 @@ export default function Biddings() {
 
             {/* Botões de ação */}
             <div className="flex flex-col sm:flex-row gap-2 pt-2">
-              <Button className="flex-1 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white border-0 shadow-lg">
+              <Button 
+                className="flex-1 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white border-0 shadow-lg"
+                onClick={executarPesquisa}
+              >
                 <Search className="mr-2 h-4 w-4" />
                 Pesquisar
               </Button>
