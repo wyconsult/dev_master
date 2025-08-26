@@ -67,7 +67,7 @@ export default function Dashboard() {
       link: "/biddings",
       gradient: "bg-gradient-to-br from-green-500 to-emerald-700",
       hoverGradient: "hover:from-green-600 hover:to-emerald-800",
-      count: isLoadingBiddingsCount ? "..." : `${totalLicitacoes.toLocaleString()} total`,
+      count: isLoadingBiddingsCount ? "..." : `${totalLicitacoes.toLocaleString()}`,
       bgPattern: "bg-green-50"
     },
     {
