@@ -71,7 +71,7 @@ git add -A
 
 echo.
 echo 12) Commitando com mensagem atualizada...
-git commit -m "Sistema v2.12 - PERFORMANCE OTIMIZADA: Carregamento inicial rápido + Carregamento em background + Busca específica sob demanda para números de controle" || echo "Nada para commitar"
+git commit -m "Sistema v2.13 - BUSCA COMPLETA: Número controle busca SEMPRE em todos boletins independente + Remove paginação + Busca inteligente otimizada" || echo "Nada para commitar"
 
 echo.
 echo 13) Enviando para GitHub...
@@ -87,14 +87,14 @@ echo ===============================================
 echo ✅ SYNC GIT CONCLUÍDO COM SUCESSO!
 echo ===============================================
 echo.
-echo === FUNCIONALIDADES v2.12 IMPLEMENTADAS ===
-echo • PERFORMANCE OTIMIZADA: Carregamento inicial extremamente rápido
-echo • CARREGAMENTO INCREMENTAL: 3 boletins iniciais para resposta instantânea
-echo • BACKGROUND LOADING: Resto dos dados carregados em background
-echo • BUSCA INTELIGENTE: Número controle com busca sob demanda
-echo • SEM TIMEOUT: Eliminação de erros "Carregando licitações..."
+echo === FUNCIONALIDADES v2.13 IMPLEMENTADAS ===
+echo • BUSCA COMPLETA: Busca por número controle SEMPRE encontra se existir
+echo • SEM PAGINAÇÃO: Interface simplificada sem páginas
+echo • BUSCA INTELIGENTE: Procura em até 200 boletins por filtro se necessário
+echo • PERFORMANCE: Carregamento rápido inicial + busca sob demanda
+echo • INDEPENDENTE: Não precisa carregar tudo antes de buscar
 echo • BRANDING JLG: "LicitaTraker" → "JLG Consultoria" completo
-echo • PDF + TITULOS: Todas as interfaces atualizadas
+echo • SISTEMA OTIMIZADO: Balance entre velocidade e cobertura completa
 echo • CAMPOS EDITÁVEIS NAS NOTAS: UF, Código UASG e Valor Estimado 100%% funcionais
 echo • PDF FORMATAÇÃO: Correção valor monetário R$ 65.000 → R$ 65.000,00 correto
 echo • MOBILE RESPONSIVO: Calendário e categorização otimizados

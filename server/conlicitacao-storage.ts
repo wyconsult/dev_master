@@ -495,6 +495,9 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
     }
     
     if (filters?.numero_controle) {
+      console.log(`🎯 Busca prioritária por número de controle: ${filters.numero_controle}`);
+      
+      // Primeiro tentar no cache existente
       biddings = biddings.filter(b => 
         b.conlicitacao_id?.toString().includes(filters.numero_controle!) ||
         b.orgao_codigo?.toLowerCase().includes(filters.numero_controle!.toLowerCase()) ||
@@ -502,18 +505,20 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
         b.edital?.toLowerCase().includes(filters.numero_controle!.toLowerCase())
       );
       
-      // Se não encontrou resultado e ainda não carregamos tudo, tentar busca específica
-      if (biddings.length === 0 && !this.fullLoadCompleted) {
-        console.log(`🔍 Busca específica para controle: ${filters.numero_controle}`);
+      // Se não encontrou, fazer busca específica SEMPRE (independente se carregou tudo)
+      if (biddings.length === 0) {
+        console.log('🔍 Não encontrado no cache, fazendo busca específica completa...');
         await this.searchSpecificBidding(filters.numero_controle);
-        // Refilter após busca específica
-        const updatedBiddings = Array.from(this.cachedBiddings.values());
-        biddings = updatedBiddings.filter(b => 
+        
+        // Tentar novamente após busca específica
+        biddings = Array.from(this.cachedBiddings.values()).filter(b => 
           b.conlicitacao_id?.toString().includes(filters.numero_controle!) ||
           b.orgao_codigo?.toLowerCase().includes(filters.numero_controle!.toLowerCase()) ||
           b.processo?.toLowerCase().includes(filters.numero_controle!.toLowerCase()) ||
           b.edital?.toLowerCase().includes(filters.numero_controle!.toLowerCase())
         );
+        
+        console.log(`✅ Busca específica concluída, encontradas: ${biddings.length} licitações`);
       }
     }
     
@@ -792,51 +797,78 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
     }
   }
 
-  // Busca específica para número de controle não encontrado
+  // Busca específica COMPLETA para número de controle não encontrado
   private async searchSpecificBidding(numeroControle: string): Promise<void> {
     try {
-      console.log(`🔍 Busca específica para: ${numeroControle}`);
+      console.log(`🔍 Busca específica COMPLETA para: ${numeroControle}`);
       const filtros = await this.getFiltros();
+      let totalBuscados = 0;
+      let encontrou = false;
       
-      // Buscar nos próximos boletins que ainda não foram carregados
+      // Buscar em TODOS os boletins até encontrar ou esgotar possibilidades
       for (const filtro of filtros) {
-        const boletinsResponse = await this.getBoletins(filtro.id, 1, 10);
-        
-        for (const boletim of boletinsResponse.boletins) {
-          // Só buscar se ainda não temos dados deste boletim
-          const existingFromBoletim = Array.from(this.cachedBiddings.values())
-            .some(b => b.boletim_id === boletim.id);
+        try {
+          // Pegar informação total de boletins
+          const boletinsResponse = await this.getBoletins(filtro.id, 1, 100);
+          console.log(`📊 Filtro ${filtro.id}: ${boletinsResponse.total} boletins disponíveis`);
+          
+          // Buscar em lotes de 20 boletins
+          const batchSize = 20;
+          const totalPages = Math.ceil(boletinsResponse.total / batchSize);
+          
+          for (let page = 1; page <= Math.min(totalPages, 10); page++) { // Limite: máximo 10 páginas (200 boletins) por filtro
+            const pageBoletins = await this.getBoletins(filtro.id, page, batchSize);
             
-          if (!existingFromBoletim) {
-            try {
-              const boletimData = await conLicitacaoAPI.getBoletimData(boletim.id);
-              
-              if (boletimData.licitacoes) {
-                const found = boletimData.licitacoes.some((licitacao: any) => 
-                  licitacao.id?.toString().includes(numeroControle) ||
-                  licitacao.orgao?.codigo?.toLowerCase().includes(numeroControle.toLowerCase()) ||
-                  licitacao.processo?.toLowerCase().includes(numeroControle.toLowerCase()) ||
-                  licitacao.edital?.toLowerCase().includes(numeroControle.toLowerCase())
-                );
+            for (const boletim of pageBoletins.boletins) {
+              try {
+                const boletimData = await conLicitacaoAPI.getBoletimData(boletim.id);
+                totalBuscados++;
                 
-                // Se encontrou, carregar todas as licitações deste boletim
-                if (found) {
+                if (boletimData.licitacoes) {
+                  // Procurar por correspondências
+                  const found = boletimData.licitacoes.some((licitacao: any) => 
+                    licitacao.id?.toString().includes(numeroControle) ||
+                    licitacao.orgao?.codigo?.toLowerCase().includes(numeroControle.toLowerCase()) ||
+                    licitacao.processo?.toLowerCase().includes(numeroControle.toLowerCase()) ||
+                    licitacao.edital?.toLowerCase().includes(numeroControle.toLowerCase())
+                  );
+                  
+                  if (found) {
+                    console.log(`🎯 ENCONTRADO em boletim ${boletim.id}!`);
+                    encontrou = true;
+                  }
+                  
+                  // Carregar TODAS as licitações deste boletim (não só as que correspondem)
                   boletimData.licitacoes.forEach((licitacao: any) => {
                     const transformedLicitacao = this.transformLicitacaoFromAPI(licitacao, boletim.id);
                     this.cachedBiddings.set(transformedLicitacao.id, transformedLicitacao);
                   });
-                  console.log(`🎯 Encontrado em boletim ${boletim.id}`);
-                  return; // Encontrou, não precisa continuar
+                  
+                  if (found) {
+                    console.log(`✅ Busca específica finalizada - SUCESSO! Total boletins verificados: ${totalBuscados}`);
+                    return; // Encontrou! Sair da função
+                  }
                 }
+              } catch (error) {
+                // Ignorar erros de boletins específicos e continuar
+                console.log(`⚠️ Erro em boletim ${boletim.id}, continuando...`);
               }
-            } catch (error) {
-              console.log(`⚠️ Erro na busca específica em boletim ${boletim.id}`);
+              
+              // Pequena pausa para não sobrecarregar a API
+              await new Promise(resolve => setTimeout(resolve, 50));
             }
           }
+        } catch (error) {
+          console.log(`⚠️ Erro no filtro ${filtro.id}, continuando para próximo...`);
         }
       }
+      
+      if (!encontrou) {
+        console.log(`❌ Número de controle ${numeroControle} não encontrado após buscar ${totalBuscados} boletins`);
+      }
+      
     } catch (error) {
-      console.log('⚠️ Erro na busca específica:', error);
+      console.log('⚠️ Erro crítico na busca específica:', error);
     }
   }
 
