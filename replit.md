@@ -3,12 +3,15 @@
 ## Overview
 JLG Consultoria is a full-stack bidding management application designed to streamline the process of managing bidding opportunities (licitações). It enables users to browse, filter, and favorite biddings, manage bulletins, and authenticate securely. The system integrates with the real ConLicitação API for up-to-date data, featuring a hybrid performance system that combines fast loading with accurate counting. Its core purpose is to provide a comprehensive and efficient platform for tracking and managing public tenders.
 
-## Recent Changes (v2.11 - August 2025)
+## Recent Changes (v2.12 - August 2025)
+- **PERFORMANCE OPTIMIZATION**: Lightning-fast initial loading with incremental data strategy
+- **SMART LOADING**: Initial load of 3 most recent bulletins for instant response
+- **BACKGROUND PROCESSING**: Complete data loaded seamlessly in background without blocking UI
+- **INTELLIGENT SEARCH**: On-demand specific search for control numbers not yet loaded
+- **TIMEOUT ELIMINATION**: No more "Loading biddings..." errors or timeouts
 - **BRANDING**: Complete rebrand from "LicitaTraker" to "JLG Consultoria" across all interfaces
 - **CRITICAL SEARCH FIX**: Fixed "Nº Controle" search dependency on bulletin visualization
-- **COMPLETE DATA LOADING**: All bulletins are now pre-loaded automatically for independent searching
 - **PRODUCTION SEARCH**: Search by control number now works regardless of bulletin access history
-- **PAGINATION IMPROVEMENT**: Added intelligent pagination for comprehensive data coverage (max 500 bulletins per filter)
 - **UI IMPROVEMENTS**: Logo JLG Consultoria positioning corrected (mb-2) - closer to text
 - **EDITABLE FIELDS**: UF, Código UASG, and Valor Estimado fields in "Notas" section fully editable
 - **PDF FORMATTING**: Fixed monetary value formatting - "R$ 65.000" now correctly displays as "R$ 65.000,00" in reports

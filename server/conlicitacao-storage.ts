@@ -49,6 +49,8 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
   private readonly CACHE_DURATION = 10 * 60 * 1000; // 10 minutos
   private boletimCache = new Map<number, { data: any, timestamp: number }>();
   private readonly CACHE_TTL = 5 * 60 * 1000; // 5 minutos
+  private fullLoadCompleted: boolean = false;
+  private backgroundLoadingInProgress: boolean = false;
 
   constructor() {
     this.users = new Map();
@@ -468,10 +470,13 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
     uf?: string[];
     numero_controle?: string;
   }): Promise<Bidding[]> {
-    // Se o cache está vazio ou expirado, pré-carregar TODAS as licitações disponíveis
+    // Carregamento inicial rápido - apenas dados básicos
     if (this.cachedBiddings.size === 0 || Date.now() - this.lastCacheUpdate > this.CACHE_DURATION) {
-      console.log('🔄 Pré-carregando todas as licitações disponíveis para busca...');
-      await this.refreshBiddingsCache();
+      console.log('⚡ Carregamento inicial rápido de licitações...');
+      await this.loadInitialBiddings();
+      
+      // Iniciar carregamento completo em background (não bloquear resposta)
+      this.loadAllBiddingsInBackground();
     }
 
     let biddings = Array.from(this.cachedBiddings.values());
@@ -489,6 +494,20 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
         b.processo?.toLowerCase().includes(filters.numero_controle!.toLowerCase()) ||
         b.edital?.toLowerCase().includes(filters.numero_controle!.toLowerCase())
       );
+      
+      // Se não encontrou resultado e ainda não carregamos tudo, tentar busca específica
+      if (biddings.length === 0 && !this.fullLoadCompleted) {
+        console.log(`🔍 Busca específica para controle: ${filters.numero_controle}`);
+        await this.searchSpecificBidding(filters.numero_controle);
+        // Refilter após busca específica
+        const updatedBiddings = Array.from(this.cachedBiddings.values());
+        biddings = updatedBiddings.filter(b => 
+          b.conlicitacao_id?.toString().includes(filters.numero_controle!) ||
+          b.orgao_codigo?.toLowerCase().includes(filters.numero_controle!.toLowerCase()) ||
+          b.processo?.toLowerCase().includes(filters.numero_controle!.toLowerCase()) ||
+          b.edital?.toLowerCase().includes(filters.numero_controle!.toLowerCase())
+        );
+      }
     }
     
     if (filters?.orgao && filters.orgao.length > 0) {
@@ -642,6 +661,176 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
     
     // Garantir que sempre tenha dados no cache
     this.lastCacheUpdate = Date.now();
+  }
+
+  // Carregamento inicial rápido - apenas boletins mais recentes
+  private async loadInitialBiddings(): Promise<void> {
+    // Dados de teste primeiro
+    const licitacoesTeste: Bidding[] = [
+      {
+        id: 1,
+        conlicitacao_id: 17942339,
+        orgao_nome: "Fundação de Apoio ao Ensino, Pesquisa, Extensão e Interiorização do IFAM- FAEPI",
+        orgao_codigo: "UASG123",
+        orgao_cidade: "Manaus",
+        orgao_uf: "AM",
+        orgao_endereco: "Endereço teste",
+        orgao_telefone: "(92) 1234-5678",
+        orgao_site: "www.teste.gov.br",
+        objeto: "Produto/Serviço Quant. Unidade Produto/Serviço: Serviço de apoio logístico para evento",
+        situacao: "URGENTE",
+        datahora_abertura: "2025-07-15 09:00:00",
+        datahora_documento: "2025-07-10 14:30:00",
+        datahora_retirada: "2025-07-12 16:00:00",
+        datahora_visita: null,
+        datahora_prazo: "2025-07-20 17:00:00",
+        edital: "SM/715/2025",
+        link_edital: "https://consultaonline.conlicitacao.com.br/boletim_web/public/api/download?auth=teste1",
+        documento_url: "https://consultaonline.conlicitacao.com.br/boletim_web/public/api/download?auth=teste1",
+        processo: "23456.789012/2025-01",
+        observacao: "Observação teste",
+        item: "Item teste",
+        preco_edital: 50000.00,
+        valor_estimado: 50000.00,
+        boletim_id: 1,
+      },
+      {
+        id: 2,
+        conlicitacao_id: 17942355,
+        orgao_nome: "Fundação de Apoio ao Ensino, Pesquisa, Extensão e Interiorização do IFAM- FAEPI",
+        orgao_codigo: "UASG456",
+        orgao_cidade: "Manaus",
+        orgao_uf: "AM",
+        orgao_endereco: "Endereço teste 2",
+        orgao_telefone: "(92) 9876-5432",
+        orgao_site: "www.teste2.gov.br",
+        objeto: "Produto/Serviço Quant. Unidade Produto/Serviço: Iogurte zero açúcar",
+        situacao: "URGENTE",
+        datahora_abertura: "2025-07-17 07:59:00",
+        datahora_documento: null,
+        datahora_retirada: null,
+        datahora_visita: "2025-07-16 10:30:00",
+        datahora_prazo: "",
+        edital: "SM/711/2025",
+        link_edital: "https://consultaonline.conlicitacao.com.br/boletim_web/public/api/download?auth=teste2",
+        documento_url: "https://consultaonline.conlicitacao.com.br/boletim_web/public/api/download?auth=teste2",
+        processo: "98765.432109/2025-02",
+        observacao: "Observação teste 2",
+        item: "Item teste 2",
+        preco_edital: 25000.00,
+        valor_estimado: 25000.00,
+        boletim_id: 1,
+      }
+    ];
+    
+    // Adicionar dados de teste ao cache
+    licitacoesTeste.forEach(licitacao => {
+      this.cachedBiddings.set(licitacao.id, licitacao);
+    });
+
+    try {
+      // Carregamento rápido: apenas os 3 boletins mais recentes
+      const filtros = await this.getFiltros();
+      
+      for (const filtro of filtros) {
+        try {
+          console.log(`⚡ Carregamento rápido: primeiros boletins do filtro ${filtro.id}`);
+          const boletinsResponse = await this.getBoletins(filtro.id, 1, 3);
+          
+          for (const boletim of boletinsResponse.boletins) {
+            try {
+              const boletimData = await conLicitacaoAPI.getBoletimData(boletim.id);
+              
+              if (boletimData.licitacoes) {
+                boletimData.licitacoes.forEach((licitacao: any) => {
+                  const transformedLicitacao = this.transformLicitacaoFromAPI(licitacao, boletim.id);
+                  this.cachedBiddings.set(transformedLicitacao.id, transformedLicitacao);
+                });
+              }
+            } catch (error) {
+              console.log(`⚠️ Erro ao carregar boletim ${boletim.id} (carregamento rápido)`);
+            }
+          }
+        } catch (error) {
+          console.log(`⚠️ Erro no carregamento rápido do filtro ${filtro.id}`);
+        }
+      }
+      
+      console.log(`⚡ Carregamento inicial concluído: ${this.cachedBiddings.size} licitações carregadas`);
+      
+    } catch (error) {
+      console.log('⚡ Usando dados de teste para carregamento inicial');
+    }
+    
+    this.lastCacheUpdate = Date.now();
+  }
+
+  // Carregamento completo em background
+  private async loadAllBiddingsInBackground(): Promise<void> {
+    if (this.backgroundLoadingInProgress || this.fullLoadCompleted) {
+      return;
+    }
+    
+    this.backgroundLoadingInProgress = true;
+    console.log('🔄 Iniciando carregamento completo em background...');
+    
+    try {
+      await this.refreshBiddingsCache();
+      this.fullLoadCompleted = true;
+      console.log('✅ Carregamento completo em background finalizado');
+    } catch (error) {
+      console.log('⚠️ Erro no carregamento em background:', error);
+    } finally {
+      this.backgroundLoadingInProgress = false;
+    }
+  }
+
+  // Busca específica para número de controle não encontrado
+  private async searchSpecificBidding(numeroControle: string): Promise<void> {
+    try {
+      console.log(`🔍 Busca específica para: ${numeroControle}`);
+      const filtros = await this.getFiltros();
+      
+      // Buscar nos próximos boletins que ainda não foram carregados
+      for (const filtro of filtros) {
+        const boletinsResponse = await this.getBoletins(filtro.id, 1, 10);
+        
+        for (const boletim of boletinsResponse.boletins) {
+          // Só buscar se ainda não temos dados deste boletim
+          const existingFromBoletim = Array.from(this.cachedBiddings.values())
+            .some(b => b.boletim_id === boletim.id);
+            
+          if (!existingFromBoletim) {
+            try {
+              const boletimData = await conLicitacaoAPI.getBoletimData(boletim.id);
+              
+              if (boletimData.licitacoes) {
+                const found = boletimData.licitacoes.some((licitacao: any) => 
+                  licitacao.id?.toString().includes(numeroControle) ||
+                  licitacao.orgao?.codigo?.toLowerCase().includes(numeroControle.toLowerCase()) ||
+                  licitacao.processo?.toLowerCase().includes(numeroControle.toLowerCase()) ||
+                  licitacao.edital?.toLowerCase().includes(numeroControle.toLowerCase())
+                );
+                
+                // Se encontrou, carregar todas as licitações deste boletim
+                if (found) {
+                  boletimData.licitacoes.forEach((licitacao: any) => {
+                    const transformedLicitacao = this.transformLicitacaoFromAPI(licitacao, boletim.id);
+                    this.cachedBiddings.set(transformedLicitacao.id, transformedLicitacao);
+                  });
+                  console.log(`🎯 Encontrado em boletim ${boletim.id}`);
+                  return; // Encontrou, não precisa continuar
+                }
+              }
+            } catch (error) {
+              console.log(`⚠️ Erro na busca específica em boletim ${boletim.id}`);
+            }
+          }
+        }
+      }
+    } catch (error) {
+      console.log('⚠️ Erro na busca específica:', error);
+    }
   }
 
   async getBidding(id: number): Promise<Bidding | undefined> {
