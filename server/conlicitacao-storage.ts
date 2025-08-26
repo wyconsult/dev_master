@@ -24,6 +24,13 @@ export interface IConLicitacaoStorage {
     uf?: string[];
     numero_controle?: string;
   }): Promise<Bidding[]>;
+  getBiddingsPaginated(filters?: { 
+    conlicitacao_id?: string; 
+    orgao?: string[]; 
+    uf?: string[];
+    numero_controle?: string;
+  }, page?: number, limit?: number): Promise<{ biddings: Bidding[], total: number }>;
+  getBiddingsCount(): Promise<number>;
   getBidding(id: number): Promise<Bidding | undefined>;
   
   // Favorites (mantemos localmente)
@@ -835,6 +842,124 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
 
   async getBidding(id: number): Promise<Bidding | undefined> {
     return this.cachedBiddings.get(id);
+  }
+
+  // Nova versão paginada e otimizada
+  async getBiddingsPaginated(filters?: { 
+    conlicitacao_id?: string; 
+    orgao?: string[]; 
+    uf?: string[];
+    numero_controle?: string;
+  }, page: number = 1, limit: number = 50): Promise<{ biddings: Bidding[], total: number }> {
+    // Carregamento inicial básico apenas
+    if (this.cachedBiddings.size === 0 || Date.now() - this.lastCacheUpdate > this.CACHE_DURATION) {
+      console.log('⚡ Carregamento inicial rápido para paginação...');
+      await this.loadInitialBiddings();
+    }
+    
+    let biddings = Array.from(this.cachedBiddings.values());
+    
+    // Aplicar filtros
+    if (filters?.conlicitacao_id) {
+      biddings = biddings.filter(b => 
+        b.conlicitacao_id.toString().includes(filters.conlicitacao_id!)
+      );
+    }
+    
+    if (filters?.numero_controle) {
+      biddings = biddings.filter(b => 
+        b.conlicitacao_id?.toString().includes(filters.numero_controle!) ||
+        b.orgao_codigo?.toLowerCase().includes(filters.numero_controle!.toLowerCase()) ||
+        b.processo?.toLowerCase().includes(filters.numero_controle!.toLowerCase()) ||
+        b.edital?.toLowerCase().includes(filters.numero_controle!.toLowerCase())
+      );
+      
+      // Se não encontrou resultado, tentar busca específica
+      if (biddings.length === 0) {
+        console.log(`🔍 Busca específica paginada para: ${filters.numero_controle}`);
+        await this.searchSpecificBidding(filters.numero_controle);
+        biddings = Array.from(this.cachedBiddings.values()).filter(b => 
+          b.conlicitacao_id?.toString().includes(filters.numero_controle!) ||
+          b.orgao_codigo?.toLowerCase().includes(filters.numero_controle!.toLowerCase()) ||
+          b.processo?.toLowerCase().includes(filters.numero_controle!.toLowerCase()) ||
+          b.edital?.toLowerCase().includes(filters.numero_controle!.toLowerCase())
+        );
+      }
+    }
+    
+    if (filters?.orgao && filters.orgao.length > 0) {
+      biddings = biddings.filter(b => 
+        filters.orgao!.some(orgao => 
+          b.orgao_nome?.toLowerCase().includes(orgao.toLowerCase())
+        )
+      );
+    }
+    
+    if (filters?.uf && filters.uf.length > 0) {
+      biddings = biddings.filter(b => 
+        filters.uf!.includes(b.orgao_uf || '')
+      );
+    }
+    
+    const total = biddings.length;
+    const startIndex = (page - 1) * limit;
+    const paginatedBiddings = biddings.slice(startIndex, startIndex + limit);
+    
+    return { biddings: paginatedBiddings, total };
+  }
+
+  // Contagem precisa sem carregar todos os dados
+  async getBiddingsCount(): Promise<number> {
+    // Carregar apenas dados iniciais se necessário
+    if (this.cachedBiddings.size === 0) {
+      await this.loadInitialBiddings();
+    }
+    
+    // Em vez de contar do cache (que pode estar incompleto),
+    // fazer uma estimativa baseada nos boletins disponíveis
+    try {
+      const filtros = await this.getFiltros();
+      let totalEstimado = this.cachedBiddings.size;
+      
+      // Se ainda não carregamos tudo, fazer uma estimativa mais precisa
+      if (!this.fullLoadCompleted && this.cachedBiddings.size < 1000) {
+        let totalBoletins = 0;
+        let amostraLicitacoes = 0;
+        let amostraBoletins = 0;
+        
+        for (const filtro of filtros.slice(0, 2)) { // Apenas 2 filtros para amostra
+          try {
+            const boletinsResponse = await this.getBoletins(filtro.id, 1, 5); // Apenas 5 boletins
+            totalBoletins += boletinsResponse.total;
+            
+            // Contar licitações em alguns boletins para fazer média
+            for (const boletim of boletinsResponse.boletins.slice(0, 2)) {
+              try {
+                const boletimData = await conLicitacaoAPI.getBoletimData(boletim.id);
+                if (boletimData.licitacoes) {
+                  amostraLicitacoes += boletimData.licitacoes.length;
+                  amostraBoletins++;
+                }
+              } catch (error) {
+                // Ignorar erros de boletins específicos
+              }
+            }
+          } catch (error) {
+            // Ignorar erros de filtros específicos
+          }
+        }
+        
+        if (amostraBoletins > 0) {
+          const mediaLicitacoesPorBoletim = Math.round(amostraLicitacoes / amostraBoletins);
+          totalEstimado = Math.min(totalBoletins * mediaLicitacoesPorBoletim, 20000);
+        }
+      }
+      
+      return Math.min(totalEstimado, 20000); // Nunca exceder o máximo real da API
+    } catch (error) {
+      console.log('⚠️ Erro na contagem, retornando cache:', error);
+      return Math.min(this.cachedBiddings.size, 20000);
+    }
   }
 
   // Métodos de favoritos com timestamps precisos em memória

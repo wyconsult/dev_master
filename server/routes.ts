@@ -25,22 +25,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Biddings routes
   app.get("/api/biddings", async (req, res) => {
     try {
-      const { conlicitacao_id, orgao, uf, numero_controle } = req.query;
+      const { conlicitacao_id, orgao, uf, numero_controle, page = '1', limit = '50' } = req.query;
       const filters: any = {};
+      const currentPage = parseInt(page as string);
+      const pageLimit = parseInt(limit as string);
       
       if (conlicitacao_id) filters.conlicitacao_id = conlicitacao_id as string;
       if (numero_controle) filters.numero_controle = numero_controle as string;
       if (orgao) {
-        // Handle multiple orgao values
         filters.orgao = Array.isArray(orgao) ? orgao : [orgao];
       }
       if (uf) {
-        // Handle multiple uf values
         filters.uf = Array.isArray(uf) ? uf : [uf];
       }
       
-      const biddings = await conLicitacaoStorage.getBiddings(filters);
-      res.json(biddings);
+      const { biddings, total } = await conLicitacaoStorage.getBiddingsPaginated(filters, currentPage, pageLimit);
+      res.json({ biddings, total, page: currentPage, limit: pageLimit });
+    } catch (error) {
+      res.status(500).json({ message: "Erro interno do servidor" });
+    }
+  });
+
+  // Rota para contar total de licitações (para dashboard)
+  app.get("/api/biddings/count", async (req, res) => {
+    try {
+      const count = await conLicitacaoStorage.getBiddingsCount();
+      res.json({ count });
     } catch (error) {
       res.status(500).json({ message: "Erro interno do servidor" });
     }

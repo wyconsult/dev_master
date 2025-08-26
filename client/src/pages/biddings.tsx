@@ -71,6 +71,10 @@ export default function Biddings() {
 
   // Estado para controlar expansão dos filtros avançados
   const [filtrosAvancadosExpandidos, setFiltrosAvancadosExpandidos] = useState(false);
+  
+  // Estado para paginação
+  const [currentPage, setCurrentPage] = useState(1);
+  const [limit] = useState(50);
 
   const buildFilters = () => {
     const filters: any = {};
@@ -80,14 +84,32 @@ export default function Biddings() {
     return filters;
   };
 
-  const { data: allBiddings = [], isLoading, error, isFetching } = useQuery<Bidding[]>({
-    queryKey: ["/api/biddings"],
-    staleTime: 30000, // 30 segundos
+  // Nova query paginada para evitar crash
+  const { data: paginatedData, isLoading, error, isFetching } = useQuery<{biddings: Bidding[], total: number, page: number, limit: number}>({
+    queryKey: ["/api/biddings", currentPage, numeroControle, selectedOrgaos, selectedUFs],
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      if (numeroControle) params.append('numero_controle', numeroControle);
+      if (selectedOrgaos.length) selectedOrgaos.forEach(orgao => params.append('orgao', orgao));
+      if (selectedUFs.length) selectedUFs.forEach(uf => params.append('uf', uf));
+      params.append('page', currentPage.toString());
+      params.append('limit', limit.toString());
+      
+      const response = await fetch(`/api/biddings?${params.toString()}`);
+      if (!response.ok) throw new Error('Erro ao carregar licitações');
+      return response.json();
+    },
+    staleTime: 30000,
     refetchOnWindowFocus: false,
-    retry: false, // Sem retry para evitar delay
+    retry: false,
     enabled: true,
     refetchInterval: false,
   });
+  
+  // Dados atuais da página
+  const allBiddings = paginatedData?.biddings || [];
+  const totalBiddings = paginatedData?.total || 0;
+  const totalPages = Math.ceil(totalBiddings / limit);
 
   // Debug específico para mobile
   React.useEffect(() => {
@@ -102,7 +124,7 @@ export default function Biddings() {
   }, [allBiddings, isLoading, error]);
 
   // Debug para verificar o estado
-  console.log("Biddings Query State:", { isLoading, error, dataLength: allBiddings.length });
+  console.log("Biddings Query State:", { isLoading, error, dataLength: allBiddings.length, currentPage, totalBiddings, totalPages });
 
   // Extrair órgãos únicos dos dados reais
   const uniqueOrgaos = Array.from(new Set(allBiddings.map(b => b.orgao_nome))).sort();
@@ -133,28 +155,9 @@ export default function Biddings() {
     return true;
   };
 
-  // Filtro dinâmico em tempo real - ATUALIZADO
+  // Filtro dinâmico em tempo real - SIMPLIFICADO (principais filtros já tratados no servidor)
   const filteredBiddings = allBiddings.filter((bidding) => {
-    // Filtro por número de controle
-    if (
-      numeroControle &&
-      !bidding.conlicitacao_id.toString().includes(numeroControle)
-    ) {
-      return false;
-    }
-
-    // Filtro por órgãos selecionados
-    if (
-      selectedOrgaos.length > 0 &&
-      !selectedOrgaos.includes(bidding.orgao_nome)
-    ) {
-      return false;
-    }
-
-    // Filtro por UFs selecionados
-    if (selectedUFs.length > 0 && !selectedUFs.includes(bidding.orgao_uf)) {
-      return false;
-    }
+    // Filtros adicionais (locais) que não são tratados no servidor
 
     // Filtro por cidade
     if (
@@ -231,7 +234,13 @@ export default function Biddings() {
     setMostrarSemValor(false);
     setDataInicio("");
     setDataFim("");
+    setCurrentPage(1); // Resetar página ao limpar filtros
   };
+
+  // Resetar página quando filtros mudarem
+  React.useEffect(() => {
+    setCurrentPage(1);
+  }, [numeroControle, selectedOrgaos, selectedUFs]);
 
   const toggleTipoData = () => {
     setTipoData((prev) => (prev === "abertura" ? "documento" : "abertura"));
@@ -288,7 +297,7 @@ export default function Biddings() {
             Busca Inteligente 🔍
           </p>
           <p className="text-sm md:text-base text-gray-500">
-            Encontre e acompanhe processos licitatórios
+            Encontre e acompanhe processos licitatórios ({totalBiddings.toLocaleString()} total)
           </p>
         </div>
 
@@ -616,9 +625,67 @@ export default function Biddings() {
               </CardContent>
             </Card>
           ) : (
-            filteredBiddings.map((bidding) => (
-              <BiddingCard key={bidding.id} bidding={bidding} showFavoriteIcon={true} />
-            ))
+            <>
+              {filteredBiddings.map((bidding) => (
+                <BiddingCard key={bidding.id} bidding={bidding} showFavoriteIcon={true} />
+              ))}
+              
+              {/* Controles de Paginação */}
+              {totalPages > 1 && (
+                <Card className="mt-6">
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div className="text-sm text-gray-600">
+                        Página {currentPage} de {totalPages} ({totalBiddings.toLocaleString()} total)
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                          disabled={currentPage <= 1}
+                        >
+                          Anterior
+                        </Button>
+                        <div className="flex items-center space-x-1">
+                          {[...Array(Math.min(totalPages, 5))].map((_, i) => {
+                            let pageNum;
+                            if (totalPages <= 5) {
+                              pageNum = i + 1;
+                            } else {
+                              const start = Math.max(1, currentPage - 2);
+                              const end = Math.min(totalPages, start + 4);
+                              pageNum = start + i;
+                              if (pageNum > end) return null;
+                            }
+                            
+                            return (
+                              <Button
+                                key={pageNum}
+                                variant={currentPage === pageNum ? "default" : "outline"}
+                                size="sm"
+                                className="w-8 h-8 p-0"
+                                onClick={() => setCurrentPage(pageNum)}
+                              >
+                                {pageNum}
+                              </Button>
+                            );
+                          })}
+                        </div>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                          disabled={currentPage >= totalPages}
+                        >
+                          Próxima
+                        </Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+            </>
           )}
         </div>
       </div>
