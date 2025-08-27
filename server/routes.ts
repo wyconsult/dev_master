@@ -31,17 +31,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Registro de usuários
   app.post("/api/auth/register", async (req, res) => {
     try {
+      console.log('📝 Tentativa de registro:', { 
+        body: req.body,
+        env: process.env.NODE_ENV,
+        isProduction: process.env.NODE_ENV === 'production'
+      });
+      
       const { nomeEmpresa, cnpj, nome, email, password, confirmPassword } = registerSchema.parse(req.body);
       
+      console.log('✅ Dados validados com sucesso');
+      
       // Verificar se usuário já existe
+      console.log('🔍 Verificando se usuário existe:', email);
       const existingUser = await storage.getUserByEmail(email);
       if (existingUser) {
+        console.log('❌ E-mail já existe:', email);
         return res.status(400).json({ message: "E-mail já cadastrado" });
       }
+      
+      console.log('👤 E-mail disponível, criando usuário...');
       
       // Hash da senha
       const saltRounds = 10;
       const hashedPassword = await bcrypt.hash(password, saltRounds);
+      
+      console.log('🔐 Senha hasheada, inserindo no banco...');
       
       // Criar usuário
       const user = await storage.createUser({
@@ -52,15 +66,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
         password: hashedPassword
       });
       
+      console.log('✅ Usuário criado com sucesso:', user.id);
+      
       res.status(201).json({ 
         message: "Usuário criado com sucesso",
         user: { id: user.id, email: user.email, nomeEmpresa: user.nomeEmpresa, nome: user.nome } 
       });
     } catch (error) {
-      console.error('Erro no registro:', error);
-      if (error instanceof Error && error.message.includes('duplicate key')) {
+      console.error('❌ ERRO COMPLETO no registro:', {
+        error: error,
+        message: error instanceof Error ? error.message : 'Erro desconhecido',
+        stack: error instanceof Error ? error.stack : undefined,
+        body: req.body,
+        env: process.env.NODE_ENV
+      });
+      
+      if (error instanceof Error && (error.message.includes('duplicate key') || error.message.includes('Duplicate entry'))) {
         return res.status(400).json({ message: "E-mail ou CNPJ já cadastrado" });
       }
+      
       res.status(400).json({ message: "Dados inválidos ou já cadastrados" });
     }
   });

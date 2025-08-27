@@ -13,6 +13,28 @@ const mysqlConfig = {
   queueLimit: 0
 };
 
+console.log('🗺️ [MySQL] Configurando conexão:', {
+  host: mysqlConfig.host,
+  user: mysqlConfig.user,
+  database: mysqlConfig.database,
+  env: process.env.NODE_ENV
+});
+
 // Pool de conexões MySQL
 const pool = mysql.createPool(mysqlConfig);
+
+// Testar conexão
+pool.getConnection()
+  .then(connection => {
+    console.log('✅ [MySQL] Conexão estabelecida com sucesso!');
+    connection.release();
+  })
+  .catch(error => {
+    console.error('❌ [MySQL] ERRO na conexão:', {
+      message: error.message,
+      code: error.code,
+      config: mysqlConfig
+    });
+  });
+
 export const db = drizzle(pool, { schema, mode: 'default' });

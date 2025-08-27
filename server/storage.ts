@@ -63,12 +63,33 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
-    const result = await db.insert(users).values(insertUser);
-    const insertId = Number(result.insertId);
-    
-    // Buscar o usuário inserido para retornar com dados completos
-    const user = await this.getUser(insertId);
-    return user!;
+    try {
+      console.log('🗺️ [DatabaseStorage] Tentando inserir usuário:', {
+        nomeEmpresa: insertUser.nomeEmpresa,
+        cnpj: insertUser.cnpj,
+        nome: insertUser.nome,
+        email: insertUser.email
+      });
+      
+      const result = await db.insert(users).values(insertUser);
+      console.log('✅ [DatabaseStorage] Insert realizado, resultado:', result);
+      
+      const insertId = Number(result.insertId);
+      console.log('🆔 [DatabaseStorage] ID gerado:', insertId);
+      
+      // Buscar o usuário inserido para retornar com dados completos
+      const user = await this.getUser(insertId);
+      console.log('✅ [DatabaseStorage] Usuário criado:', user?.id);
+      
+      return user!;
+    } catch (error) {
+      console.error('❌ [DatabaseStorage] ERRO ao criar usuário:', {
+        error: error,
+        message: error instanceof Error ? error.message : 'Erro desconhecido',
+        insertUser: insertUser
+      });
+      throw error;
+    }
   }
 
   async updateUserPassword(email: string, hashedPassword: string): Promise<User | undefined> {
@@ -328,4 +349,10 @@ export class MemStorage implements IStorage {
 
 // Usar MySQL em produção, MemStorage em desenvolvimento
 const isProduction = process.env.NODE_ENV === 'production';
+console.log('🔧 [STORAGE] Configurando storage:', {
+  NODE_ENV: process.env.NODE_ENV,
+  isProduction,
+  storageType: isProduction ? 'MySQL (DatabaseStorage)' : 'Memory (MemStorage)'
+});
+
 export const storage = isProduction ? new DatabaseStorage() : new MemStorage();
