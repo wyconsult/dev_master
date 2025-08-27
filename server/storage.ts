@@ -19,7 +19,9 @@ export interface IStorage {
   // Users
   getUser(id: number): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
+  getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
+  updateUserPassword(email: string, hashedPassword: string): Promise<User | undefined>;
   
   // Biddings
   getBiddings(filters?: { 
@@ -54,12 +56,26 @@ export class DatabaseStorage implements IStorage {
     return user || undefined;
   }
 
+  async getUserByUsername(username: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.email, username));
+    return user || undefined;
+  }
+
   async createUser(insertUser: InsertUser): Promise<User> {
     const [user] = await db
       .insert(users)
       .values(insertUser)
       .returning();
     return user;
+  }
+
+  async updateUserPassword(email: string, hashedPassword: string): Promise<User | undefined> {
+    const [user] = await db
+      .update(users)
+      .set({ password: hashedPassword })
+      .where(eq(users.email, email))
+      .returning();
+    return user || undefined;
   }
 
   async getBiddings(filters?: { 
@@ -78,22 +94,15 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getFavorites(userId: number, date?: string, dateFrom?: string, dateTo?: string): Promise<Bidding[]> {
-    let query = db.select().from(favorites).where(eq(favorites.userId, userId));
+    let conditions = [eq(favorites.userId, userId)];
 
     // Aplicar filtros de data na data de criação do favorito
     if (date) {
       const startDate = new Date(date + "T00:00:00");
       const endDate = new Date(date + "T23:59:59");
-      query = query.where(
-        and(
-          eq(favorites.userId, userId),
-          gte(favorites.createdAt, startDate),
-          lte(favorites.createdAt, endDate)
-        )
-      );
+      conditions.push(gte(favorites.createdAt, startDate));
+      conditions.push(lte(favorites.createdAt, endDate));
     } else if (dateFrom || dateTo) {
-      let conditions = [eq(favorites.userId, userId)];
-      
       if (dateFrom) {
         const startDate = new Date(dateFrom + "T00:00:00");
         conditions.push(gte(favorites.createdAt, startDate));
@@ -103,15 +112,13 @@ export class DatabaseStorage implements IStorage {
         const endDate = new Date(dateTo + "T23:59:59");
         conditions.push(lte(favorites.createdAt, endDate));
       }
-      
-      query = query.where(and(...conditions));
     }
 
-    const favoritesList = await query;
+    const favoritesList = await db.select().from(favorites).where(and(...conditions));
     
     // Buscar dados das licitações do ConLicitacaoStorage
     const biddingsWithFavoriteData: Bidding[] = [];
-    const { storage: conLicitacaoStorage } = await import("./conlicitacao-storage");
+    const { conLicitacaoStorage } = await import("./conlicitacao-storage");
     
     for (const fav of favoritesList) {
       const bidding = await conLicitacaoStorage.getBidding(fav.biddingId);
@@ -206,16 +213,8 @@ export class MemStorage implements IStorage {
   }
 
   private initializeMockData() {
-    // Create a test user
-    const testUser: User = {
-      id: 1,
-      email: "admin@test.com",
-      password: "admin123"
-    };
-    this.users.set(1, testUser);
-    this.currentUserId = 2;
-    
-    // No bidding, boletins or other mock data - system should use ConLicitação API only
+    // No mock users - real authentication only
+    // System uses ConLicitação API for all data
   }
 
   async getUser(id: number): Promise<User | undefined> {
@@ -226,11 +225,25 @@ export class MemStorage implements IStorage {
     return Array.from(this.users.values()).find(user => user.email === email);
   }
 
+  async getUserByUsername(username: string): Promise<User | undefined> {
+    return Array.from(this.users.values()).find(user => user.email === username);
+  }
+
   async createUser(insertUser: InsertUser): Promise<User> {
     const id = this.currentUserId++;
-    const user: User = { ...insertUser, id };
+    const user: User = { ...insertUser, id, createdAt: new Date() };
     this.users.set(id, user);
     return user;
+  }
+
+  async updateUserPassword(email: string, hashedPassword: string): Promise<User | undefined> {
+    const user = await this.getUserByEmail(email);
+    if (user) {
+      user.password = hashedPassword;
+      this.users.set(user.id, user);
+      return user;
+    }
+    return undefined;
   }
 
   async getBiddings(filters?: { 
@@ -253,7 +266,19 @@ export class MemStorage implements IStorage {
 
   async addFavorite(insertFavorite: InsertFavorite): Promise<Favorite> {
     const id = this.currentFavoriteId++;
-    const favorite: Favorite = { ...insertFavorite, id, createdAt: new Date() };
+    const favorite: Favorite = { 
+      ...insertFavorite, 
+      id, 
+      createdAt: new Date(),
+      category: insertFavorite.category || null,
+      customCategory: insertFavorite.customCategory || null,
+      notes: insertFavorite.notes || null,
+      uf: insertFavorite.uf || null,
+      codigoUasg: insertFavorite.codigoUasg || null,
+      valorEstimado: insertFavorite.valorEstimado || null,
+      fornecedor: insertFavorite.fornecedor || null,
+      site: insertFavorite.site || null
+    };
     this.favorites.set(id, favorite);
     return favorite;
   }
@@ -290,4 +315,4 @@ export class MemStorage implements IStorage {
   }
 }
 
-export const storage = new MemStorage();
+export const storage = new DatabaseStorage();

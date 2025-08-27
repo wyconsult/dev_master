@@ -4,8 +4,12 @@ import { z } from "zod";
 
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
+  nomeEmpresa: text("nome_empresa").notNull(),
+  cnpj: text("cnpj").notNull().unique(),
+  nome: text("nome").notNull(),
   email: text("email").notNull().unique(),
   password: text("password").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
 export const biddings = pgTable("biddings", {
@@ -89,8 +93,27 @@ export const acompanhamentos = pgTable("acompanhamentos", {
 });
 
 export const insertUserSchema = createInsertSchema(users).pick({
+  nomeEmpresa: true,
+  cnpj: true,
+  nome: true,
   email: true,
   password: true,
+});
+
+export const registerSchema = insertUserSchema.extend({
+  confirmPassword: z.string().min(6, "Confirmação de senha deve ter no mínimo 6 caracteres"),
+}).refine(data => data.password === data.confirmPassword, {
+  message: "Senhas não coincidem",
+  path: ["confirmPassword"],
+});
+
+export const forgotPasswordSchema = z.object({
+  email: z.string().email("E-mail inválido"),
+  newPassword: z.string().min(6, "Nova senha deve ter no mínimo 6 caracteres"),
+  confirmPassword: z.string().min(6, "Confirmação de senha deve ter no mínimo 6 caracteres"),
+}).refine(data => data.newPassword === data.confirmPassword, {
+  message: "Senhas não coincidem",
+  path: ["confirmPassword"],
 });
 
 export const insertBiddingSchema = createInsertSchema(biddings).omit({
@@ -126,3 +149,5 @@ export type Boletim = typeof boletins.$inferSelect;
 export type InsertAcompanhamento = z.infer<typeof insertAcompanhamentoSchema>;
 export type Acompanhamento = typeof acompanhamentos.$inferSelect;
 export type LoginRequest = z.infer<typeof loginSchema>;
+export type RegisterRequest = z.infer<typeof registerSchema>;
+export type ForgotPasswordRequest = z.infer<typeof forgotPasswordSchema>;

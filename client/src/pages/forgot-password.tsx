@@ -4,24 +4,17 @@ import { Input } from "@/components/ui/input";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
+import { forgotPasswordSchema, type ForgotPasswordRequest } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
-import { Gavel, Key, ArrowLeft } from "lucide-react";
-import { Link } from "wouter";
+import { useMutation } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
+import { Key, ArrowLeft } from "lucide-react";
+import { Link, useLocation } from "wouter";
 
-const forgotPasswordSchema = z.object({
-  email: z.string().email("E-mail inválido"),
-  newPassword: z.string().min(6, "Nova senha deve ter pelo menos 6 caracteres"),
-  confirmPassword: z.string().min(6, "Confirmação de senha é obrigatória"),
-}).refine((data) => data.newPassword === data.confirmPassword, {
-  message: "As senhas não coincidem",
-  path: ["confirmPassword"],
-});
-
-type ForgotPasswordRequest = z.infer<typeof forgotPasswordSchema>;
 
 export default function ForgotPassword() {
   const { toast } = useToast();
+  const [, setLocation] = useLocation();
 
   const form = useForm<ForgotPasswordRequest>({
     resolver: zodResolver(forgotPasswordSchema),
@@ -32,12 +25,29 @@ export default function ForgotPassword() {
     },
   });
 
+  const forgotPasswordMutation = useMutation({
+    mutationFn: async (data: ForgotPasswordRequest) => {
+      const response = await apiRequest("POST", "/api/auth/forgot-password", data);
+      return response.json();
+    },
+    onSuccess: (data) => {
+      toast({
+        title: "Sucesso",
+        description: "Senha alterada com sucesso! Faça login com a nova senha.",
+      });
+      setLocation("/");
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Erro",
+        description: error.message || "Erro ao redefinir senha",
+        variant: "destructive",
+      });
+    },
+  });
+
   const onSubmit = (data: ForgotPasswordRequest) => {
-    toast({
-      title: "Funcionalidade em desenvolvimento",
-      description: "A recuperação de senha será implementada quando a API estiver disponível.",
-    });
-    console.log("Forgot password data:", data);
+    forgotPasswordMutation.mutate(data);
   };
 
   return (
@@ -113,9 +123,10 @@ export default function ForgotPassword() {
                 <Button 
                   type="submit" 
                   className="w-full bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white font-semibold py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5"
+                  disabled={forgotPasswordMutation.isPending}
                 >
                   <Key className="mr-2 h-5 w-5" />
-                  Redefinir Senha
+                  {forgotPasswordMutation.isPending ? "Redefinindo..." : "Redefinir Senha"}
                 </Button>
 
                 <div className="text-center pt-2">

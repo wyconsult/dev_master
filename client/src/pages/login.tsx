@@ -148,11 +148,6 @@ export default function Login() {
             </Form>
           </CardContent>
         </Card>
-
-          <div className="text-center text-sm text-gray-600 space-y-2">
-            <p>Usuário de teste: admin@test.com</p>
-            <p>Senha: admin123</p>
-          </div>
         </div>
       </div>
 

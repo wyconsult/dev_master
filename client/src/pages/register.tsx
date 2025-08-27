@@ -4,41 +4,53 @@ import { Input } from "@/components/ui/input";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
+import { registerSchema, type RegisterRequest } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
-import { Gavel, UserPlus, ArrowLeft } from "lucide-react";
-import { Link } from "wouter";
+import { useMutation } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
+import { UserPlus, ArrowLeft } from "lucide-react";
+import { Link, useLocation } from "wouter";
 
-const registerSchema = z.object({
-  companyName: z.string().min(1, "Nome da empresa é obrigatório"),
-  cnpj: z.string().min(14, "CNPJ deve ter 14 dígitos").regex(/^\d{14}$/, "CNPJ deve conter apenas números"),
-  name: z.string().min(1, "Nome é obrigatório"),
-  email: z.string().email("E-mail inválido"),
-  password: z.string().min(6, "Senha deve ter pelo menos 6 caracteres"),
-});
-
-type RegisterRequest = z.infer<typeof registerSchema>;
 
 export default function Register() {
   const { toast } = useToast();
+  const [, setLocation] = useLocation();
 
   const form = useForm<RegisterRequest>({
     resolver: zodResolver(registerSchema),
     defaultValues: {
-      companyName: "",
+      nomeEmpresa: "",
       cnpj: "",
-      name: "",
+      nome: "",
       email: "",
       password: "",
+      confirmPassword: "",
+    },
+  });
+
+  const registerMutation = useMutation({
+    mutationFn: async (data: RegisterRequest) => {
+      const response = await apiRequest("POST", "/api/auth/register", data);
+      return response.json();
+    },
+    onSuccess: (data) => {
+      toast({
+        title: "Sucesso",
+        description: "Cadastro realizado com sucesso! Faça login para continuar.",
+      });
+      setLocation("/");
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Erro",
+        description: error.message || "Erro ao realizar cadastro",
+        variant: "destructive",
+      });
     },
   });
 
   const onSubmit = (data: RegisterRequest) => {
-    toast({
-      title: "Funcionalidade em desenvolvimento",
-      description: "O cadastro será implementado quando a API estiver disponível.",
-    });
-    console.log("Register data:", data);
+    registerMutation.mutate(data);
   };
 
   return (
@@ -59,7 +71,7 @@ export default function Register() {
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                 <FormField
                   control={form.control}
-                  name="companyName"
+                  name="nomeEmpresa"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Nome da Empresa</FormLabel>
@@ -96,7 +108,7 @@ export default function Register() {
 
                 <FormField
                   control={form.control}
-                  name="name"
+                  name="nome"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Nome</FormLabel>
@@ -150,12 +162,32 @@ export default function Register() {
                   )}
                 />
 
+                <FormField
+                  control={form.control}
+                  name="confirmPassword"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Confirmar Senha</FormLabel>
+                      <FormControl>
+                        <Input 
+                          type="password" 
+                          placeholder="Confirme sua senha" 
+                          className="border-gray-300 text-black placeholder:text-gray-400"
+                          {...field} 
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
                 <Button 
                   type="submit" 
                   className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-semibold py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5"
+                  disabled={registerMutation.isPending}
                 >
                   <UserPlus className="mr-2 h-5 w-5" />
-                  Cadastrar
+                  {registerMutation.isPending ? "Cadastrando..." : "Cadastrar"}
                 </Button>
 
                 <div className="text-center pt-2">

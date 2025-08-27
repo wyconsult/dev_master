@@ -2,7 +2,8 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { conLicitacaoStorage } from "./conlicitacao-storage";
-import { loginSchema } from "@shared/schema";
+import { loginSchema, registerSchema, forgotPasswordSchema } from "@shared/schema";
+import bcrypt from "bcrypt";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Auth routes
@@ -10,14 +11,81 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { email, password } = loginSchema.parse(req.body);
       
-      const user = await conLicitacaoStorage.getUserByEmail(email);
-      if (!user || user.password !== password) {
+      const user = await storage.getUserByEmail(email);
+      if (!user) {
         return res.status(401).json({ message: "Credenciais inválidas" });
       }
       
-      // In a real app, we'd use proper session management or JWT
-      res.json({ user: { id: user.id, email: user.email } });
+      const isPasswordValid = await bcrypt.compare(password, user.password);
+      if (!isPasswordValid) {
+        return res.status(401).json({ message: "Credenciais inválidas" });
+      }
+      
+      res.json({ user: { id: user.id, email: user.email, nomeEmpresa: user.nomeEmpresa, nome: user.nome } });
     } catch (error) {
+      console.error('Erro no login:', error);
+      res.status(400).json({ message: "Dados inválidos" });
+    }
+  });
+
+  // Registro de usuários
+  app.post("/api/auth/register", async (req, res) => {
+    try {
+      const { nomeEmpresa, cnpj, nome, email, password, confirmPassword } = registerSchema.parse(req.body);
+      
+      // Verificar se usuário já existe
+      const existingUser = await storage.getUserByEmail(email);
+      if (existingUser) {
+        return res.status(400).json({ message: "E-mail já cadastrado" });
+      }
+      
+      // Hash da senha
+      const saltRounds = 10;
+      const hashedPassword = await bcrypt.hash(password, saltRounds);
+      
+      // Criar usuário
+      const user = await storage.createUser({
+        nomeEmpresa,
+        cnpj,
+        nome,
+        email,
+        password: hashedPassword
+      });
+      
+      res.status(201).json({ 
+        message: "Usuário criado com sucesso",
+        user: { id: user.id, email: user.email, nomeEmpresa: user.nomeEmpresa, nome: user.nome } 
+      });
+    } catch (error) {
+      console.error('Erro no registro:', error);
+      if (error instanceof Error && error.message.includes('duplicate key')) {
+        return res.status(400).json({ message: "E-mail ou CNPJ já cadastrado" });
+      }
+      res.status(400).json({ message: "Dados inválidos ou já cadastrados" });
+    }
+  });
+
+  // Recuperação de senha
+  app.post("/api/auth/forgot-password", async (req, res) => {
+    try {
+      const { email, newPassword, confirmPassword } = forgotPasswordSchema.parse(req.body);
+      
+      // Verificar se usuário existe
+      const user = await storage.getUserByEmail(email);
+      if (!user) {
+        return res.status(404).json({ message: "E-mail não encontrado" });
+      }
+      
+      // Hash da nova senha
+      const saltRounds = 10;
+      const hashedPassword = await bcrypt.hash(newPassword, saltRounds);
+      
+      // Atualizar senha
+      await storage.updateUserPassword(email, hashedPassword);
+      
+      res.json({ message: "Senha alterada com sucesso" });
+    } catch (error) {
+      console.error('Erro na recuperação de senha:', error);
       res.status(400).json({ message: "Dados inválidos" });
     }
   });
