@@ -63,9 +63,12 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
-    // MySQL não suporta .returning(), precisaria de implementação diferente
     const result = await db.insert(users).values(insertUser);
-    return { ...insertUser, id: Number(result.insertId), createdAt: new Date() };
+    const insertId = Number(result.insertId);
+    
+    // Buscar o usuário inserido para retornar com dados completos
+    const user = await this.getUser(insertId);
+    return user!;
   }
 
   async updateUserPassword(email: string, hashedPassword: string): Promise<User | undefined> {
@@ -141,9 +144,12 @@ export class DatabaseStorage implements IStorage {
   }
 
   async addFavorite(favorite: InsertFavorite): Promise<Favorite> {
-    // MySQL não suporta .returning(), precisaria de implementação diferente
     const result = await db.insert(favorites).values(favorite);
-    return { ...favorite, id: Number(result.insertId), createdAt: new Date() } as Favorite;
+    const insertId = Number(result.insertId);
+    
+    // Buscar o favorito inserido para retornar com dados completos
+    const [insertedFavorite] = await db.select().from(favorites).where(eq(favorites.id, insertId));
+    return insertedFavorite;
   }
 
   async removeFavorite(userId: number, biddingId: number): Promise<void> {
@@ -320,5 +326,5 @@ export class MemStorage implements IStorage {
   }
 }
 
-// Usando MemStorage temporariamente até configurar MySQL corretamente
-export const storage = new MemStorage();
+// Agora usando o banco MySQL real
+export const storage = new DatabaseStorage();
