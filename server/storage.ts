@@ -326,5 +326,6 @@ export class MemStorage implements IStorage {
   }
 }
 
-// Usando sistema temporário até configurar MySQL para conexões externas
-export const storage = new MemStorage();
+// Usar MySQL em produção, MemStorage em desenvolvimento
+const isProduction = process.env.NODE_ENV === 'production';
+export const storage = isProduction ? new DatabaseStorage() : new MemStorage();
