@@ -14,6 +14,7 @@ import {
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, gte, lte } from "drizzle-orm";
+import bcrypt from "bcrypt";
 
 export interface IStorage {
   // Users
@@ -62,20 +63,15 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
-    const [user] = await db
-      .insert(users)
-      .values(insertUser)
-      .returning();
-    return user;
+    // MySQL não suporta .returning(), precisaria de implementação diferente
+    const result = await db.insert(users).values(insertUser);
+    return { ...insertUser, id: Number(result.insertId), createdAt: new Date() };
   }
 
   async updateUserPassword(email: string, hashedPassword: string): Promise<User | undefined> {
-    const [user] = await db
-      .update(users)
-      .set({ password: hashedPassword })
-      .where(eq(users.email, email))
-      .returning();
-    return user || undefined;
+    // MySQL não suporta .returning(), precisaria de implementação diferente
+    await db.update(users).set({ password: hashedPassword }).where(eq(users.email, email));
+    return await this.getUserByEmail(email);
   }
 
   async getBiddings(filters?: { 
@@ -145,11 +141,9 @@ export class DatabaseStorage implements IStorage {
   }
 
   async addFavorite(favorite: InsertFavorite): Promise<Favorite> {
-    const [newFavorite] = await db
-      .insert(favorites)
-      .values(favorite)
-      .returning();
-    return newFavorite;
+    // MySQL não suporta .returning(), precisaria de implementação diferente
+    const result = await db.insert(favorites).values(favorite);
+    return { ...favorite, id: Number(result.insertId), createdAt: new Date() } as Favorite;
   }
 
   async removeFavorite(userId: number, biddingId: number): Promise<void> {
@@ -212,9 +206,20 @@ export class MemStorage implements IStorage {
     this.initializeMockData();
   }
 
-  private initializeMockData() {
-    // No mock users - real authentication only
-    // System uses ConLicitação API for all data
+  private async initializeMockData() {
+    // Criar usuário inicial para login
+    const hashedPassword = await bcrypt.hash("admin123", 10);
+    const adminUser: User = {
+      id: 1,
+      nomeEmpresa: "JLG Consultoria",
+      cnpj: "12345678000100",
+      nome: "Administrador",
+      email: "admin@jlg.com",
+      password: hashedPassword,
+      createdAt: new Date()
+    };
+    this.users.set(1, adminUser);
+    this.currentUserId = 2;
   }
 
   async getUser(id: number): Promise<User | undefined> {
@@ -315,4 +320,5 @@ export class MemStorage implements IStorage {
   }
 }
 
-export const storage = new DatabaseStorage();
+// Usando MemStorage temporariamente até configurar MySQL corretamente
+export const storage = new MemStorage();
