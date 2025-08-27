@@ -326,5 +326,5 @@ export class MemStorage implements IStorage {
   }
 }
 
-// Agora usando o banco MySQL real
-export const storage = new DatabaseStorage();
+// Usando sistema temporário até configurar MySQL para conexões externas
+export const storage = new MemStorage();
