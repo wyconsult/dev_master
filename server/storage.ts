@@ -71,9 +71,16 @@ export class DatabaseStorage implements IStorage {
         email: insertUser.email
       });
       
-      // Usar query direta do MySQL para garantir que o insertId retorne
-      const { db: dbInstance } = await import('./db');
-      const connection = await dbInstance.execute(`
+      // Importar o pool do MySQL2 diretamente
+      const mysql = await import('mysql2/promise');
+      const pool = mysql.createPool({
+        host: process.env.DB_HOST || 'localhost',
+        user: process.env.DB_USER || 'geovani',
+        password: process.env.DB_PASSWORD || 'Vermelho006@',
+        database: process.env.DB_NAME || 'jlg_consultoria',
+      });
+      
+      const connection = await pool.execute(`
         INSERT INTO users (nome_empresa, cnpj, nome, email, password, created_at) 
         VALUES (?, ?, ?, ?, ?, NOW())
       `, [
@@ -84,11 +91,13 @@ export class DatabaseStorage implements IStorage {
         insertUser.password
       ]);
       
-      console.log('✅ [DatabaseStorage] Insert realizado, resultado:', connection);
+      console.log('✅ [DatabaseStorage] Insert realizado, resultado:', connection[0]);
       
       // Para MySQL2, o insertId está em connection[0].insertId
-      const insertId = connection[0].insertId as number;
+      const insertId = (connection[0] as any).insertId as number;
       console.log('🆔 [DatabaseStorage] ID gerado:', insertId);
+      
+      await pool.end(); // Fechar pool temporário
       
       if (!insertId || isNaN(Number(insertId))) {
         throw new Error('Falha ao obter ID do usuário inserido');
