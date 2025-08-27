@@ -1,6 +1,6 @@
 @echo off
 echo ===============================================
-echo GIT SETUP + SYNC GITHUB - JLG CONSULTORIA v2.12
+echo GIT SETUP + SYNC GITHUB - JLG CONSULTORIA v2.14
 echo ===============================================
 echo.
 echo Este script vai:
@@ -71,7 +71,7 @@ git add -A
 
 echo.
 echo 12) Commitando com mensagem atualizada...
-git commit -m "Sistema v2.13 - BUSCA COMPLETA: Número controle busca SEMPRE em todos boletins independente + Remove paginação + Busca inteligente otimizada" || echo "Nada para commitar"
+git commit -m "Sistema v2.14 - AUTENTICAÇÃO COMPLETA: Login/registro com MySQL + script init-db.js + Sistema dual storage (dev/prod) + Busca garantida número controle" || echo "Nada para commitar"
 
 echo.
 echo 13) Enviando para GitHub...
@@ -87,7 +87,11 @@ echo ===============================================
 echo ✅ SYNC GIT CONCLUÍDO COM SUCESSO!
 echo ===============================================
 echo.
-echo === FUNCIONALIDADES v2.13 IMPLEMENTADAS ===
+echo === FUNCIONALIDADES v2.14 IMPLEMENTADAS ===
+echo • AUTENTICAÇÃO COMPLETA: Sistema login/registro com MySQL integrado
+echo • SCRIPT INICIALIZAÇÃO: node scripts/init-db.js cria usuário admin automaticamente
+echo • SISTEMA DUAL: MemStorage (dev) + MySQL (prod) com detecção automática
+echo • SEGURANÇA: Hash bcrypt para senhas + sessões seguras
 echo • BUSCA COMPLETA: Busca por número controle SEMPRE encontra se existir
 echo • SEM PAGINAÇÃO: Interface simplificada sem páginas
 echo • BUSCA INTELIGENTE: Procura em até 200 boletins por filtro se necessário
@@ -126,10 +130,16 @@ echo === DEPLOY E ACESSO ===
 echo Servidor: 31.97.26.138
 echo Senha: Vermelho006@
 echo Domínio: https://jlglicitacoes.com.br
+echo Banco: MySQL localhost/jlg_consultoria (geovani/Vermelho006@)
+echo.
 echo Comandos no servidor:
-echo   npm install
-echo   npm run build  
-echo   npm start
+echo   git pull origin main
+echo   npm ci
+echo   npm run build
+echo   node scripts/init-db.js  (só na primeira vez)
+echo   pm2 restart all
+echo.
+echo Login admin: admin@jlg.com / admin123
 echo.
 echo Sistema 100%% funcional e pronto!
 echo.
