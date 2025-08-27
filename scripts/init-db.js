@@ -1,5 +1,5 @@
-const mysql = require('mysql2/promise');
-const bcrypt = require('bcrypt');
+import mysql from 'mysql2/promise';
+import bcrypt from 'bcrypt';
 
 async function initializeDatabase() {
   console.log('🔧 Inicializando banco de dados...');
@@ -53,9 +53,7 @@ async function initializeDatabase() {
   }
 }
 
-// Executar se chamado diretamente
-if (require.main === module) {
-  initializeDatabase();
-}
+// Executar quando o script for chamado
+initializeDatabase();
 
-module.exports = { initializeDatabase };
+export { initializeDatabase };
