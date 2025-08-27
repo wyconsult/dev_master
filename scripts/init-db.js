@@ -15,6 +15,41 @@ async function initializeDatabase() {
     
     console.log('✅ Conectado ao MySQL');
     
+    // Criar tabela users se não existir
+    await connection.execute(`
+      CREATE TABLE IF NOT EXISTS users (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        nome_empresa VARCHAR(255) NOT NULL,
+        cnpj VARCHAR(18) NOT NULL UNIQUE,
+        nome VARCHAR(255) NOT NULL,
+        email VARCHAR(255) NOT NULL UNIQUE,
+        password VARCHAR(255) NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+    
+    console.log('✅ Tabela users criada/verificada');
+    
+    // Criar tabela favorites se não existir
+    await connection.execute(`
+      CREATE TABLE IF NOT EXISTS favorites (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        user_id INT NOT NULL,
+        bidding_id INT NOT NULL,
+        category VARCHAR(100),
+        custom_category VARCHAR(255),
+        notes VARCHAR(1000),
+        uf VARCHAR(2),
+        codigo_uasg VARCHAR(50),
+        valor_estimado VARCHAR(100),
+        fornecedor VARCHAR(255),
+        site VARCHAR(255),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+    
+    console.log('✅ Tabela favorites criada/verificada');
+    
     // Verificar se já existe usuário admin
     const [rows] = await connection.execute(
       'SELECT COUNT(*) as count FROM users WHERE email = ?',

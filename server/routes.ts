@@ -6,6 +6,37 @@ import { loginSchema, registerSchema, forgotPasswordSchema } from "@shared/schem
 import bcrypt from "bcrypt";
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Teste de saúde do sistema
+  app.get("/api/health", async (req, res) => {
+    try {
+      const isProduction = process.env.NODE_ENV === 'production';
+      const healthInfo = {
+        status: 'ok',
+        environment: process.env.NODE_ENV || 'development',
+        storageType: isProduction ? 'MySQL' : 'Memory',
+        timestamp: new Date().toISOString()
+      };
+      
+      // Testar conexão com banco se em produção
+      if (isProduction) {
+        try {
+          await storage.getUserByEmail('test@test.com'); // Teste simples
+          healthInfo.database = 'connected';
+        } catch (error) {
+          healthInfo.database = 'error';
+          healthInfo.databaseError = error instanceof Error ? error.message : 'Unknown error';
+        }
+      }
+      
+      res.json(healthInfo);
+    } catch (error) {
+      res.status(500).json({
+        status: 'error',
+        message: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
+  
   // Auth routes
   app.post("/api/auth/login", async (req, res) => {
     try {
