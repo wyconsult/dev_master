@@ -71,17 +71,38 @@ export class DatabaseStorage implements IStorage {
         email: insertUser.email
       });
       
-      const result = await db.insert(users).values(insertUser);
-      console.log('✅ [DatabaseStorage] Insert realizado, resultado:', result);
+      // Usar query direta do MySQL para garantir que o insertId retorne
+      const { db: dbInstance } = await import('./db');
+      const connection = await dbInstance.execute(`
+        INSERT INTO users (nome_empresa, cnpj, nome, email, password, created_at) 
+        VALUES (?, ?, ?, ?, ?, NOW())
+      `, [
+        insertUser.nomeEmpresa,
+        insertUser.cnpj,
+        insertUser.nome,
+        insertUser.email,
+        insertUser.password
+      ]);
       
-      const insertId = Number(result.insertId);
+      console.log('✅ [DatabaseStorage] Insert realizado, resultado:', connection);
+      
+      // Para MySQL2, o insertId está em connection[0].insertId
+      const insertId = connection[0].insertId as number;
       console.log('🆔 [DatabaseStorage] ID gerado:', insertId);
       
+      if (!insertId || isNaN(Number(insertId))) {
+        throw new Error('Falha ao obter ID do usuário inserido');
+      }
+      
       // Buscar o usuário inserido para retornar com dados completos
-      const user = await this.getUser(insertId);
+      const user = await this.getUser(Number(insertId));
       console.log('✅ [DatabaseStorage] Usuário criado:', user?.id);
       
-      return user!;
+      if (!user) {
+        throw new Error('Usuário inserido mas não encontrado');
+      }
+      
+      return user;
     } catch (error) {
       console.error('❌ [DatabaseStorage] ERRO ao criar usuário:', {
         error: error,
