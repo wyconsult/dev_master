@@ -10,7 +10,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/health", async (req, res) => {
     try {
       const isProduction = process.env.NODE_ENV === 'production';
-      const healthInfo = {
+      const healthInfo: any = {
         status: 'ok',
         environment: process.env.NODE_ENV || 'development',
         storageType: isProduction ? 'MySQL' : 'Memory',
@@ -50,7 +50,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userIds = new Set([1, 2, 5]); // IDs conhecidos: admin, Wilson, Moacir
 
       const users = [];
-      for (const userId of userIds) {
+      for (const userId of Array.from(userIds)) {
         try {
           const user = await storage.getUser(userId);
           if (user) {
