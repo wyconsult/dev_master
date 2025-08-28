@@ -355,7 +355,12 @@ export default function Favorites() {
         }
       } else if (bidding.valor_estimado) {
         // Se há valor estimado da licitação original
-        valorEstimado = `R$ ${bidding.valor_estimado.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+        const numericValue = typeof bidding.valor_estimado === 'number' ? bidding.valor_estimado : parseFloat(bidding.valor_estimado.toString());
+        if (!isNaN(numericValue)) {
+          valorEstimado = `R$ ${numericValue.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+        } else {
+          valorEstimado = bidding.valor_estimado.toString();
+        }
       }
       
       htmlRows += `
@@ -519,9 +524,9 @@ export default function Favorites() {
             </CardTitle>
           </CardHeader>
           <CardContent className="px-3 md:px-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3 md:gap-4">
-              {/* Usuário */}
-              <div>
+            {/* Filtro de usuário separado */}
+            <div className="mb-4 pb-4 border-b border-gray-200">
+              <div className="w-full sm:w-1/2 lg:w-1/3">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Usuário
                 </label>
@@ -559,7 +564,10 @@ export default function Favorites() {
                   </PopoverContent>
                 </Popover>
               </div>
+            </div>
 
+            {/* Demais filtros com mais espaço para o calendário */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
               {/* Número de Controle */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -794,13 +802,15 @@ export default function Favorites() {
                   </div>
                 </div>
               </div>
+            </div>
 
-              {/* Botão Gerar PDF */}
-              <div className="pt-4 border-t border-gray-200">
+            {/* Botão Gerar PDF - Seção separada */}
+            <div className="mt-4 pt-4 border-t border-gray-200">
+              <div className="flex justify-center">
                 <Button
                   variant="outline"
                   className={cn(
-                    "w-full justify-center gap-3 h-12 font-semibold text-sm transition-all duration-300 relative overflow-hidden",
+                    "justify-center gap-3 h-12 font-semibold text-sm transition-all duration-300 relative overflow-hidden px-8",
                     dateRange.from && dateRange.to
                       ? "bg-gradient-to-r from-red-500 to-red-600 border-red-500 text-white hover:from-red-600 hover:to-red-700 hover:border-red-600 shadow-lg hover:shadow-xl transform hover:scale-[1.02] active:scale-[0.98]"
                       : "border-gray-300 text-gray-400 cursor-not-allowed opacity-50 bg-gray-50"
