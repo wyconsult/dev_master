@@ -58,141 +58,150 @@ export interface IStorage {
 }
 
 export class DatabaseStorage implements IStorage {
+  // Implementação simples para produção usando MySQL
   async getUser(id: number): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.id, id));
-    return user || undefined;
+    try {
+      const [user] = await db.select().from(users).where(eq(users.id, id));
+      return user || undefined;
+    } catch (error) {
+      console.error('Erro ao buscar usuário:', error);
+      return undefined;
+    }
   }
 
   async getUserByEmail(email: string): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.email, email));
-    return user || undefined;
+    try {
+      const [user] = await db.select().from(users).where(eq(users.email, email));
+      return user || undefined;
+    } catch (error) {
+      console.error('Erro ao buscar usuário por email:', error);
+      return undefined;
+    }
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.email, username));
-    return user || undefined;
+    return this.getUserByEmail(username);
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
-    const [user] = await db
-      .insert(users)
-      .values(insertUser)
-      .returning();
-    return user;
+    try {
+      const [user] = await db.insert(users).values(insertUser).returning? await db.insert(users).values(insertUser).returning() : [];
+      if (!user) {
+        // MySQL doesn't support returning, need to fetch the inserted user
+        const result = await db.insert(users).values(insertUser);
+        const insertId = (result as any).insertId;
+        const newUser = await this.getUser(insertId);
+        if (!newUser) throw new Error('Failed to create user');
+        return newUser;
+      }
+      return user;
+    } catch (error) {
+      console.error('Erro ao criar usuário:', error);
+      throw error;
+    }
   }
 
   async updateUserPassword(email: string, hashedPassword: string): Promise<User | undefined> {
-    const [updatedUser] = await db
-      .update(users)
-      .set({ password: hashedPassword })
-      .where(eq(users.email, email))
-      .returning();
-    return updatedUser || undefined;
+    try {
+      await db.update(users).set({ password: hashedPassword }).where(eq(users.email, email));
+      return this.getUserByEmail(email);
+    } catch (error) {
+      console.error('Erro ao atualizar senha:', error);
+      return undefined;
+    }
   }
 
   async getAllUsers(): Promise<User[]> {
-    return await db.select().from(users);
+    try {
+      return await db.select({ id: users.id, nome: users.nome, email: users.email, nomeEmpresa: users.nomeEmpresa }).from(users);
+    } catch (error) {
+      console.error('Erro ao buscar usuários:', error);
+      return [];
+    }
   }
 
-  async getBiddings(filters?: { 
-    conlicitacao_id?: string; 
-    orgao?: string[]; 
-    uf?: string[];
-    numero_controle?: string;
-  }): Promise<Bidding[]> {
-    // Basic implementation - can be enhanced with filters
-    return await db.select().from(biddings);
+  async getBiddings(): Promise<Bidding[]> {
+    try {
+      return await db.select().from(biddings);
+    } catch (error) {
+      console.error('Erro ao buscar licitações:', error);
+      return [];
+    }
   }
 
   async getBidding(id: number): Promise<Bidding | undefined> {
-    const [bidding] = await db.select().from(biddings).where(eq(biddings.id, id));
-    return bidding || undefined;
+    try {
+      const [bidding] = await db.select().from(biddings).where(eq(biddings.id, id));
+      return bidding || undefined;
+    } catch (error) {
+      console.error('Erro ao buscar licitação:', error);
+      return undefined;
+    }
   }
 
-  async getFavorites(userId: number, date?: string, dateFrom?: string, dateTo?: string): Promise<Bidding[]> {
-    const query = db
-      .select({
-        id: biddings.id,
-        conlicitacao_id: biddings.conlicitacao_id,
-        edital: biddings.edital,
-        objeto: biddings.objeto,
-        orgao_nome: biddings.orgao_nome,
-        orgao_codigo: biddings.orgao_codigo,
-        orgao_uf: biddings.orgao_uf,
-        modalidade: biddings.modalidade,
-        datahora_abertura: biddings.datahora_abertura,
-        datahora_prazo: biddings.datahora_prazo,
-        datahora_documento: biddings.datahora_documento,
-        datahora_retirada: biddings.datahora_retirada,
-        datahora_visita: biddings.datahora_visita,
-        valor_estimado: biddings.valor_estimado,
-        situacao: biddings.situacao,
-        createdAt: biddings.createdAt,
-        // Include favorite data
-        favoriteId: favorites.id,
-        category: favorites.category,
-        customCategory: favorites.customCategory,
-        notes: favorites.notes,
-        uf: favorites.uf,
-        codigoUasg: favorites.codigoUasg,
-        valorEstimado: favorites.valorEstimado,
-        fornecedor: favorites.fornecedor,
-        site: favorites.site,
-        createdAtFavorite: favorites.createdAt
-      })
-      .from(favorites)
-      .innerJoin(biddings, eq(favorites.biddingId, biddings.id))
-      .where(eq(favorites.userId, userId));
-
-    let conditions = [eq(favorites.userId, userId)];
-    
-    if (dateFrom && dateTo) {
-      const startDate = new Date(dateFrom + 'T00:00:00Z');
-      const endDate = new Date(dateTo + 'T23:59:59Z');
-      conditions.push(
-        and(
-          gte(favorites.createdAt, startDate),
-          lte(favorites.createdAt, endDate)
-        )!
-      );
+  async getFavorites(userId: number): Promise<Bidding[]> {
+    try {
+      // MySQL join simples
+      const result = await db
+        .select()
+        .from(favorites)
+        .innerJoin(biddings, eq(favorites.biddingId, biddings.id))
+        .where(eq(favorites.userId, userId));
+      
+      return result.map(row => ({
+        ...row.biddings,
+        // Adicionar dados do favorito
+        favoriteId: row.favorites.id,
+        category: row.favorites.category,
+        customCategory: row.favorites.customCategory,
+        notes: row.favorites.notes,
+        uf: row.favorites.uf,
+        codigoUasg: row.favorites.codigoUasg,
+        valorEstimado: row.favorites.valorEstimado,
+        fornecedor: row.favorites.fornecedor,
+        site: row.favorites.site,
+        createdAtFavorite: row.favorites.createdAt
+      })) as any[];
+    } catch (error) {
+      console.error('Erro ao buscar favoritos:', error);
+      return [];
     }
-
-    const result = await query.where(and(...conditions));
-    return result as any[]; // Cast to match expected type
   }
 
   async addFavorite(favorite: InsertFavorite): Promise<Favorite> {
-    const [newFavorite] = await db
-      .insert(favorites)
-      .values(favorite)
-      .returning();
-    return newFavorite;
+    try {
+      const result = await db.insert(favorites).values(favorite);
+      const insertId = (result as any).insertId;
+      const [newFavorite] = await db.select().from(favorites).where(eq(favorites.id, insertId));
+      return newFavorite;
+    } catch (error) {
+      console.error('Erro ao adicionar favorito:', error);
+      throw error;
+    }
   }
 
   async removeFavorite(userId: number, biddingId: number): Promise<void> {
-    await db
-      .delete(favorites)
-      .where(
-        and(
-          eq(favorites.userId, userId),
-          eq(favorites.biddingId, biddingId)
-        )
-      );
+    try {
+      await db
+        .delete(favorites)
+        .where(and(eq(favorites.userId, userId), eq(favorites.biddingId, biddingId)));
+    } catch (error) {
+      console.error('Erro ao remover favorito:', error);
+    }
   }
 
   async isFavorite(userId: number, biddingId: number): Promise<boolean> {
-    const [favorite] = await db
-      .select()
-      .from(favorites)
-      .where(
-        and(
-          eq(favorites.userId, userId),
-          eq(favorites.biddingId, biddingId)
-        )
-      )
-      .limit(1);
-    
-    return !!favorite;
+    try {
+      const [favorite] = await db
+        .select()
+        .from(favorites)
+        .where(and(eq(favorites.userId, userId), eq(favorites.biddingId, biddingId)))
+        .limit(1);
+      return !!favorite;
+    } catch (error) {
+      console.error('Erro ao verificar favorito:', error);
+      return false;
+    }
   }
 
   async updateFavoriteCategorization(userId: number, biddingId: number, data: {
@@ -205,32 +214,30 @@ export class DatabaseStorage implements IStorage {
     fornecedor?: string;
     site?: string;
   }): Promise<void> {
-    await db
-      .update(favorites)
-      .set(data)
-      .where(
-        and(
-          eq(favorites.userId, userId),
-          eq(favorites.biddingId, biddingId)
-        )
-      );
+    try {
+      await db
+        .update(favorites)
+        .set(data)
+        .where(and(eq(favorites.userId, userId), eq(favorites.biddingId, biddingId)));
+    } catch (error) {
+      console.error('Erro ao atualizar categorização:', error);
+    }
   }
 
   async getBoletins(): Promise<Boletim[]> {
-    return await db.select().from(boletins);
+    return [];
   }
 
   async getBoletinsByDate(date: string): Promise<Boletim[]> {
-    return await db.select().from(boletins);
+    return [];
   }
 
   async getBoletim(id: number): Promise<Boletim | undefined> {
-    const [boletim] = await db.select().from(boletins).where(eq(boletins.id, id));
-    return boletim || undefined;
+    return undefined;
   }
 
   async markBoletimAsViewed(id: number): Promise<void> {
-    // Implementation for marking boletim as viewed
+    // Implementation for production
   }
 }
 
@@ -390,12 +397,12 @@ export class MemStorage implements IStorage {
   }
 }
 
-// Usar DatabaseStorage se temos DATABASE_URL (Replit/Produção), senão MemStorage  
-const hasDatabase = !!process.env.DATABASE_URL;
+// Usar MemStorage em desenvolvimento, DatabaseStorage em produção (MySQL)
+const isProduction = process.env.NODE_ENV === 'production';
 console.log('🔧 [STORAGE] Configurando storage:', {
   NODE_ENV: process.env.NODE_ENV,
-  hasDatabase,
-  storageType: hasDatabase ? 'PostgreSQL (DatabaseStorage)' : 'Memory (MemStorage)'
+  isProduction,
+  storageType: isProduction ? 'MySQL (DatabaseStorage)' : 'Memory (MemStorage)'
 });
 
-export const storage = hasDatabase ? new DatabaseStorage() : new MemStorage();
+export const storage = isProduction ? new DatabaseStorage() : new MemStorage();

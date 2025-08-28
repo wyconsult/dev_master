@@ -1,9 +1,9 @@
-import { pgTable, varchar, integer, boolean, timestamp, decimal, serial } from "drizzle-orm/pg-core";
+import { mysqlTable, varchar, int, boolean, timestamp, decimal } from "drizzle-orm/mysql-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
-export const users = pgTable("users", {
-  id: serial("id").primaryKey(),
+export const users = mysqlTable("users", {
+  id: int("id").primaryKey().autoincrement(),
   nomeEmpresa: varchar("nome_empresa", { length: 255 }).notNull(),
   cnpj: varchar("cnpj", { length: 18 }).notNull().unique(),
   nome: varchar("nome", { length: 255 }).notNull(),
@@ -12,9 +12,9 @@ export const users = pgTable("users", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
-export const biddings = pgTable("biddings", {
-  id: serial("id").primaryKey(),
-  conlicitacao_id: integer("conlicitacao_id").notNull(), // ID da ConLicitação
+export const biddings = mysqlTable("biddings", {
+  id: int("id").primaryKey().autoincrement(),
+  conlicitacao_id: int("conlicitacao_id").notNull(), // ID da ConLicitação
   orgao_nome: varchar("orgao_nome", { length: 500 }).notNull(),
   orgao_codigo: varchar("orgao_codigo", { length: 100 }),
   orgao_cidade: varchar("orgao_cidade", { length: 255 }).notNull(),
@@ -37,14 +37,14 @@ export const biddings = pgTable("biddings", {
   item: varchar("item", { length: 500 }),
   preco_edital: decimal("preco_edital", { precision: 15, scale: 2 }),
   valor_estimado: decimal("valor_estimado", { precision: 15, scale: 2 }),
-  boletim_id: integer("boletim_id"), // ID do boletim que contém esta licitação
+  boletim_id: int("boletim_id"), // ID do boletim que contém esta licitação
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
-export const favorites = pgTable("favorites", {
-  id: serial("id").primaryKey(),
-  userId: integer("user_id").notNull(),
-  biddingId: integer("bidding_id").notNull(),
+export const favorites = mysqlTable("favorites", {
+  id: int("id").primaryKey().autoincrement(),
+  userId: int("user_id").notNull(),
+  biddingId: int("bidding_id").notNull(),
   category: varchar("category", { length: 100 }), // Categoria: alimentacao, limpeza, sites, outros
   customCategory: varchar("custom_category", { length: 255 }), // Categoria personalizada definida pelo usuário
   notes: varchar("notes", { length: 1000 }), // Notas/observações do usuário sobre o favorito
@@ -57,31 +57,31 @@ export const favorites = pgTable("favorites", {
 });
 
 // Tabela de filtros da ConLicitação
-export const filtros = pgTable("filtros", {
-  id: integer("id").primaryKey(), // ID do filtro da ConLicitação
+export const filtros = mysqlTable("filtros", {
+  id: int("id").primaryKey(), // ID do filtro da ConLicitação
   descricao: varchar("descricao", { length: 255 }).notNull(),
-  cliente_id: integer("cliente_id"),
+  cliente_id: int("cliente_id"),
   cliente_razao_social: varchar("cliente_razao_social", { length: 255 }),
   manha: boolean("manha").default(true),
   tarde: boolean("tarde").default(true),
   noite: boolean("noite").default(true),
 });
 
-export const boletins = pgTable("boletins", {
-  id: integer("id").primaryKey(), // ID do boletim da ConLicitação
-  numero_edicao: integer("numero_edicao").notNull(),
+export const boletins = mysqlTable("boletins", {
+  id: int("id").primaryKey(), // ID do boletim da ConLicitação
+  numero_edicao: int("numero_edicao").notNull(),
   datahora_fechamento: varchar("datahora_fechamento", { length: 50 }).notNull(),
-  filtro_id: integer("filtro_id").notNull(),
-  quantidade_licitacoes: integer("quantidade_licitacoes").notNull(),
-  quantidade_acompanhamentos: integer("quantidade_acompanhamentos").notNull(),
+  filtro_id: int("filtro_id").notNull(),
+  quantidade_licitacoes: int("quantidade_licitacoes").notNull(),
+  quantidade_acompanhamentos: int("quantidade_acompanhamentos").notNull(),
   visualizado: boolean("visualizado").default(false).notNull(),
 });
 
 // Tabela de acompanhamentos
-export const acompanhamentos = pgTable("acompanhamentos", {
-  id: serial("id").primaryKey(),
-  conlicitacao_id: integer("conlicitacao_id").notNull(),
-  licitacao_id: integer("licitacao_id"), // Referência à licitação original
+export const acompanhamentos = mysqlTable("acompanhamentos", {
+  id: int("id").primaryKey().autoincrement(),
+  conlicitacao_id: int("conlicitacao_id").notNull(),
+  licitacao_id: int("licitacao_id"), // Referência à licitação original
   orgao_nome: varchar("orgao_nome", { length: 500 }).notNull(),
   orgao_cidade: varchar("orgao_cidade", { length: 255 }),
   orgao_uf: varchar("orgao_uf", { length: 2 }),
@@ -90,7 +90,7 @@ export const acompanhamentos = pgTable("acompanhamentos", {
   data_fonte: varchar("data_fonte", { length: 50 }),
   edital: varchar("edital", { length: 255 }),
   processo: varchar("processo", { length: 255 }),
-  boletim_id: integer("boletim_id"),
+  boletim_id: int("boletim_id"),
 });
 
 export const insertUserSchema = createInsertSchema(users).pick({
