@@ -430,17 +430,16 @@ export class MemStorage implements IStorage {
   }
 }
 
-// Usar MySQL em produção, MemStorage em desenvolvimento
-// Detecta produção por múltiplos fatores para garantir uso do MySQL
-const isReplit = process.env.REPLIT === '1' || process.env.NODE_ENV === 'development';
-const isProduction = !isReplit && (process.env.NODE_ENV === 'production' || process.env.DATABASE_URL || process.env.DB_HOST);
+// FORÇAR o uso do MySQL sempre que não estiver no Replit
+const isReplit = process.env.REPLIT === '1';
+const forceMySQL = !isReplit; // Usar MySQL sempre que não for Replit
 
-console.log('🔧 [STORAGE] Configurando storage:', {
+console.log('🔧 [STORAGE] Configurando storage FORÇADO:', {
   NODE_ENV: process.env.NODE_ENV,
   REPLIT: process.env.REPLIT,
   isReplit,
-  isProduction,
-  storageType: isProduction ? 'MySQL (DatabaseStorage)' : 'Memory (MemStorage)'
+  forceMySQL,
+  storageType: forceMySQL ? 'MySQL (DatabaseStorage) - FORÇADO' : 'Memory (MemStorage)'
 });
 
-export const storage = isProduction ? new DatabaseStorage() : new MemStorage();
+export const storage = forceMySQL ? new DatabaseStorage() : new MemStorage();
