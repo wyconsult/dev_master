@@ -195,12 +195,65 @@ export class DatabaseStorage implements IStorage {
   }
 
   async addFavorite(favorite: InsertFavorite): Promise<Favorite> {
-    const result = await db.insert(favorites).values(favorite);
-    const insertId = Number(result.insertId);
-    
-    // Buscar o favorito inserido para retornar com dados completos
-    const [insertedFavorite] = await db.select().from(favorites).where(eq(favorites.id, insertId));
-    return insertedFavorite;
+    try {
+      console.log('💾 [DatabaseStorage] Inserindo favorito no MySQL:', {
+        userId: favorite.userId,
+        biddingId: favorite.biddingId,
+        category: favorite.category
+      });
+      
+      // Usar MySQL2 diretamente para garantir insertId
+      const mysql = await import('mysql2/promise');
+      const pool = mysql.createPool({
+        host: process.env.DB_HOST || 'localhost',
+        user: process.env.DB_USER || 'geovani',
+        password: process.env.DB_PASSWORD || 'Vermelho006@',
+        database: process.env.DB_NAME || 'jlg_consultoria',
+      });
+      
+      const connection = await pool.execute(`
+        INSERT INTO favorites (user_id, bidding_id, category, custom_category, notes, uf, codigo_uasg, valor_estimado, fornecedor, site, created_at) 
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
+      `, [
+        favorite.userId,
+        favorite.biddingId,
+        favorite.category || null,
+        favorite.customCategory || null,
+        favorite.notes || null,
+        favorite.uf || null,
+        favorite.codigoUasg || null,
+        favorite.valorEstimado || null,
+        favorite.fornecedor || null,
+        favorite.site || null
+      ]);
+      
+      console.log('✅ [DatabaseStorage] Favorito inserido, resultado:', connection[0]);
+      
+      const insertId = (connection[0] as any).insertId as number;
+      console.log('🆔 [DatabaseStorage] ID do favorito:', insertId);
+      
+      await pool.end();
+      
+      if (!insertId || isNaN(Number(insertId))) {
+        throw new Error('Falha ao obter ID do favorito inserido');
+      }
+      
+      // Buscar o favorito inserido para retornar com dados completos
+      const [insertedFavorite] = await db.select().from(favorites).where(eq(favorites.id, insertId));
+      
+      if (!insertedFavorite) {
+        throw new Error('Favorito inserido mas não encontrado');
+      }
+      
+      return insertedFavorite;
+    } catch (error) {
+      console.error('❌ [DatabaseStorage] ERRO ao inserir favorito:', {
+        error: error,
+        message: error instanceof Error ? error.message : 'Erro desconhecido',
+        favorite: favorite
+      });
+      throw error;
+    }
   }
 
   async removeFavorite(userId: number, biddingId: number): Promise<void> {
@@ -378,9 +431,14 @@ export class MemStorage implements IStorage {
 }
 
 // Usar MySQL em produção, MemStorage em desenvolvimento
-const isProduction = process.env.NODE_ENV === 'production';
+// Detecta produção por múltiplos fatores para garantir uso do MySQL
+const isReplit = process.env.REPLIT === '1' || process.env.NODE_ENV === 'development';
+const isProduction = !isReplit && (process.env.NODE_ENV === 'production' || process.env.DATABASE_URL || process.env.DB_HOST);
+
 console.log('🔧 [STORAGE] Configurando storage:', {
   NODE_ENV: process.env.NODE_ENV,
+  REPLIT: process.env.REPLIT,
+  isReplit,
   isProduction,
   storageType: isProduction ? 'MySQL (DatabaseStorage)' : 'Memory (MemStorage)'
 });
