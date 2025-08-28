@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { BiddingCard } from "@/components/bidding-card";
-import { Filter, Search, X, Calendar as CalendarIcon, Heart, Eraser, FileText } from "lucide-react";
+import { Filter, Search, X, Calendar as CalendarIcon, Heart, Eraser, FileText, Users, ChevronDown } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from "@/components/ui/command";
@@ -14,7 +14,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
-import { type Bidding } from "@shared/schema";
+import { type Bidding, type User } from "@shared/schema";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 
@@ -67,11 +67,18 @@ export default function Favorites() {
   const [dateFilterType, setDateFilterType] = useState<"favorito" | "realizacao">("favorito");
   const [orgaoPopoverOpen, setOrgaoPopoverOpen] = useState(false);
   const [ufPopoverOpen, setUfPopoverOpen] = useState(false);
+  const [selectedUserId, setSelectedUserId] = useState<number | undefined>(user?.id);
 
+
+  // Buscar todos os usuários da empresa JLG Consultoria
+  const { data: users = [] } = useQuery<User[]>({
+    queryKey: ["/api/users"],
+    enabled: !!user,
+  });
 
   const { data: favorites = [], isLoading } = useQuery<Bidding[]>({
-    queryKey: [`/api/favorites/${user?.id}`],
-    enabled: !!user,
+    queryKey: [`/api/favorites/${selectedUserId}`],
+    enabled: !!selectedUserId,
   });
 
   // Extrair órgãos únicos dos favoritos
@@ -143,6 +150,7 @@ export default function Favorites() {
     setSelectedOrgaos([]);
     setSelectedUFs([]);
     setDateRange({});
+    // Não resetar o usuário selecionado para manter a visualização
   };
 
   // Função para gerar PDF
@@ -505,7 +513,49 @@ export default function Favorites() {
             </CardTitle>
           </CardHeader>
           <CardContent className="px-3 md:px-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3 md:gap-4">
+              {/* Filtro de Usuário */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <Users className="h-4 w-4 inline mr-1" />
+                  Usuário JLG
+                </label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      role="combobox"
+                      className="w-full justify-between h-10 text-left font-normal bg-white"
+                    >
+                      {selectedUserId 
+                        ? users.find(u => u.id === selectedUserId)?.nome || "Selecionar usuário"
+                        : "Selecionar usuário"
+                      }
+                      <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[200px] p-0">
+                    <Command>
+                      <CommandInput placeholder="Buscar usuário..." />
+                      <CommandEmpty>Nenhum usuário encontrado.</CommandEmpty>
+                      <CommandGroup>
+                        {users.map((user) => (
+                          <CommandItem
+                            key={user.id}
+                            onSelect={() => setSelectedUserId(user.id)}
+                          >
+                            <div className="flex flex-col">
+                              <span className="font-medium">{user.nome}</span>
+                              <span className="text-xs text-gray-500">{user.email}</span>
+                            </div>
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
+              </div>
+
               {/* Número de Controle */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">

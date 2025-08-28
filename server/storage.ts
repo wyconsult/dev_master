@@ -23,6 +23,7 @@ export interface IStorage {
   getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
   updateUserPassword(email: string, hashedPassword: string): Promise<User | undefined>;
+  getAllUsers(): Promise<User[]>;
   
   // Biddings
   getBiddings(filters?: { 
@@ -38,6 +39,16 @@ export interface IStorage {
   addFavorite(favorite: InsertFavorite): Promise<Favorite>;
   removeFavorite(userId: number, biddingId: number): Promise<void>;
   isFavorite(userId: number, biddingId: number): Promise<boolean>;
+  updateFavoriteCategorization(userId: number, biddingId: number, data: {
+    category?: string;
+    customCategory?: string;
+    notes?: string;
+    uf?: string;
+    codigoUasg?: string;
+    valorEstimado?: string;
+    fornecedor?: string;
+    site?: string;
+  }): Promise<void>;
   
   // Boletins
   getBoletins(): Promise<Boletim[]>;
@@ -237,6 +248,26 @@ export class DatabaseStorage implements IStorage {
       .set({ visualizado: true })
       .where(eq(boletins.id, id));
   }
+
+  async getAllUsers(): Promise<User[]> {
+    return await db.select().from(users);
+  }
+
+  async updateFavoriteCategorization(userId: number, biddingId: number, data: {
+    category?: string;
+    customCategory?: string;
+    notes?: string;
+    uf?: string;
+    codigoUasg?: string;
+    valorEstimado?: string;
+    fornecedor?: string;
+    site?: string;
+  }): Promise<void> {
+    await db
+      .update(favorites)
+      .set(data)
+      .where(and(eq(favorites.userId, userId), eq(favorites.biddingId, biddingId)));
+  }
 }
 
 export class MemStorage implements IStorage {
@@ -374,6 +405,29 @@ export class MemStorage implements IStorage {
 
   async markBoletimAsViewed(id: number): Promise<void> {
     // Implementation not needed for API-only system
+  }
+
+  async getAllUsers(): Promise<User[]> {
+    return Array.from(this.users.values());
+  }
+
+  async updateFavoriteCategorization(userId: number, biddingId: number, data: {
+    category?: string;
+    customCategory?: string;
+    notes?: string;
+    uf?: string;
+    codigoUasg?: string;
+    valorEstimado?: string;
+    fornecedor?: string;
+    site?: string;
+  }): Promise<void> {
+    const favoriteToUpdate = Array.from(this.favorites.entries())
+      .find(([_, fav]) => fav.userId === userId && fav.biddingId === biddingId);
+    
+    if (favoriteToUpdate) {
+      const [favoriteId, existingFavorite] = favoriteToUpdate;
+      this.favorites.set(favoriteId, { ...existingFavorite, ...data });
+    }
   }
 }
 
