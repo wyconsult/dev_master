@@ -37,6 +37,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Users routes
+  app.get("/api/users", async (req, res) => {
+    try {
+      console.log('👥 [ROUTES] Buscando lista de usuários via MySQL Storage');
+      // Para simplificar, vamos buscar usuários que já têm favoritos
+      const favorites = await storage.getFavorites(1); // Buscar alguns favoritos
+      const allFavorites = await storage.getFavorites(2); // E de outros usuários
+      const moreResults = await storage.getFavorites(5);
+
+      // Buscar dados dos usuários pelos IDs encontrados nos favoritos + IDs conhecidos
+      const userIds = new Set([1, 2, 5]); // IDs conhecidos: admin, Wilson, Moacir
+
+      const users = [];
+      for (const userId of userIds) {
+        try {
+          const user = await storage.getUser(userId);
+          if (user) {
+            users.push({
+              id: user.id,
+              nome: user.nome,
+              email: user.email,
+              nomeEmpresa: user.nomeEmpresa
+            });
+          }
+        } catch (error) {
+          console.log(`Usuário ${userId} não encontrado`);
+        }
+      }
+      
+      console.log('✅ [ROUTES] Usuários encontrados:', users.length);
+      res.json(users);
+    } catch (error) {
+      console.error('❌ Erro ao buscar usuários:', error);
+      res.status(500).json({ message: "Erro interno do servidor" });
+    }
+  });
+
   // Auth routes
   app.post("/api/auth/login", async (req, res) => {
     try {

@@ -60,6 +60,7 @@ const DATE_FILTER_OPTIONS = [
 export default function Favorites() {
   const { user } = useAuth();
   const { toast } = useToast();
+  const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
   const [numeroControle, setNumeroControle] = useState("");
   const [selectedOrgaos, setSelectedOrgaos] = useState<string[]>([]);
   const [selectedUFs, setSelectedUFs] = useState<string[]>([]);
@@ -67,11 +68,20 @@ export default function Favorites() {
   const [dateFilterType, setDateFilterType] = useState<"favorito" | "realizacao">("favorito");
   const [orgaoPopoverOpen, setOrgaoPopoverOpen] = useState(false);
   const [ufPopoverOpen, setUfPopoverOpen] = useState(false);
+  const [userPopoverOpen, setUserPopoverOpen] = useState(false);
 
 
+  // Buscar lista de usuários
+  const { data: users = [] } = useQuery<any[]>({
+    queryKey: ['/api/users'],
+  });
+
+  // Usar o primeiro usuário disponível se nenhum estiver selecionado
+  const effectiveUserId = selectedUserId || users[0]?.id || user?.id;
+  
   const { data: favorites = [], isLoading } = useQuery<Bidding[]>({
-    queryKey: [`/api/favorites/${user?.id}`],
-    enabled: !!user,
+    queryKey: [`/api/favorites/${effectiveUserId}`],
+    enabled: !!effectiveUserId,
   });
 
   // Extrair órgãos únicos dos favoritos
@@ -139,6 +149,7 @@ export default function Favorites() {
   };
 
   const clearFilters = () => {
+    // Não limpar usuário selecionado para manter contexto
     setNumeroControle("");
     setSelectedOrgaos([]);
     setSelectedUFs([]);
@@ -480,7 +491,10 @@ export default function Favorites() {
             Suas Preferidas ❤️
           </p>
           <p className="text-sm md:text-base text-gray-500">
-            Suas licitações marcadas como favoritas
+            {users.find(u => u.id === effectiveUserId)?.nome ? 
+              `Favoritos de ${users.find(u => u.id === effectiveUserId)?.nome}` : 
+              'Suas licitações marcadas como favoritas'
+            }
           </p>
         </div>
 
@@ -505,7 +519,47 @@ export default function Favorites() {
             </CardTitle>
           </CardHeader>
           <CardContent className="px-3 md:px-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3 md:gap-4">
+              {/* Usuário JLG */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Usuário JLG
+                </label>
+                <Popover open={userPopoverOpen} onOpenChange={setUserPopoverOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      role="combobox"
+                      className="w-full justify-between border-gray-300 text-gray-700 h-10"
+                    >
+                      {users.find(u => u.id === effectiveUserId)?.nome || "Selecione usuário"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-64 p-0 z-50 bg-white border border-gray-200 shadow-lg">
+                    <Command>
+                      <CommandInput placeholder="Buscar usuário..." />
+                      <CommandEmpty>Nenhum usuário encontrado.</CommandEmpty>
+                      <CommandGroup className="max-h-64 overflow-auto">
+                        {users.map((userData) => (
+                          <CommandItem
+                            key={userData.id}
+                            onSelect={() => {
+                              setSelectedUserId(userData.id);
+                              setUserPopoverOpen(false);
+                            }}
+                            className="flex items-center gap-2 cursor-pointer"
+                          >
+                            <span className="flex-1 text-sm">
+                              {userData.nome} ({userData.email})
+                            </span>
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
+              </div>
+
               {/* Número de Controle */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
