@@ -198,7 +198,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       // Para o dashboard, usar usuário padrão (1) se não especificado
       const userId = 1; // Usuário padrão para desenvolvimento
-      const favorites = await conLicitacaoStorage.getFavorites(userId);
+      console.log('🔍 [ROUTES] Buscando favoritos via MySQL Storage para usuário:', userId);
+      const favorites = await storage.getFavorites(userId);
       
       // Adicionar headers para evitar cache
       res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
@@ -216,7 +217,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = parseInt(req.params.userId);
       const { date, dateFrom, dateTo } = req.query;
-      const favorites = await conLicitacaoStorage.getFavorites(userId, date as string, dateFrom as string, dateTo as string);
+      console.log('🔍 [ROUTES] Buscando favoritos via MySQL Storage para usuário:', userId);
+      const favorites = await storage.getFavorites(userId, date as string, dateFrom as string, dateTo as string);
       
       // Adicionar headers para evitar cache
       res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
@@ -237,7 +239,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "userId e biddingId são obrigatórios" });
       }
       
-      const favorite = await conLicitacaoStorage.addFavorite({ userId, biddingId });
+      console.log('➕ [ROUTES] Adicionando favorito via MySQL Storage:', { userId, biddingId });
+      const favorite = await storage.addFavorite({ userId, biddingId });
       res.status(201).json(favorite);
     } catch (error) {
       res.status(500).json({ message: "Erro interno do servidor" });
@@ -249,7 +252,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = parseInt(req.params.userId);
       const biddingId = parseInt(req.params.biddingId);
       
-      await conLicitacaoStorage.removeFavorite(userId, biddingId);
+      console.log('➖ [ROUTES] Removendo favorito via MySQL Storage:', { userId, biddingId });
+      await storage.removeFavorite(userId, biddingId);
       res.status(204).send();
     } catch (error) {
       res.status(500).json({ message: "Erro interno do servidor" });
@@ -261,7 +265,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = parseInt(req.params.userId);
       const biddingId = parseInt(req.params.biddingId);
       
-      const isFavorite = await conLicitacaoStorage.isFavorite(userId, biddingId);
+      console.log('❓ [ROUTES] Verificando favorito via MySQL Storage:', { userId, biddingId });
+      const isFavorite = await storage.isFavorite(userId, biddingId);
       res.json({ isFavorite });
     } catch (error) {
       res.status(500).json({ message: "Erro interno do servidor" });
@@ -275,7 +280,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const biddingId = parseInt(req.params.biddingId);
       const { category, customCategory, notes, uf, codigoUasg, valorEstimado, fornecedor, site } = req.body;
       
-      await conLicitacaoStorage.updateFavoriteCategorization(userId, biddingId, {
+      console.log('🏷️ [ROUTES] Categorizando favorito via MySQL Storage:', { userId, biddingId, category });
+      // Para categorização, vamos adicionar novamente o favorito com os dados de categorização
+      await storage.addFavorite({
+        userId,
+        biddingId,
         category,
         customCategory,
         notes,
