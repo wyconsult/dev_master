@@ -139,7 +139,6 @@ echo   npm run build
 echo   node scripts/init-db.js  (só na primeira vez)
 echo   pm2 restart all
 echo.
-echo Login admin: admin@jlg.com / admin123
 echo.
 echo Sistema 100%% funcional e pronto!
 echo.
