@@ -520,10 +520,10 @@ export default function Favorites() {
           </CardHeader>
           <CardContent className="px-3 md:px-6">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3 md:gap-4">
-              {/* Usuário JLG */}
+              {/* Usuário */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Usuário JLG
+                  Usuário
                 </label>
                 <Popover open={userPopoverOpen} onOpenChange={setUserPopoverOpen}>
                   <PopoverTrigger asChild>
