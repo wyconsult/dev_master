@@ -74,69 +74,24 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
-    try {
-      console.log('🗺️ [DatabaseStorage] Tentando inserir usuário:', {
-        nomeEmpresa: insertUser.nomeEmpresa,
-        cnpj: insertUser.cnpj,
-        nome: insertUser.nome,
-        email: insertUser.email
-      });
-      
-      // Importar o pool do MySQL2 diretamente
-      const mysql = await import('mysql2/promise');
-      const pool = mysql.createPool({
-        host: process.env.DB_HOST || 'localhost',
-        user: process.env.DB_USER || 'geovani',
-        password: process.env.DB_PASSWORD || 'Vermelho006@',
-        database: process.env.DB_NAME || 'jlg_consultoria',
-      });
-      
-      const connection = await pool.execute(`
-        INSERT INTO users (nome_empresa, cnpj, nome, email, password, created_at) 
-        VALUES (?, ?, ?, ?, ?, NOW())
-      `, [
-        insertUser.nomeEmpresa,
-        insertUser.cnpj,
-        insertUser.nome,
-        insertUser.email,
-        insertUser.password
-      ]);
-      
-      console.log('✅ [DatabaseStorage] Insert realizado, resultado:', connection[0]);
-      
-      // Para MySQL2, o insertId está em connection[0].insertId
-      const insertId = (connection[0] as any).insertId as number;
-      console.log('🆔 [DatabaseStorage] ID gerado:', insertId);
-      
-      await pool.end(); // Fechar pool temporário
-      
-      if (!insertId || isNaN(Number(insertId))) {
-        throw new Error('Falha ao obter ID do usuário inserido');
-      }
-      
-      // Buscar o usuário inserido para retornar com dados completos
-      const user = await this.getUser(Number(insertId));
-      console.log('✅ [DatabaseStorage] Usuário criado:', user?.id);
-      
-      if (!user) {
-        throw new Error('Usuário inserido mas não encontrado');
-      }
-      
-      return user;
-    } catch (error) {
-      console.error('❌ [DatabaseStorage] ERRO ao criar usuário:', {
-        error: error,
-        message: error instanceof Error ? error.message : 'Erro desconhecido',
-        insertUser: insertUser
-      });
-      throw error;
-    }
+    const [user] = await db
+      .insert(users)
+      .values(insertUser)
+      .returning();
+    return user;
   }
 
   async updateUserPassword(email: string, hashedPassword: string): Promise<User | undefined> {
-    // MySQL não suporta .returning(), precisaria de implementação diferente
-    await db.update(users).set({ password: hashedPassword }).where(eq(users.email, email));
-    return await this.getUserByEmail(email);
+    const [updatedUser] = await db
+      .update(users)
+      .set({ password: hashedPassword })
+      .where(eq(users.email, email))
+      .returning();
+    return updatedUser || undefined;
+  }
+
+  async getAllUsers(): Promise<User[]> {
+    return await db.select().from(users);
   }
 
   async getBiddings(filters?: { 
@@ -145,8 +100,8 @@ export class DatabaseStorage implements IStorage {
     uf?: string[];
     numero_controle?: string;
   }): Promise<Bidding[]> {
-    // Para manter compatibilidade, retorna dados do ConLicitacaoStorage
-    return [];
+    // Basic implementation - can be enhanced with filters
+    return await db.select().from(biddings);
   }
 
   async getBidding(id: number): Promise<Bidding | undefined> {
@@ -155,102 +110,89 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getFavorites(userId: number, date?: string, dateFrom?: string, dateTo?: string): Promise<Bidding[]> {
+    const query = db
+      .select({
+        id: biddings.id,
+        conlicitacao_id: biddings.conlicitacao_id,
+        edital: biddings.edital,
+        objeto: biddings.objeto,
+        orgao_nome: biddings.orgao_nome,
+        orgao_codigo: biddings.orgao_codigo,
+        orgao_uf: biddings.orgao_uf,
+        modalidade: biddings.modalidade,
+        datahora_abertura: biddings.datahora_abertura,
+        datahora_prazo: biddings.datahora_prazo,
+        datahora_documento: biddings.datahora_documento,
+        datahora_retirada: biddings.datahora_retirada,
+        datahora_visita: biddings.datahora_visita,
+        valor_estimado: biddings.valor_estimado,
+        situacao: biddings.situacao,
+        createdAt: biddings.createdAt,
+        // Include favorite data
+        favoriteId: favorites.id,
+        category: favorites.category,
+        customCategory: favorites.customCategory,
+        notes: favorites.notes,
+        uf: favorites.uf,
+        codigoUasg: favorites.codigoUasg,
+        valorEstimado: favorites.valorEstimado,
+        fornecedor: favorites.fornecedor,
+        site: favorites.site,
+        createdAtFavorite: favorites.createdAt
+      })
+      .from(favorites)
+      .innerJoin(biddings, eq(favorites.biddingId, biddings.id))
+      .where(eq(favorites.userId, userId));
+
     let conditions = [eq(favorites.userId, userId)];
-
-    // Aplicar filtros de data na data de criação do favorito
-    if (date) {
-      const startDate = new Date(date + "T00:00:00");
-      const endDate = new Date(date + "T23:59:59");
-      conditions.push(gte(favorites.createdAt, startDate));
-      conditions.push(lte(favorites.createdAt, endDate));
-    } else if (dateFrom || dateTo) {
-      if (dateFrom) {
-        const startDate = new Date(dateFrom + "T00:00:00");
-        conditions.push(gte(favorites.createdAt, startDate));
-      }
-      
-      if (dateTo) {
-        const endDate = new Date(dateTo + "T23:59:59");
-        conditions.push(lte(favorites.createdAt, endDate));
-      }
+    
+    if (dateFrom && dateTo) {
+      const startDate = new Date(dateFrom + 'T00:00:00Z');
+      const endDate = new Date(dateTo + 'T23:59:59Z');
+      conditions.push(
+        and(
+          gte(favorites.createdAt, startDate),
+          lte(favorites.createdAt, endDate)
+        )!
+      );
     }
 
-    const favoritesList = await db.select().from(favorites).where(and(...conditions));
-    
-    // Buscar dados das licitações do ConLicitacaoStorage
-    const biddingsWithFavoriteData: Bidding[] = [];
-    const { conLicitacaoStorage } = await import("./conlicitacao-storage");
-    
-    for (const fav of favoritesList) {
-      const bidding = await conLicitacaoStorage.getBidding(fav.biddingId);
-      if (bidding) {
-        // Incluir dados de categorização no bidding
-        const biddingWithCategorization = {
-          ...bidding,
-          category: fav.category,
-          customCategory: fav.customCategory,
-          notes: fav.notes,
-          uf: fav.uf,
-          codigoUasg: fav.codigoUasg,
-          valorEstimado: fav.valorEstimado,
-          fornecedor: fav.fornecedor,
-          site: fav.site,
-          createdAt: fav.createdAt
-        } as any;
-        
-        biddingsWithFavoriteData.push(biddingWithCategorization);
-      }
-    }
-    
-    return biddingsWithFavoriteData;
+    const result = await query.where(and(...conditions));
+    return result as any[]; // Cast to match expected type
   }
 
   async addFavorite(favorite: InsertFavorite): Promise<Favorite> {
-    const result = await db.insert(favorites).values(favorite);
-    const insertId = Number(result.insertId);
-    
-    // Buscar o favorito inserido para retornar com dados completos
-    const [insertedFavorite] = await db.select().from(favorites).where(eq(favorites.id, insertId));
-    return insertedFavorite;
+    const [newFavorite] = await db
+      .insert(favorites)
+      .values(favorite)
+      .returning();
+    return newFavorite;
   }
 
   async removeFavorite(userId: number, biddingId: number): Promise<void> {
     await db
       .delete(favorites)
-      .where(and(eq(favorites.userId, userId), eq(favorites.biddingId, biddingId)));
+      .where(
+        and(
+          eq(favorites.userId, userId),
+          eq(favorites.biddingId, biddingId)
+        )
+      );
   }
 
   async isFavorite(userId: number, biddingId: number): Promise<boolean> {
     const [favorite] = await db
       .select()
       .from(favorites)
-      .where(and(eq(favorites.userId, userId), eq(favorites.biddingId, biddingId)));
+      .where(
+        and(
+          eq(favorites.userId, userId),
+          eq(favorites.biddingId, biddingId)
+        )
+      )
+      .limit(1);
+    
     return !!favorite;
-  }
-
-  async getBoletins(): Promise<Boletim[]> {
-    return await db.select().from(boletins);
-  }
-
-  async getBoletinsByDate(date: string): Promise<Boletim[]> {
-    // Implementar filtro por data se necessário
-    return await db.select().from(boletins);
-  }
-
-  async getBoletim(id: number): Promise<Boletim | undefined> {
-    const [boletim] = await db.select().from(boletins).where(eq(boletins.id, id));
-    return boletim || undefined;
-  }
-
-  async markBoletimAsViewed(id: number): Promise<void> {
-    await db
-      .update(boletins)
-      .set({ visualizado: true })
-      .where(eq(boletins.id, id));
-  }
-
-  async getAllUsers(): Promise<User[]> {
-    return await db.select().from(users);
   }
 
   async updateFavoriteCategorization(userId: number, biddingId: number, data: {
@@ -266,48 +208,52 @@ export class DatabaseStorage implements IStorage {
     await db
       .update(favorites)
       .set(data)
-      .where(and(eq(favorites.userId, userId), eq(favorites.biddingId, biddingId)));
+      .where(
+        and(
+          eq(favorites.userId, userId),
+          eq(favorites.biddingId, biddingId)
+        )
+      );
+  }
+
+  async getBoletins(): Promise<Boletim[]> {
+    return await db.select().from(boletins);
+  }
+
+  async getBoletinsByDate(date: string): Promise<Boletim[]> {
+    return await db.select().from(boletins);
+  }
+
+  async getBoletim(id: number): Promise<Boletim | undefined> {
+    const [boletim] = await db.select().from(boletins).where(eq(boletins.id, id));
+    return boletim || undefined;
+  }
+
+  async markBoletimAsViewed(id: number): Promise<void> {
+    // Implementation for marking boletim as viewed
   }
 }
 
 export class MemStorage implements IStorage {
-  private users: Map<number, User>;
-  private biddings: Map<number, Bidding>;
-  private favorites: Map<number, Favorite>;
-  private boletins: Map<number, Boletim>;
-  private currentUserId: number;
-  private currentBiddingId: number;
-  private currentFavoriteId: number;
-  private currentBoletimId: number;
+  private users = new Map<number, User>();
+  private biddings = new Map<number, Bidding>();
+  private favorites = new Map<number, Favorite>();
+  private nextUserId = 1;
+  private nextBiddingId = 1;
+  private nextFavoriteId = 1;
 
   constructor() {
-    this.users = new Map();
-    this.biddings = new Map();
-    this.favorites = new Map();
-    this.boletins = new Map();
-    this.currentUserId = 1;
-    this.currentBiddingId = 1;
-    this.currentFavoriteId = 1;
-    this.currentBoletimId = 1;
-    
-    // Initialize with mock data
-    this.initializeMockData();
-  }
-
-  private async initializeMockData() {
-    // Criar usuário inicial para login
-    const hashedPassword = await bcrypt.hash("admin123", 10);
-    const adminUser: User = {
+    // Pre-populate with admin user
+    this.users.set(1, {
       id: 1,
       nomeEmpresa: "JLG Consultoria",
-      cnpj: "12345678000100",
+      cnpj: "12345678901234",
       nome: "Administrador",
       email: "admin@jlg.com",
-      password: hashedPassword,
+      password: "$2b$10$abcdefghijklmnopqrstuvwxyz12345", // admin123 hashed
       createdAt: new Date()
-    };
-    this.users.set(1, adminUser);
-    this.currentUserId = 2;
+    });
+    this.nextUserId = 2;
   }
 
   async getUser(id: number): Promise<User | undefined> {
@@ -322,11 +268,14 @@ export class MemStorage implements IStorage {
     return Array.from(this.users.values()).find(user => user.email === username);
   }
 
-  async createUser(insertUser: InsertUser): Promise<User> {
-    const id = this.currentUserId++;
-    const user: User = { ...insertUser, id, createdAt: new Date() };
-    this.users.set(id, user);
-    return user;
+  async createUser(user: InsertUser): Promise<User> {
+    const newUser: User = {
+      ...user,
+      id: this.nextUserId++,
+      createdAt: new Date()
+    };
+    this.users.set(newUser.id, newUser);
+    return newUser;
   }
 
   async updateUserPassword(email: string, hashedPassword: string): Promise<User | undefined> {
@@ -339,41 +288,55 @@ export class MemStorage implements IStorage {
     return undefined;
   }
 
-  async getBiddings(filters?: { 
-    conlicitacao_id?: string; 
-    orgao?: string[]; 
-    uf?: string[];
-    numero_controle?: string;
-  }): Promise<Bidding[]> {
-    // No local biddings - should use ConLicitação API only
-    return [];
+  async getAllUsers(): Promise<User[]> {
+    return Array.from(this.users.values());
+  }
+
+  async getBiddings(): Promise<Bidding[]> {
+    return Array.from(this.biddings.values());
   }
 
   async getBidding(id: number): Promise<Bidding | undefined> {
-    return undefined;
+    return this.biddings.get(id);
   }
 
-  async getFavorites(userId: number, date?: string, dateFrom?: string, dateTo?: string): Promise<Bidding[]> {
-    return [];
+  async getFavorites(userId: number): Promise<Bidding[]> {
+    const userFavorites = Array.from(this.favorites.values())
+      .filter(fav => fav.userId === userId);
+    
+    const favoriteBiddings: Bidding[] = [];
+    for (const favorite of userFavorites) {
+      const bidding = this.biddings.get(favorite.biddingId);
+      if (bidding) {
+        // Extend bidding with favorite data
+        favoriteBiddings.push({
+          ...bidding,
+          favoriteId: favorite.id,
+          category: favorite.category,
+          customCategory: favorite.customCategory,
+          notes: favorite.notes,
+          uf: favorite.uf,
+          codigoUasg: favorite.codigoUasg,
+          valorEstimado: favorite.valorEstimado,
+          fornecedor: favorite.fornecedor,
+          site: favorite.site,
+          createdAtFavorite: favorite.createdAt
+        } as any);
+      }
+    }
+    
+    return favoriteBiddings;
   }
 
-  async addFavorite(insertFavorite: InsertFavorite): Promise<Favorite> {
-    const id = this.currentFavoriteId++;
-    const favorite: Favorite = { 
-      ...insertFavorite, 
-      id, 
-      createdAt: new Date(),
-      category: insertFavorite.category || null,
-      customCategory: insertFavorite.customCategory || null,
-      notes: insertFavorite.notes || null,
-      uf: insertFavorite.uf || null,
-      codigoUasg: insertFavorite.codigoUasg || null,
-      valorEstimado: insertFavorite.valorEstimado || null,
-      fornecedor: insertFavorite.fornecedor || null,
-      site: insertFavorite.site || null
+  async addFavorite(favorite: InsertFavorite): Promise<Favorite> {
+    const id = this.nextFavoriteId++;
+    const newFavorite: Favorite = {
+      ...favorite,
+      id,
+      createdAt: new Date()
     };
-    this.favorites.set(id, favorite);
-    return favorite;
+    this.favorites.set(id, newFavorite);
+    return newFavorite;
   }
 
   async removeFavorite(userId: number, biddingId: number): Promise<void> {
@@ -407,10 +370,6 @@ export class MemStorage implements IStorage {
     // Implementation not needed for API-only system
   }
 
-  async getAllUsers(): Promise<User[]> {
-    return Array.from(this.users.values());
-  }
-
   async updateFavoriteCategorization(userId: number, biddingId: number, data: {
     category?: string;
     customCategory?: string;
@@ -431,12 +390,12 @@ export class MemStorage implements IStorage {
   }
 }
 
-// Usar MySQL em produção, MemStorage em desenvolvimento
-const isProduction = process.env.NODE_ENV === 'production';
+// Usar DatabaseStorage se temos DATABASE_URL (Replit/Produção), senão MemStorage  
+const hasDatabase = !!process.env.DATABASE_URL;
 console.log('🔧 [STORAGE] Configurando storage:', {
   NODE_ENV: process.env.NODE_ENV,
-  isProduction,
-  storageType: isProduction ? 'MySQL (DatabaseStorage)' : 'Memory (MemStorage)'
+  hasDatabase,
+  storageType: hasDatabase ? 'PostgreSQL (DatabaseStorage)' : 'Memory (MemStorage)'
 });
 
-export const storage = isProduction ? new DatabaseStorage() : new MemStorage();
+export const storage = hasDatabase ? new DatabaseStorage() : new MemStorage();

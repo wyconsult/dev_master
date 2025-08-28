@@ -1,9 +1,9 @@
-import { mysqlTable, varchar, int, boolean, timestamp, decimal } from "drizzle-orm/mysql-core";
+import { pgTable, varchar, integer, boolean, timestamp, decimal, serial } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
-export const users = mysqlTable("users", {
-  id: int("id").primaryKey().autoincrement(),
+export const users = pgTable("users", {
+  id: serial("id").primaryKey(),
   nomeEmpresa: varchar("nome_empresa", { length: 255 }).notNull(),
   cnpj: varchar("cnpj", { length: 18 }).notNull().unique(),
   nome: varchar("nome", { length: 255 }).notNull(),
@@ -12,9 +12,9 @@ export const users = mysqlTable("users", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
-export const biddings = mysqlTable("biddings", {
-  id: int("id").primaryKey().autoincrement(),
-  conlicitacao_id: int("conlicitacao_id").notNull(), // ID da ConLicitação
+export const biddings = pgTable("biddings", {
+  id: serial("id").primaryKey(),
+  conlicitacao_id: integer("conlicitacao_id").notNull(), // ID da ConLicitação
   orgao_nome: varchar("orgao_nome", { length: 500 }).notNull(),
   orgao_codigo: varchar("orgao_codigo", { length: 100 }),
   orgao_cidade: varchar("orgao_cidade", { length: 255 }).notNull(),
@@ -37,13 +37,14 @@ export const biddings = mysqlTable("biddings", {
   item: varchar("item", { length: 500 }),
   preco_edital: decimal("preco_edital", { precision: 15, scale: 2 }),
   valor_estimado: decimal("valor_estimado", { precision: 15, scale: 2 }),
-  boletim_id: int("boletim_id"), // ID do boletim que contém esta licitação
+  boletim_id: integer("boletim_id"), // ID do boletim que contém esta licitação
+  createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
-export const favorites = mysqlTable("favorites", {
-  id: int("id").primaryKey().autoincrement(),
-  userId: int("user_id").notNull(),
-  biddingId: int("bidding_id").notNull(),
+export const favorites = pgTable("favorites", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull(),
+  biddingId: integer("bidding_id").notNull(),
   category: varchar("category", { length: 100 }), // Categoria: alimentacao, limpeza, sites, outros
   customCategory: varchar("custom_category", { length: 255 }), // Categoria personalizada definida pelo usuário
   notes: varchar("notes", { length: 1000 }), // Notas/observações do usuário sobre o favorito
@@ -56,31 +57,31 @@ export const favorites = mysqlTable("favorites", {
 });
 
 // Tabela de filtros da ConLicitação
-export const filtros = mysqlTable("filtros", {
-  id: int("id").primaryKey(), // ID do filtro da ConLicitação
+export const filtros = pgTable("filtros", {
+  id: integer("id").primaryKey(), // ID do filtro da ConLicitação
   descricao: varchar("descricao", { length: 255 }).notNull(),
-  cliente_id: int("cliente_id"),
+  cliente_id: integer("cliente_id"),
   cliente_razao_social: varchar("cliente_razao_social", { length: 255 }),
   manha: boolean("manha").default(true),
   tarde: boolean("tarde").default(true),
   noite: boolean("noite").default(true),
 });
 
-export const boletins = mysqlTable("boletins", {
-  id: int("id").primaryKey(), // ID do boletim da ConLicitação
-  numero_edicao: int("numero_edicao").notNull(),
+export const boletins = pgTable("boletins", {
+  id: integer("id").primaryKey(), // ID do boletim da ConLicitação
+  numero_edicao: integer("numero_edicao").notNull(),
   datahora_fechamento: varchar("datahora_fechamento", { length: 50 }).notNull(),
-  filtro_id: int("filtro_id").notNull(),
-  quantidade_licitacoes: int("quantidade_licitacoes").notNull(),
-  quantidade_acompanhamentos: int("quantidade_acompanhamentos").notNull(),
+  filtro_id: integer("filtro_id").notNull(),
+  quantidade_licitacoes: integer("quantidade_licitacoes").notNull(),
+  quantidade_acompanhamentos: integer("quantidade_acompanhamentos").notNull(),
   visualizado: boolean("visualizado").default(false).notNull(),
 });
 
 // Tabela de acompanhamentos
-export const acompanhamentos = mysqlTable("acompanhamentos", {
-  id: int("id").primaryKey().autoincrement(),
-  conlicitacao_id: int("conlicitacao_id").notNull(),
-  licitacao_id: int("licitacao_id"), // Referência à licitação original
+export const acompanhamentos = pgTable("acompanhamentos", {
+  id: serial("id").primaryKey(),
+  conlicitacao_id: integer("conlicitacao_id").notNull(),
+  licitacao_id: integer("licitacao_id"), // Referência à licitação original
   orgao_nome: varchar("orgao_nome", { length: 500 }).notNull(),
   orgao_cidade: varchar("orgao_cidade", { length: 255 }),
   orgao_uf: varchar("orgao_uf", { length: 2 }),
@@ -89,7 +90,7 @@ export const acompanhamentos = mysqlTable("acompanhamentos", {
   data_fonte: varchar("data_fonte", { length: 50 }),
   edital: varchar("edital", { length: 255 }),
   processo: varchar("processo", { length: 255 }),
-  boletim_id: int("boletim_id"),
+  boletim_id: integer("boletim_id"),
 });
 
 export const insertUserSchema = createInsertSchema(users).pick({
@@ -98,6 +99,11 @@ export const insertUserSchema = createInsertSchema(users).pick({
   nome: true,
   email: true,
   password: true,
+});
+
+export const loginSchema = z.object({
+  email: z.string().email("E-mail inválido"),
+  password: z.string().min(6, "Senha deve ter no mínimo 6 caracteres"),
 });
 
 export const registerSchema = insertUserSchema.extend({
@@ -118,6 +124,7 @@ export const forgotPasswordSchema = z.object({
 
 export const insertBiddingSchema = createInsertSchema(biddings).omit({
   id: true,
+  createdAt: true,
 });
 
 export const insertFavoriteSchema = createInsertSchema(favorites).omit({
@@ -125,29 +132,16 @@ export const insertFavoriteSchema = createInsertSchema(favorites).omit({
   createdAt: true,
 });
 
-export const insertFiltroSchema = createInsertSchema(filtros);
 export const insertBoletimSchema = createInsertSchema(boletins);
-export const insertAcompanhamentoSchema = createInsertSchema(acompanhamentos).omit({
-  id: true,
-});
 
-export const loginSchema = z.object({
-  email: z.string().email("E-mail inválido"),
-  password: z.string().min(1, "Senha é obrigatória"),
-});
-
-export type InsertUser = z.infer<typeof insertUserSchema>;
+// Types
 export type User = typeof users.$inferSelect;
-export type InsertBidding = z.infer<typeof insertBiddingSchema>;
+export type InsertUser = typeof users.$inferInsert;
 export type Bidding = typeof biddings.$inferSelect;
-export type InsertFavorite = z.infer<typeof insertFavoriteSchema>;
+export type InsertBidding = typeof biddings.$inferInsert;
 export type Favorite = typeof favorites.$inferSelect;
-export type InsertFiltro = z.infer<typeof insertFiltroSchema>;
-export type Filtro = typeof filtros.$inferSelect;
-export type InsertBoletim = z.infer<typeof insertBoletimSchema>;
+export type InsertFavorite = typeof favorites.$inferInsert;
 export type Boletim = typeof boletins.$inferSelect;
-export type InsertAcompanhamento = z.infer<typeof insertAcompanhamentoSchema>;
+export type InsertBoletim = typeof boletins.$inferInsert;
+export type Filtro = typeof filtros.$inferSelect;
 export type Acompanhamento = typeof acompanhamentos.$inferSelect;
-export type LoginRequest = z.infer<typeof loginSchema>;
-export type RegisterRequest = z.infer<typeof registerSchema>;
-export type ForgotPasswordRequest = z.infer<typeof forgotPasswordSchema>;
