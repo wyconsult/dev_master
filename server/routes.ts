@@ -198,7 +198,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       // Para o dashboard, usar usuário padrão (1) se não especificado
       const userId = 1; // Usuário padrão para desenvolvimento
-      const favorites = await storage.getFavorites(userId);
+      const favorites = await conLicitacaoStorage.getFavorites(userId);
       
       // Adicionar headers para evitar cache
       res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
@@ -216,7 +216,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = parseInt(req.params.userId);
       const { date, dateFrom, dateTo } = req.query;
-      const favorites = await storage.getFavorites(userId, date as string, dateFrom as string, dateTo as string);
+      const favorites = await conLicitacaoStorage.getFavorites(userId, date as string, dateFrom as string, dateTo as string);
       
       // Adicionar headers para evitar cache
       res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
@@ -237,10 +237,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "userId e biddingId são obrigatórios" });
       }
       
-      const favorite = await storage.addFavorite({ userId, biddingId });
+      const favorite = await conLicitacaoStorage.addFavorite({ userId, biddingId });
       res.status(201).json(favorite);
     } catch (error) {
-      console.error('Erro ao adicionar favorito:', error);
       res.status(500).json({ message: "Erro interno do servidor" });
     }
   });
@@ -250,10 +249,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = parseInt(req.params.userId);
       const biddingId = parseInt(req.params.biddingId);
       
-      await storage.removeFavorite(userId, biddingId);
+      await conLicitacaoStorage.removeFavorite(userId, biddingId);
       res.status(204).send();
     } catch (error) {
-      console.error('Erro ao remover favorito:', error);
       res.status(500).json({ message: "Erro interno do servidor" });
     }
   });
@@ -263,10 +261,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = parseInt(req.params.userId);
       const biddingId = parseInt(req.params.biddingId);
       
-      const isFavorite = await storage.isFavorite(userId, biddingId);
+      const isFavorite = await conLicitacaoStorage.isFavorite(userId, biddingId);
       res.json({ isFavorite });
     } catch (error) {
-      console.error('Erro ao verificar favorito:', error);
       res.status(500).json({ message: "Erro interno do servidor" });
     }
   });
@@ -278,7 +275,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const biddingId = parseInt(req.params.biddingId);
       const { category, customCategory, notes, uf, codigoUasg, valorEstimado, fornecedor, site } = req.body;
       
-      await storage.updateFavoriteCategorization(userId, biddingId, {
+      await conLicitacaoStorage.updateFavoriteCategorization(userId, biddingId, {
         category,
         customCategory,
         notes,
@@ -357,24 +354,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
 
-
-  // Rota para listar usuários da empresa JLG Consultoria
-  app.get("/api/users", async (req, res) => {
-    try {
-      const users = await storage.getAllUsers();
-      // Retornar apenas dados seguros dos usuários
-      const safeUsers = users.map(user => ({
-        id: user.id,
-        nome: user.nome,
-        email: user.email,
-        nomeEmpresa: user.nomeEmpresa
-      }));
-      res.json(safeUsers);
-    } catch (error) {
-      console.error('Erro ao buscar usuários:', error);
-      res.status(500).json({ message: "Erro interno do servidor" });
-    }
-  });
 
   app.post("/api/boletins/:id/mark-viewed", async (req, res) => {
     try {

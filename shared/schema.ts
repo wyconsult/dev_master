@@ -38,7 +38,6 @@ export const biddings = mysqlTable("biddings", {
   preco_edital: decimal("preco_edital", { precision: 15, scale: 2 }),
   valor_estimado: decimal("valor_estimado", { precision: 15, scale: 2 }),
   boletim_id: int("boletim_id"), // ID do boletim que contém esta licitação
-  createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
 export const favorites = mysqlTable("favorites", {
@@ -101,11 +100,6 @@ export const insertUserSchema = createInsertSchema(users).pick({
   password: true,
 });
 
-export const loginSchema = z.object({
-  email: z.string().email("E-mail inválido"),
-  password: z.string().min(6, "Senha deve ter no mínimo 6 caracteres"),
-});
-
 export const registerSchema = insertUserSchema.extend({
   confirmPassword: z.string().min(6, "Confirmação de senha deve ter no mínimo 6 caracteres"),
 }).refine(data => data.password === data.confirmPassword, {
@@ -124,7 +118,6 @@ export const forgotPasswordSchema = z.object({
 
 export const insertBiddingSchema = createInsertSchema(biddings).omit({
   id: true,
-  createdAt: true,
 });
 
 export const insertFavoriteSchema = createInsertSchema(favorites).omit({
@@ -132,16 +125,29 @@ export const insertFavoriteSchema = createInsertSchema(favorites).omit({
   createdAt: true,
 });
 
+export const insertFiltroSchema = createInsertSchema(filtros);
 export const insertBoletimSchema = createInsertSchema(boletins);
+export const insertAcompanhamentoSchema = createInsertSchema(acompanhamentos).omit({
+  id: true,
+});
 
-// Types
+export const loginSchema = z.object({
+  email: z.string().email("E-mail inválido"),
+  password: z.string().min(1, "Senha é obrigatória"),
+});
+
+export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
-export type InsertUser = typeof users.$inferInsert;
+export type InsertBidding = z.infer<typeof insertBiddingSchema>;
 export type Bidding = typeof biddings.$inferSelect;
-export type InsertBidding = typeof biddings.$inferInsert;
+export type InsertFavorite = z.infer<typeof insertFavoriteSchema>;
 export type Favorite = typeof favorites.$inferSelect;
-export type InsertFavorite = typeof favorites.$inferInsert;
-export type Boletim = typeof boletins.$inferSelect;
-export type InsertBoletim = typeof boletins.$inferInsert;
+export type InsertFiltro = z.infer<typeof insertFiltroSchema>;
 export type Filtro = typeof filtros.$inferSelect;
+export type InsertBoletim = z.infer<typeof insertBoletimSchema>;
+export type Boletim = typeof boletins.$inferSelect;
+export type InsertAcompanhamento = z.infer<typeof insertAcompanhamentoSchema>;
 export type Acompanhamento = typeof acompanhamentos.$inferSelect;
+export type LoginRequest = z.infer<typeof loginSchema>;
+export type RegisterRequest = z.infer<typeof registerSchema>;
+export type ForgotPasswordRequest = z.infer<typeof forgotPasswordSchema>;

@@ -23,20 +23,18 @@ console.log('🗺️ [MySQL] Configurando conexão:', {
 // Pool de conexões MySQL
 const pool = mysql.createPool(mysqlConfig);
 
-// Testar conexão apenas em produção
-if (process.env.NODE_ENV === 'production') {
-  pool.getConnection()
-    .then(connection => {
-      console.log('✅ [MySQL] Conexão estabelecida com sucesso!');
-      connection.release();
-    })
-    .catch(error => {
-      console.error('❌ [MySQL] ERRO na conexão:', {
-        message: error.message,
-        code: error.code,
-        config: mysqlConfig
-      });
+// Testar conexão
+pool.getConnection()
+  .then(connection => {
+    console.log('✅ [MySQL] Conexão estabelecida com sucesso!');
+    connection.release();
+  })
+  .catch(error => {
+    console.error('❌ [MySQL] ERRO na conexão:', {
+      message: error.message,
+      code: error.code,
+      config: mysqlConfig
     });
-}
+  });
 
 export const db = drizzle(pool, { schema, mode: 'default' });
