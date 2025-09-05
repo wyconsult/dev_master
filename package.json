@@ -4,9 +4,15 @@
   "type": "module",
   "license": "MIT",
   "scripts": {
+<<<<<<< HEAD
   "dev": "cross-env NODE_ENV=development tsx server/index.ts",
   "build": "tsc",
   "start": "node dist/index.js",
+=======
+    "dev": "NODE_ENV=development tsx server/index.ts",
+    "build": "vite build && esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist",
+    "start": "NODE_ENV=production node dist/index.js",
+>>>>>>> 72b98e9a85d4ac184f331a1fd7264501186cbcd0
     "check": "tsc",
     "db:push": "drizzle-kit push"
   },

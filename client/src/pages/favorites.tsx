@@ -331,6 +331,7 @@ export default function Favorites() {
       }
       
       const uf = (any as any).uf || bidding.orgao_uf || "";
+      const uf = any.uf || bidding.orgao_uf || "";
       const site = any.site || "";
       const codigoUnidade = any.codigoUasg || bidding.orgao_codigo || "";
       
