@@ -264,7 +264,7 @@ const getFirstValidDate = (bidding: any): Date | null => {
       const getDateWithPriority = (bidding: any) => {
         // P1 = Abertura, P2 = Prazo, P3 = Documento, P4 = Retirada, P5 = Visita
         // Nomes dos campos conforme documentação oficial da API ConLicitação
-        const datePriorities = [
+        const dateFields = [
           { key: 'datahora_abertura', label: 'Abertura' },
           { key: 'datahora_prazo', label: 'Prazo' },
           { key: 'datahora_documento', label: 'Documento' },
@@ -272,33 +272,51 @@ const getFirstValidDate = (bidding: any): Date | null => {
           { key: 'datahora_visita', label: 'Visita' }
         ];
 
-        for (const priority of datePriorities) {
-          const dateValue = bidding[priority.key];
-          if (dateValue && dateValue.trim() !== "") {
-            try {
-              const formattedDate = format(new Date(dateValue), "dd/MM/yyyy");
-              const formattedTime = format(new Date(dateValue), "HH:mm");
-              return {
-                dateLabel: formattedDate, // Remover prefixo, manter apenas data
-                time: formattedTime,
-                rawDate: dateValue
-              };
-            } catch (error) {
-              // Se houver erro na formatação, continua para próxima data
-              continue;
-            }
+          if (dateFilterType === "favorito") {
+    // Mantém prioridade P1-P5
+    for (const field of dateFields) {
+      const val = bidding[field.key];
+      if (val && val.trim() !== "") {
+        try {
+          const dt = new Date(val);
+          if (!isNaN(dt.getTime())) {
+            return { 
+              dateLabel: format(dt, "dd/MM/yyyy"), 
+              time: format(dt, "HH:mm"), 
+              rawDate: val 
+            };
           }
+        } catch (e) { continue; }
+      }
+    }
+  } else {
+    // Data de realização: pega a primeira data dentro do período selecionado
+    const startDate = new Date(dateRange.from!);
+    const endDate = new Date(dateRange.to!);
+    startDate.setHours(0,0,0,0);
+    endDate.setHours(23,59,59,999);
+
+    for (const field of dateFields) {
+      const val = bidding[field.key];
+      if (val && val.trim() !== "") {
+        const dt = new Date(val);
+        dt.setHours(0,0,0,0);
+        if (!isNaN(dt.getTime()) && dt >= startDate && dt <= endDate) {
+          return { 
+            dateLabel: format(new Date(val), "dd/MM/yyyy"), 
+            time: format(new Date(val), "HH:mm"), 
+            rawDate: val 
+          };
         }
+      }
+    }
+  }
 
-        // Se nenhuma data foi encontrada
-        return {
-          dateLabel: "Não informado",
-          time: "",
-          rawDate: null
-        };
-      };
+  // Se nenhuma data válida for encontrada
+  return { dateLabel: "Não informado", time: "", rawDate: null };
+};
 
-      const dateInfo = getDateWithPriority(bidding);
+      const dateInfo = getDateForPDF(bidding);
       const data = dateInfo.dateLabel;
       const pregao = bidding.edital || "";
       const hora = dateInfo.time;

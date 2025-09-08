@@ -178,6 +178,7 @@ export class DatabaseStorage implements IStorage {
         // Incluir dados de categorização no bidding
         const biddingWithCategorization = {
           ...bidding,
+          data: fav.Date,
           category: fav.category,
           customCategory: fav.customCategory,
           notes: fav.notes,
