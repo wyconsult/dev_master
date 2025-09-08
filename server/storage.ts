@@ -10,11 +10,13 @@ import {
   type Favorite,
   type InsertFavorite,
   type Boletim,
-  type InsertBoletim
+  type InsertBoletim,
+  insertBiddingSchema
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, gte, lte } from "drizzle-orm";
 import bcrypt from "bcrypt";
+import { Data } from "ws";
 
 export interface IStorage {
   // Users
@@ -217,6 +219,7 @@ export class DatabaseStorage implements IStorage {
       `, [
         favorite.userId,
         favorite.biddingId,
+        favorite.data || null,
         favorite.category || null,
         favorite.customCategory || null,
         favorite.notes || null,
@@ -385,6 +388,7 @@ export class MemStorage implements IStorage {
       ...insertFavorite, 
       id, 
       createdAt: new Date(),
+      data: insertFavorite.data || null,
       category: insertFavorite.category || null,
       customCategory: insertFavorite.customCategory || null,
       notes: insertFavorite.notes || null,
