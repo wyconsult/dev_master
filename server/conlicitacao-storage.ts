@@ -451,9 +451,9 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
       objeto: licitacao.objeto || '', // Objeto
       situacao: situacaoNormalizada, // Situação
       datahora_abertura: licitacao.datahora_abertura || '', // Data/Hora abertura
-      datahora_documento: licitacao.datahora_documento || null, // Data/Hora documento
-      datahora_retirada: licitacao.datahora_retirada || null, // Data/Hora retirada
-      datahora_visita: licitacao.datahora_visita || null, // Data/Hora visita
+      datahora_documento: licitacao.datahora_documento || '', // Data/Hora documento
+      datahora_retirada: licitacao.datahora_retirada || '', // Data/Hora retirada
+      datahora_visita: licitacao.datahora_visita || '', // Data/Hora visita
       datahora_prazo: licitacao.datahora_prazo || '', // Data/Hora prazo
       edital: licitacao.edital || '', // Edital
       link_edital: documentoUrl, // Link edital
