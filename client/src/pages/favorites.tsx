@@ -98,6 +98,7 @@ export default function Favorites() {
     const matchesUF = selectedUFs.length === 0 || 
       selectedUFs.includes(bidding.orgao_uf);
 
+
     // Date filter logic - check by type of date filter selected
     let matchesDateRange = true;
     if (dateRange.from && dateRange.to) {
@@ -168,6 +169,32 @@ export default function Favorites() {
     setDateRange({});
   };
 
+// Função para extrair a primeira data válida seguindo prioridade P1-P5
+const getFirstValidDate = (bidding: any): Date | null => {
+  const datePriorities = [
+    'datahora_abertura',
+    'datahora_prazo', 
+    'datahora_documento',
+    'datahora_retirada',
+    'datahora_visita'
+  ];
+
+  for (const dateKey of datePriorities) {
+    const dateValue = bidding[dateKey];
+    if (dateValue && dateValue.trim() !== "") {
+      try {
+        const date = new Date(dateValue);
+        if (!isNaN(date.getTime())) {
+          return date;
+        }
+      } catch (error) {
+        continue;
+      }
+    }
+  }
+  return null;
+};
+  
   // Função para gerar PDF
   const generatePDF = () => {
     if (!dateRange.from || !dateRange.to) {
@@ -209,30 +236,9 @@ export default function Favorites() {
     // "Não informado" sempre por último
     const sortedFavorites = [...filteredFavorites].sort((a, b) => {
       // Função para extrair data com prioridade P1-P5
-      const getEarliestDate = (bidding: any) => {
-        const datePriorities = [
-          'datahora_abertura',
-          'datahora_prazo', 
-          'datahora_documento',
-          'datahora_retirada',
-          'datahora_visita'
-        ];
-
-        for (const dateKey of datePriorities) {
-          const dateValue = bidding[dateKey];
-          if (dateValue && dateValue.trim() !== "") {
-            try {
-              return new Date(dateValue);
-            } catch (error) {
-              continue;
-            }
-          }
-        }
-        return null; // Não informado
-      };
-
-      const dateA = getEarliestDate(a);
-      const dateB = getEarliestDate(b);
+      const dateA = getFirstValidDate(a);
+      const dateB = getFirstValidDate(b);
+      
 
       // Lógica de ordenação: datas válidas primeiro (crescente), "Não informado" por último
       if (dateA && dateB) {
@@ -479,6 +485,7 @@ export default function Favorites() {
       </html>
     `;
   };
+  
 
   if (isLoading) {
     return (
