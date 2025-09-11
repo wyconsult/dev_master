@@ -10,7 +10,7 @@ echo 3. Preparar para deploy manual em produção
 echo.
 pause
 
-cd D:\licita_tracker
+cd C:\Users\Geovani\LicitacaoTracker
 
 echo.
 echo 1) Status atual do Git...

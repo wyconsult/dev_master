@@ -1,5 +1,4 @@
 import { mysqlTable, varchar, int, boolean, timestamp, decimal } from "drizzle-orm/mysql-core";
-import { date } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -45,7 +44,6 @@ export const favorites = mysqlTable("favorites", {
   id: int("id").primaryKey().autoincrement(),
   userId: int("user_id").notNull(),
   biddingId: int("bidding_id").notNull(),
-  data:date("data").notNull(),
   category: varchar("category", { length: 100 }), // Categoria: alimentacao, limpeza, sites, outros
   customCategory: varchar("custom_category", { length: 255 }), // Categoria personalizada definida pelo usuário
   notes: varchar("notes", { length: 1000 }), // Notas/observações do usuário sobre o favorito
