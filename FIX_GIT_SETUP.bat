@@ -71,7 +71,7 @@ git add -A
 
 echo.
 echo 12) Commitando com mensagem atualizada...
-git commit -m "Sistema v2.14 - AUTENTICAÇÃO COMPLETA: Login/registro com MySQL + script init-db.js + Sistema dual storage (dev/prod) + Busca garantida número controle" || echo "Nada para commitar"
+git commit -m "Sistema v2.15 - AUTENTICAÇÃO COMPLETA: Login/registro com MySQL + script init-db.js + Sistema dual storage (dev/prod) + Busca garantida número controle" || echo "Nada para commitar"
 
 echo.
 echo 13) Enviando para GitHub...
