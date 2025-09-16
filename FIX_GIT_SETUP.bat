@@ -1,6 +1,6 @@
 @echo off
 echo ===============================================
-echo GIT SETUP + SYNC GITHUB - JLG CONSULTORIA v2.14
+echo GIT SETUP + SYNC GITHUB - JLG CONSULTORIA v2.15
 echo ===============================================
 echo.
 echo Este script vai:
@@ -125,7 +125,9 @@ echo • Sistema de prioridade P1-P5 mantido (Abertura→Prazo→Documento→Ret
 echo • Domínio personalizado: https://jlglicitacoes.com.br
 echo • SSL/HTTPS configurado com certificado Let's Encrypt
 echo • Sistema 100%% compatível com deploy sem banco de dados
-echo.
+echo •=== FUNCIONALIDADES v2.15 IMPLEMENTADAS ===
+echo • Alterada a parte de pesquisa de filtro na pagina de favoritos
+echo.•
 echo === DEPLOY E ACESSO ===
 echo Servidor: 31.97.26.138
 echo Senha: Vermelho006@
