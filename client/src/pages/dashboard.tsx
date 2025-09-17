@@ -105,7 +105,7 @@ export default function Dashboard() {
             Olá, {user?.email?.split('@')[0]}! 👋
           </p>
           <p className="text-sm md:text-base text-gray-500">
-            Gerencie suas licitações e boletins de forma inteligente
+            Gerencie suas licitações e boletins de forma inteligente e rapida
           </p>
         </div>
 

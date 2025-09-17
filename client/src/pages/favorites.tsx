@@ -37,7 +37,7 @@ import { date } from "drizzle-orm/pg-core";
 const UF_OPTIONS = [
   { code: "AC", name: "AC - Acre" },
   { code: "AL", name: "AL - Alagoas" },
-  { code: "AP", name: "AP - Amapá" },
+  { code: "AP", name: "AP - Amapa" },
   { code: "AM", name: "AM - Amazonas" },
   { code: "BA", name: "BA - Bahia" },
   { code: "CE", name: "CE - Ceará" },
