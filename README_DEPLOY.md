@@ -59,7 +59,7 @@ ssh root@31.97.26.138
    > **Senha**: `Vermelho006@`
 
 2. **Navegar para o Diretório**
-   ```bash
+   ```bashnpm run 
    cd ~/dev_master
    ```
 
@@ -319,8 +319,8 @@ npm run build
 ---
 
 **Sistema em Produção** ✅  
-**Última Atualização**: 15/09/2025  
-**Versão**: 2.15 - JLG Consultoria Production Ready
+**Última Atualização**: 24/09/2025  
+**Versão**: 2.16 - JLG Consultoria Production Ready
 
 ---
 

@@ -71,7 +71,7 @@ git add -A
 
 echo.
 echo 12) Commitando com mensagem atualizada...
-git commit -m "Sistema v2.15 - AUTENTICAÇÃO COMPLETA: Login/registro com MySQL + script init-db.js + Sistema dual storage (dev/prod) + Busca garantida número controle" || echo "Nada para commitar"
+git commit -m "Sistema v2.16 - incluido o item de logo e contato na geração do pdf" || echo "Nada para commitar"
 
 echo.
 echo 13) Enviando para GitHub...
@@ -127,6 +127,9 @@ echo • SSL/HTTPS configurado com certificado Let's Encrypt
 echo • Sistema 100%% compatível com deploy sem banco de dados
 echo •=== FUNCIONALIDADES v2.15 IMPLEMENTADAS ===
 echo • Alterada a parte de pesquisa de filtro na pagina de favoritos
+echo •=== FUNCIONALIDADES v2.16 IMPLEMENTADAS ===
+echo • em  24/09 - incluido a logo e itens de contato na geração do .pdf
+
 echo.•
 echo === DEPLOY E ACESSO ===
 echo Servidor: 31.97.26.138

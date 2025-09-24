@@ -6,24 +6,10 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { BiddingCard } from "@/components/bidding-card";
-import {
-  Filter,
-  Search,
-  X,
-  Calendar as CalendarIcon,
-  Heart,
-  Eraser,
-  FileText,
-} from "lucide-react";
+import { Filter, Search, X, Calendar as CalendarIcon, Heart, Eraser, FileText } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-} from "@/components/ui/command";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from "@/components/ui/command";
 import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -31,13 +17,12 @@ import { cn } from "@/lib/utils";
 import { type Bidding } from "@shared/schema";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
-import { date } from "drizzle-orm/pg-core";
 
-// Lista de UFs
+// Lista de UFs com nomes completos para evitar confusão
 const UF_OPTIONS = [
   { code: "AC", name: "AC - Acre" },
   { code: "AL", name: "AL - Alagoas" },
-  { code: "AP", name: "AP - Amapa" },
+  { code: "AP", name: "AP - Amapá" },
   { code: "AM", name: "AM - Amazonas" },
   { code: "BA", name: "BA - Bahia" },
   { code: "CE", name: "CE - Ceará" },
@@ -61,23 +46,40 @@ const UF_OPTIONS = [
   { code: "SC", name: "SC - Santa Catarina" },
   { code: "SP", name: "SP - São Paulo" },
   { code: "SE", name: "SE - Sergipe" },
-  { code: "TO", name: "TO - Tocantins" },
+  { code: "TO", name: "TO - Tocantins" }
 ];
 
 // Tipos de filtro de data
 const DATE_FILTER_OPTIONS = [
   { value: "favorito", label: "Data de inclusão favorito" },
-  { value: "realizacao", label: "Data de realização" },
+  { value: "realizacao", label: "Data de realização" }
 ];
 
-// Opções de datas de realização
-const DATE_OPTIONS = [
-  { key: "datahora_abertura", label: "Abertura" },
-  { key: "datahora_prazo", label: "Prazo" },
-  { key: "datahora_documento", label: "Documento" },
-  { key: "datahora_retirada", label: "Retirada" },
-  { key: "datahora_visita", label: "Visita" },
-];
+// Função auxiliar para extrair a primeira data disponível das 5 possibilidades
+const getFirstAvailableDate = (bidding: any) => {
+  const datePriorities = [
+    'datahora_abertura',
+    'datahora_prazo', 
+    'datahora_documento',
+    'datahora_retirada',
+    'datahora_visita'
+  ];
+
+  for (const dateKey of datePriorities) {
+    const dateValue = bidding[dateKey];
+    if (dateValue && dateValue.trim() !== "") {
+      try {
+        const parsedDate = new Date(dateValue);
+        if (!isNaN(parsedDate.getTime())) {
+          return parsedDate;
+        }
+      } catch (error) {
+        continue;
+      }
+    }
+  }
+  return null; // Nenhuma data disponível
+};
 
 export default function Favorites() {
   const { user } = useAuth();
@@ -86,23 +88,20 @@ export default function Favorites() {
   const [numeroControle, setNumeroControle] = useState("");
   const [selectedOrgaos, setSelectedOrgaos] = useState<string[]>([]);
   const [selectedUFs, setSelectedUFs] = useState<string[]>([]);
-  const [dateRange, setDateRange] = useState<{ from?: Date; to?: Date }>({});
+  const [dateRange, setDateRange] = useState<{from?: Date, to?: Date}>({});
   const [dateFilterType, setDateFilterType] = useState<"favorito" | "realizacao">("favorito");
   const [orgaoPopoverOpen, setOrgaoPopoverOpen] = useState(false);
   const [ufPopoverOpen, setUfPopoverOpen] = useState(false);
   const [userPopoverOpen, setUserPopoverOpen] = useState(false);
 
-  // Estado para armazenar quais datas estão selecionadas no filtro (default: todas)
-  const [selectedDates, setSelectedDates] = useState<string[]>(DATE_OPTIONS.map(d => d.key));
-
   // Buscar lista de usuários
   const { data: users = [] } = useQuery<any[]>({
-    queryKey: ["/api/users"],
+    queryKey: ['/api/users'],
   });
 
   // Usar o primeiro usuário disponível se nenhum estiver selecionado
   const effectiveUserId = selectedUserId || users[0]?.id || user?.id;
-
+  
   const { data: favorites = [], isLoading } = useQuery<Bidding[]>({
     queryKey: [`/api/favorites/${effectiveUserId}`],
     enabled: !!effectiveUserId,
@@ -113,50 +112,47 @@ export default function Favorites() {
 
   // Filter favorites based on form filters
   const filteredFavorites = favorites.filter(bidding => {
-    const matchesNumeroControle =
-      !numeroControle ||
+    const matchesNumeroControle = !numeroControle || 
       bidding.conlicitacao_id?.toString().includes(numeroControle);
+    
+    const matchesOrgao = selectedOrgaos.length === 0 || 
+      selectedOrgaos.includes(bidding.orgao_nome);  
+    
+    const matchesUF = selectedUFs.length === 0 || 
+      selectedUFs.includes(bidding.orgao_uf);
 
-    const matchesOrgao =
-      selectedOrgaos.length === 0 || selectedOrgaos.includes(bidding.orgao_nome);
-
-    const matchesUF =
-      selectedUFs.length === 0 || selectedUFs.includes(bidding.orgao_uf);
-
-    // Lógica de filtro por data
+    // Date filter logic - check by type of date filter selected
     let matchesDateRange = true;
     if (dateRange.from && dateRange.to) {
       const startDate = new Date(dateRange.from);
       const endDate = new Date(dateRange.to);
+      // normaliza para comparação inclusiva por dia
       startDate.setHours(0, 0, 0, 0);
       endDate.setHours(23, 59, 59, 999);
 
       if (dateFilterType === "favorito") {
-        // Filtrar pela data de inclusão do favorito (createdAt)
-        const fav = bidding as any;
-        const createdAtValue = fav?.createdAt ? new Date(fav.createdAt) : null;
-        if (!createdAtValue) return false;
-        createdAtValue.setHours(0, 0, 0, 0);
-        matchesDateRange =
-          createdAtValue >= startDate && createdAtValue <= endDate;
-      } else if (dateFilterType === "realizacao"){
-        // Filtrar pelas 5 datas selecionadas (Abertura, Prazo, Documento, Retirada, Visita)
-        matchesDateRange = selectedDates.some(dateKey => {
-          const value = bidding[dateKey as keyof Bidding] as string | undefined;
-          if (!value) return false;
-          const biddingDate = new Date(value);
-          biddingDate.setHours(0, 0, 0, 0);
-          return biddingDate >= startDate && biddingDate <= endDate;
-        });
+        // Filter by favorite creation date
+        const favoriteData = bidding as any;
+        const created = favoriteData.createdAt ? new Date(favoriteData.createdAt) : new Date();
+        created.setHours(0, 0, 0, 0);
+        matchesDateRange = created >= startDate && created <= endDate;
+      } else {
+        // ATUALIZADO: Filtrar usando a primeira data disponível das 5 possibilidades
+        const firstAvailableDate = getFirstAvailableDate(bidding);
+        
+          // Se não há nenhuma data válida, não incluir no resultado quando filtrando por data de realização
+        if (!firstAvailableDate) {
+          return false;
+        }
+
+        // Normalizar a data para comparação
+        const normalizedDate = new Date(firstAvailableDate);
+        normalizedDate.setHours(0, 0, 0, 0);        
+        matchesDateRange = normalizedDate >= startDate && normalizedDate <= endDate;
       }
     }
 
-    return (
-      matchesNumeroControle &&
-      matchesOrgao &&
-      matchesUF &&
-      matchesDateRange
-    );
+    return matchesNumeroControle && matchesOrgao && matchesUF && matchesDateRange;
   });
 
   const toggleOrgao = (orgao: string) => {
@@ -185,7 +181,7 @@ export default function Favorites() {
 
   // Função para gerar PDF
   const generatePDF = () => {
-    if (!dateRange.from || !dateRange.to) { 
+    if (!dateRange.from || !dateRange.to) {
       toast({
         title: "Erro",
         description: "Selecione um período de datas para gerar o PDF",
@@ -195,7 +191,7 @@ export default function Favorites() {
     }
 
     // Criar conteúdo HTML para o PDF usando apenas favoritos filtrados por data
-    const htmlContent = createPDFContent(filteredFavorites);
+    const htmlContent = createPDFContent();
     
     // Abrir nova janela para impressão/PDF
     const printWindow = window.open('', '_blank');
@@ -210,45 +206,29 @@ export default function Favorites() {
   };
 
   // Função para criar o conteúdo HTML do PDF
-  const createPDFContent = (favoritesList: Bidding[]) => {
+  const createPDFContent = () => {
     const dateFromStr = dateRange.from ? format(dateRange.from, "dd/MM/yyyy") : "";
     const dateToStr = dateRange.to ? format(dateRange.to, "dd/MM/yyyy") : "";
     const filterTypeLabel = dateFilterType === "favorito" ? "Data de inclusão favorito" : "Data de realização";
     
     // CORREÇÃO: Ordenar favoritos por data cronológica crescente antes de gerar PDF
     // "Não informado" sempre por último
-    const sortedFavorites = [...favoritesList].sort((a, b) => {
-      // Função para extrair data com prioridade P1-P5
-      const getRelevantDate = (bidding: any): Date | null => {
-        if (dateFilterType === "favorito") {
-          return bidding?.createdAt ? new Date(bidding.createdAt) : null;
-        }
-        // realizações: usar prioridade P1-P5 
-      const datePriorities = [
-          'datahora_abertura',
-          'datahora_prazo', 
-          'datahora_documento',
-          'datahora_retirada',
-          'datahora_visita'
-        ];
+    const sortedFavorites = [...filteredFavorites].sort((a, b) => {
+      const dateA = getFirstAvailableDate(a);
+      const dateB = getFirstAvailableDate(b);
 
-        for (const Key of datePriorities) {
-          const Value = bidding[Key];
-          if (Value) {
-            return new Date(Value);
-            } 
-        }
-        return null; // Não informado
-      };
-
-      const dateA = getRelevantDate(a);
-      const dateB = getRelevantDate(b);
-
-      if(dateA && dateB) return dateA.getTime() - dateB.getTime();
-      if(dateA && !dateB) return -1;
-      if(!dateA && dateB) return 1;
-      return 0;
-    });    
+      // Lógica de ordenação: datas válidas primeiro (crescente), "Não informado" por último
+      if (dateA && dateB) {
+        return dateA.getTime() - dateB.getTime(); // Ordem cronológica crescente
+      } else if (dateA && !dateB) {
+        return -1; // A tem data, B não - A vem primeiro
+      } else if (!dateA && dateB) {
+        return 1; // A não tem data, B tem - B vem primeiro
+      } else {
+        return 0; // Ambos "Não informado" - manter ordem original
+      }
+    });
+    
     let htmlRows = "";
     
     sortedFavorites.forEach((bidding) => {
@@ -257,42 +237,33 @@ export default function Favorites() {
       // Extrair dados do bidding
       const controle = bidding.conlicitacao_id || "";
       
-      // Função para extrair data com prioridade P1-P5
+      // Função para extrair data com prioridade P1-P5 atualizada
       const getDateWithPriority = (bidding: any) => {
-        // P1 = Abertura, P2 = Prazo, P3 = Documento, P4 = Retirada, P5 = Visita
-        // Nomes dos campos conforme documentação oficial da API ConLicitação
-        const datePriorities = [
-          { key: 'datahora_abertura', label: 'Abertura' },
-          { key: 'datahora_prazo', label: 'Prazo' },
-          { key: 'datahora_documento', label: 'Documento' },
-          { key: 'datahora_retirada', label: 'Retirada' },
-          { key: 'datahora_visita', label: 'Visita' }
-        ];
-
-        for (const priority of datePriorities) {
-          const dateValue = bidding[priority.key];
-          if (dateValue && dateValue.trim() !== "") {
-            try {
-              const formattedDate = format(new Date(dateValue), "dd/MM/yyyy");
-              const formattedTime = format(new Date(dateValue), "HH:mm");
-              return {
-                dateLabel: formattedDate, // Remover prefixo, manter apenas data
-                time: formattedTime,
-                rawDate: dateValue
-              };
-            } catch (error) {
-              // Se houver erro na formatação, continua para próxima data
-              continue;
-            }
-          }
+        const firstDate = getFirstAvailableDate(bidding);
+        
+        if (!firstDate) {
+          return {
+            dateLabel: "Não informado",
+            time: "",
+            rawDate: null
+          };
         }
 
-        // Se nenhuma data foi encontrada
-        return {
-          dateLabel: "Não informado",
-          time: "",
-          rawDate: null
-        };
+        try {
+          const formattedDate = format(firstDate, "dd/MM/yyyy");
+          const formattedTime = format(firstDate, "HH:mm");
+          return {
+            dateLabel: formattedDate,
+            time: formattedTime,
+            rawDate: firstDate
+          };
+        } catch (error) {
+          return {
+            dateLabel: "Não informado",
+            time: "",
+            rawDate: null
+          };
+        }
       };
 
       const dateInfo = getDateWithPriority(bidding);
@@ -333,7 +304,7 @@ export default function Favorites() {
         }
       }
       
-      const uf = any.uf || bidding.orgao_uf || "";
+      const uf = (any as any).uf || bidding.orgao_uf || "";
       const site = any.site || "";
       const codigoUnidade = any.codigoUasg || bidding.orgao_codigo || "";
       
@@ -404,24 +375,43 @@ export default function Favorites() {
       <html>
       <head>
         <meta charset="UTF-8">
-        <title>Relatório de Favoritos - JLG Consultoria</title>
+        <title>-</title>
         <style>
           body { 
             font-family: Arial, sans-serif; 
             margin: 20px; 
             font-size: 12px;
           }
-          .header {
-            text-align: center;
+          .header-main-row{
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
             margin-bottom: 20px;
             border-bottom: 2px solid #333;
             padding-bottom: 10px;
+          }
+          .logo-section{
+            flex-basis: 20%; /*ajuste conforme o tamanho desejado do logo */
+            text-align: left;
+          }
+          .logo {
+            max-width: 150px; /* ajustar o tamanho do logo */
+            height: auto;
+          }
+          .title-section-header {
+            flex-grow: 1;
+            text-align: center;
+          }
+          .contact-section {
+            flex-basics: 20%; /* ajustar conforme o tamanho para os contatos */
+            text-align: right;
           }
           .info {
             margin-bottom: 20px;
             background-color: #f5f5f5;
             padding: 10px;
             border-radius: 5px;
+            text-align: center;
           }
           table { 
             width: 100%; 
@@ -443,16 +433,26 @@ export default function Favorites() {
           .no-break { page-break-inside: avoid; }
           @media print {
             body { margin: 0; }
-            .header { page-break-after: avoid; }
+            .header-main-row { page-break-after: avoid; }
           }
         </style>
       </head>
       <body>
-        <div class="header">
-          <h1>JLG Consultoria - Relatório de Favoritos</h1>
-          <p>Gerado em: ${format(new Date(), "dd/MM/yyyy 'às' HH:mm")}</p>
+        <div class="header-main-row">
+          <div class="logo-section">
+            <img src="/src/imagem/logo.jpeg" alt="JLG Consultoria" class="logo" onerror="this.style.display=\'none\'" />
+          </div>
+          <div class="title-section-header">
+            <h1>JLG Consultoria - Relatório de Novos Processos</h1>
+            <p>Gerado em: ${format(new Date(), "dd/MM/yyyy 'às' HH:mm")}</p>
         </div>
-        
+        <div class="contact-secton">
+          <p><strong>Contato:</strong> Junior</p>
+          <p><strong>Tel:</strong> (11) 93461-6200</p>
+          <p><strong>E-mail:</strong> comercial@jlglicitacoes.com.br</p>
+         </div>
+        </div>
+             
         <div class="info">
           <p><strong>Filtro aplicado:</strong> ${filterTypeLabel}</p>
           <p><strong>Período:</strong> ${dateFromStr} até ${dateToStr}</p>
@@ -716,121 +716,110 @@ export default function Favorites() {
                   </div>
                 )}
               </div>
-            </div>
 
-            {/* Tipo de Data (favorito ou realização) */}
-            <div className="mt-4">
-              <label className="block text-sm font-medium text-gray-700 mb-2">Tipo de Data</label>
-              <div className="w-full sm:w-1/2 lg:w-1/3">
-                <select
-                  value={dateFilterType}
-                  onChange={e => setDateFilterType(e.target.value as "favorito" | "realizacao")}
-                  className="w-full border border-gray-300 p-2 rounded text-sm h-10"
-                >
-                  <option value="favorito">Data de Inclusão do Favorito</option>
-                  <option value="realizacao">Datas de Realização</option>
-                </select>
-              </div>
-            </div>
-
-            {/* Checkboxes das 5 datas (só aparecem se realização for escolhido) */}
-            {dateFilterType === "realizacao" && (
-              <div className="mt-3 w-full sm:w-2/3 lg:w-1/2">
-                <div className="p-3 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200">
-                  <div className="text-sm font-semibold text-blue-800 mb-2">
-                    Selecionar datas de realização:
+              {/* Selecionar período */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Selecionar período
+                </label>
+                
+                {/* Seletor de tipo de data */}
+                <div className="mb-4 p-3 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200">
+                  <div className="text-sm font-semibold text-blue-800 mb-3 flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+                    Filtrar por:
                   </div>
-                  <div className="space-y-2">
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <Checkbox
-                        checked={selectedDates.length === DATE_OPTIONS.length}
-                        onCheckedChange={(checked) =>
-                          setSelectedDates(checked ? DATE_OPTIONS.map(d => d.key) : [])
-                        }
-                      />
-                      <span className="text-sm font-medium">Selecionar todas</span>
-                    </label>
-                    {DATE_OPTIONS.map(option => (
-                      <label key={option.key} className="flex items-center gap-2 cursor-pointer">
-                        <Checkbox
-                          checked={selectedDates.includes(option.key)}
-                          onCheckedChange={(checked) =>
-                            setSelectedDates(prev =>
-                              checked ? [...prev, option.key] : prev.filter(d => d !== option.key)
-                            )
-                          }
-                        />
-                        <span className="text-sm">{option.label}</span>
+                  <div className="grid grid-cols-1 gap-3">
+                    {DATE_FILTER_OPTIONS.map((option) => (
+                      <label 
+                        key={option.value} 
+                        className="flex items-center gap-3 cursor-pointer hover:bg-white/60 p-2 rounded-lg transition-colors"
+                        onClick={() => setDateFilterType(option.value as "favorito" | "realizacao")}
+                      >
+                        <div className={cn(
+                          "w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all",
+                          dateFilterType === option.value 
+                            ? "border-blue-600 bg-blue-600 shadow-md" 
+                            : "border-gray-400 hover:border-blue-400"
+                        )}>
+                          {dateFilterType === option.value && (
+                            <div className="w-2.5 h-2.5 rounded-full bg-white"></div>
+                          )}
+                        </div>
+                        <span className={cn(
+                          "text-sm font-medium transition-colors",
+                          dateFilterType === option.value 
+                            ? "text-blue-800" 
+                            : "text-gray-700 hover:text-blue-700"
+                        )}>
+                          {option.label}
+                        </span>
                       </label>
                     ))}
                   </div>
                 </div>
-              </div>
-            )}
+                
+                <div className="grid grid-cols-2 gap-1">
+                  {/* Data de Início */}
+                  <div>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          className={cn(
+                            "w-full justify-start text-left font-normal text-sm h-10 px-3 border-gray-300 text-gray-700",
+                            !dateRange.from && "text-gray-400"
+                          )}
+                        >
+                          <CalendarIcon className="mr-2 h-4 w-4" />
+                          <span className="text-xs">
+                            {dateRange.from ? format(dateRange.from, "dd/MM/yyyy") : "Início"}
+                          </span>
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0 z-[60] bg-white border border-gray-200 shadow-xl" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={dateRange.from}
+                          onSelect={(date) => setDateRange(prev => ({ ...prev, from: date }))}
+                          initialFocus
+                          numberOfMonths={1}
+                          locale={ptBR}
+                        />
+                      </PopoverContent>
+                    </Popover>
+                  </div>
 
-            {/* Período (de/até) */}
-            <div className="mt-4">
-              <label className="block text-sm font-medium text-gray-700 mb-2">Período</label>
-              <div className="flex gap-2 w-full sm:w-2/3 lg:w-1/2">
-                {/* Data de Início */}
-                <div className="flex-1">
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        className={cn(
-                          "w-full justify-start text-left font-normal text-sm h-10 px-2 border-gray-300 text-gray-700",
-                          !dateRange.from && "text-gray-400"
-                        )}
-                      >
-                        <CalendarIcon className="mr-1 h-3 w-3" />
-                        <span className="text-xs">
-                          {dateRange.from ? format(dateRange.from, "dd/MM/yyyy") : "Início"}
-                        </span>
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0 z-[60] bg-white border border-gray-200 shadow-xl" align="start">
-                      <Calendar
-                        mode="single"
-                        selected={dateRange.from}
-                        onSelect={(date) => setDateRange(prev => ({ ...prev, from: date }))}
-                        initialFocus
-                        numberOfMonths={1}
-                        locale={ptBR}
-                      />
-                    </PopoverContent>
-                  </Popover>
-                </div>
-
-                {/* Data de Fim */}
-                <div className="flex-1">
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        className={cn(
-                          "w-full justify-start text-left font-normal text-sm h-10 px-2 border-gray-300 text-gray-700",
-                          !dateRange.to && "text-gray-400"
-                        )}
-                      >
-                        <CalendarIcon className="mr-1 h-3 w-3" />
-                        <span className="text-xs">
-                          {dateRange.to ? format(dateRange.to, "dd/MM/yyyy") : "Fim"}
-                        </span>
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0 z-[60] bg-white border border-gray-200 shadow-xl" align="start">
-                      <Calendar
-                        mode="single"
-                        selected={dateRange.to}
-                        onSelect={(date) => setDateRange(prev => ({ ...prev, to: date }))}
-                        initialFocus
-                        numberOfMonths={1}
-                        locale={ptBR}
-                        disabled={(date) => dateRange.from ? date < dateRange.from : false}
-                      />
-                    </PopoverContent>
-                  </Popover>
+                  {/* Data de Fim */}
+                  <div>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          className={cn(
+                            "w-full justify-start text-left font-normal text-sm h-10 px-3 border-gray-300 text-gray-700",
+                            !dateRange.to && "text-gray-400"
+                          )}
+                        >
+                          <CalendarIcon className="mr-2 h-4 w-4" />
+                          <span className="text-xs">
+                            {dateRange.to ? format(dateRange.to, "dd/MM/yyyy") : "Fim"}
+                          </span>
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0 z-[60] bg-white border border-gray-200 shadow-xl" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={dateRange.to}
+                          onSelect={(date) => setDateRange(prev => ({ ...prev, to: date }))}
+                          initialFocus
+                          numberOfMonths={1}
+                          locale={ptBR}
+                          disabled={(date) => dateRange.from ? date < dateRange.from : false}
+                        />
+                      </PopoverContent>
+                    </Popover>
+                  </div>
                 </div>
               </div>
             </div>
@@ -924,4 +913,4 @@ export default function Favorites() {
       </div>
     </div>
   );
-}
+} 
