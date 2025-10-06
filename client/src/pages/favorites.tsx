@@ -73,7 +73,7 @@ export default function Favorites() {
 
   // Buscar lista de usuários
   const { data: users = [] } = useQuery<any[]>({
-    queryKey: ['/api/users'],
+    queryKey: ["/api/users"],
   });
 
   // Usar o primeiro usuário disponível se nenhum estiver selecionado
@@ -98,6 +98,7 @@ export default function Favorites() {
     const matchesUF = selectedUFs.length === 0 || 
       selectedUFs.includes(bidding.orgao_uf);
 
+
     // Date filter logic - check by type of date filter selected
     let matchesDateRange = true;
     if (dateRange.from && dateRange.to) {
@@ -115,29 +116,27 @@ export default function Favorites() {
         matchesDateRange = created >= startDate && created <= endDate;
       } else {
         // NOVO: Filtrar por QUALQUER uma das datas de realização
-        const rawDates = [
+        const dateFields = [
           (bidding as any).datahora_abertura,
           (bidding as any).datahora_documento,
           (bidding as any).datahora_retirada,
           (bidding as any).datahora_visita,
           (bidding as any).datahora_prazo,
-        ].filter(Boolean) as (string | Date)[];
+        ];
 
-        if (rawDates.length === 0) return false; // sem nenhuma data informada
+        const validDates = dateFields
+          .filter(Boolean) // Remove null, undefined, empty strings
+          .map(d => new Date(d)) // Convert to Date objects
+          .filter(dt => !isNaN(dt.getTime())); // Remove invalid dates
 
-        const normalizedDates = rawDates
-          .map(d => new Date(d))
-          .filter(dt => !isNaN(dt.getTime()))
-          .map(dt => {
-            dt.setHours(0, 0, 0, 0);
-            return dt;
-          });
+        if (validDates.length === 0) return false; // No valid dates to check
 
-        // se após normalização não restaram datas válidas, descarta
-        if (normalizedDates.length === 0) return false;
-
-        // passa se pelo menos UMA data cair no intervalo
-        matchesDateRange = normalizedDates.some(dt => dt >= startDate && dt <= endDate);
+        // Check if any of the valid dates fall within the selected range
+        matchesDateRange = validDates.some(dt => {
+          const normalizedDt = new Date(dt);
+          normalizedDt.setHours(0, 0, 0, 0);
+          return normalizedDt >= startDate && normalizedDt <= endDate;
+        });
       }
     }
 
@@ -168,13 +167,34 @@ export default function Favorites() {
     setDateRange({});
   };
 
+// Função para extrair a primeira data válida seguindo prioridade P1-P5
+const getFirstValidDate = (bidding: any): Date | null => {
+  const datePriorities = [
+    "datahora_abertura",
+    "datahora_prazo", 
+    "datahora_documento",
+    "datahora_retirada",
+    "datahora_visita"
+  ];
+
+  for (const dateKey of datePriorities) {
+    const dateValue = bidding[dateKey];
+    if (dateValue && dateValue.trim() !== "") {
+      try {
+        const date = new Date(dateValue);
+        if (!isNaN(date.getTime())) {
+          return date;
+        }
+      } catch (error) {
+        continue;
+      }
+    }
+  }
+  return null;
+};
+  
   // Função para gerar PDF
   const generatePDF = () => {
-    if (!dateRange.from || !dateRange.to) {
-      const { toast } = { toast: (args: any) => {} };
-      // usando o hook original já declarado acima
-    }
-
     if (!dateRange.from || !dateRange.to) {
       toast({
         title: "Erro",
@@ -188,7 +208,7 @@ export default function Favorites() {
     const htmlContent = createPDFContent();
     
     // Abrir nova janela para impressão/PDF
-    const printWindow = window.open('', '_blank');
+    const printWindow = window.open("", "_blank");
     if (printWindow) {
       printWindow.document.write(htmlContent);
       printWindow.document.close();
@@ -209,30 +229,9 @@ export default function Favorites() {
     // "Não informado" sempre por último
     const sortedFavorites = [...filteredFavorites].sort((a, b) => {
       // Função para extrair data com prioridade P1-P5
-      const getEarliestDate = (bidding: any) => {
-        const datePriorities = [
-          'datahora_abertura',
-          'datahora_prazo', 
-          'datahora_documento',
-          'datahora_retirada',
-          'datahora_visita'
-        ];
-
-        for (const dateKey of datePriorities) {
-          const dateValue = bidding[dateKey];
-          if (dateValue && dateValue.trim() !== "") {
-            try {
-              return new Date(dateValue);
-            } catch (error) {
-              continue;
-            }
-          }
-        }
-        return null; // Não informado
-      };
-
-      const dateA = getEarliestDate(a);
-      const dateB = getEarliestDate(b);
+      const dateA = getFirstValidDate(a);
+      const dateB = getFirstValidDate(b);
+      
 
       // Lógica de ordenação: datas válidas primeiro (crescente), "Não informado" por último
       if (dateA && dateB) {
@@ -255,44 +254,62 @@ export default function Favorites() {
       const controle = bidding.conlicitacao_id || "";
       
       // Função para extrair data com prioridade P1-P5
-      const getDateWithPriority = (bidding: any) => {
+      const getDateForPDF = (bidding: any) => {
         // P1 = Abertura, P2 = Prazo, P3 = Documento, P4 = Retirada, P5 = Visita
         // Nomes dos campos conforme documentação oficial da API ConLicitação
-        const datePriorities = [
-          { key: 'datahora_abertura', label: 'Abertura' },
-          { key: 'datahora_prazo', label: 'Prazo' },
-          { key: 'datahora_documento', label: 'Documento' },
-          { key: 'datahora_retirada', label: 'Retirada' },
-          { key: 'datahora_visita', label: 'Visita' }
+        const dateFields = [
+          { key: "datahora_abertura", label: "Abertura" },
+          { key: "datahora_prazo", label: "Prazo" },
+          { key: "datahora_documento", label: "Documento" },
+          { key: "datahora_retirada", label: "Retirada" },
+          { key: "datahora_visita", label: "Visita" }
         ];
 
-        for (const priority of datePriorities) {
-          const dateValue = bidding[priority.key];
-          if (dateValue && dateValue.trim() !== "") {
-            try {
-              const formattedDate = format(new Date(dateValue), "dd/MM/yyyy");
-              const formattedTime = format(new Date(dateValue), "HH:mm");
-              return {
-                dateLabel: formattedDate, // Remover prefixo, manter apenas data
-                time: formattedTime,
-                rawDate: dateValue
-              };
-            } catch (error) {
-              // Se houver erro na formatação, continua para próxima data
-              continue;
+        if (dateFilterType === "favorito") {
+          // Mantém prioridade P1-P5
+          for (const field of dateFields) {
+            const val = bidding[field.key];
+            if (val && val.trim() !== "") {
+              try {
+                const dt = new Date(val);
+                if (!isNaN(dt.getTime())) {
+                  return { 
+                    dateLabel: format(dt, "dd/MM/yyyy"), 
+                    time: format(dt, "HH:mm"), 
+                    rawDate: val 
+                  };
+                }
+              } catch (e) { continue; }
+            }
+          }
+        } else {
+          // Data de realização: pega a primeira data dentro do período selecionado
+          const startDate = new Date(dateRange.from!);
+          const endDate = new Date(dateRange.to!);
+          startDate.setHours(0,0,0,0);
+          endDate.setHours(23,59,59,999);
+
+          for (const field of dateFields) {
+            const val = bidding[field.key];
+            if (val && val.trim() !== "") {
+              const dt = new Date(val);
+              dt.setHours(0,0,0,0);
+              if (!isNaN(dt.getTime()) && dt >= startDate && dt <= endDate) {
+                return { 
+                  dateLabel: format(new Date(val), "dd/MM/yyyy"), 
+                  time: format(new Date(val), "HH:mm"), 
+                  rawDate: val 
+                };
+              }
             }
           }
         }
 
-        // Se nenhuma data foi encontrada
-        return {
-          dateLabel: "Não informado",
-          time: "",
-          rawDate: null
-        };
+        // Se nenhuma data válida for encontrada
+        return { dateLabel: "Não informado", time: "", rawDate: null };
       };
 
-      const dateInfo = getDateWithPriority(bidding);
+      const dateInfo = getDateForPDF(bidding);
       const data = dateInfo.dateLabel;
       const pregao = bidding.edital || "";
       const hora = dateInfo.time;
@@ -314,13 +331,13 @@ export default function Favorites() {
         const categoryStr = any.category.trim();
         
         // Verificar se usa separador "|" (dados salvos) ou " → " (exibição)
-        if (categoryStr.includes('|')) {
-          const parts = categoryStr.split('|').map((p: string) => p.trim());
+        if (categoryStr.includes("|")) {
+          const parts = categoryStr.split("|").map((p: string) => p.trim());
           // Usar apenas a segunda parte (Categoria): "Alimentação|Auxiliar de Cozinha|Especialização"
           objeto = parts[1] || parts[0] || objeto;
 
-        } else if (categoryStr.includes(' → ')) {
-          const parts = categoryStr.split(' → ').map((p: string) => p.trim());
+        } else if (categoryStr.includes(" → ")) {
+          const parts = categoryStr.split(" → ").map((p: string) => p.trim());
           // Usar apenas a segunda parte (Categoria)
           objeto = parts[1] || parts[0] || objeto;
 
@@ -348,33 +365,33 @@ export default function Favorites() {
       let valorEstimado = "Não Informado";
       if (any.valorEstimado) {
         // Se valor estimado foi preenchido na categorização
-        let cleanValue = any.valorEstimado.toString().replace(/[^\d,.]/g, '');
+        let cleanValue = any.valorEstimado.toString().replace(/[^\d,.]/g, "");
         
         // Tratar formato brasileiro: R$ 65.000,00 ou R$ 65.000 ou R$ 65000
-        if (cleanValue.includes('.') && cleanValue.includes(',')) {
+        if (cleanValue.includes(".") && cleanValue.includes(",")) {
           // Formato: 65.000,00 - ponto é separador de milhares, vírgula é decimal
-          cleanValue = cleanValue.replace(/\./g, '').replace(',', '.');
-        } else if (cleanValue.includes('.') && !cleanValue.includes(',')) {
+          cleanValue = cleanValue.replace(/\./g, "").replace(",", ".");
+        } else if (cleanValue.includes(".") && !cleanValue.includes(",")) {
           // Formato: 65.000 - assumir que ponto é separador de milhares se valor >= 1000
-          const parts = cleanValue.split('.');
+          const parts = cleanValue.split(".");
           if (parts.length === 2 && parts[1].length === 3) {
             // Provável separador de milhares (ex: 65.000)
-            cleanValue = cleanValue.replace('.', '');
+            cleanValue = cleanValue.replace(".", "");
           }
           // Se for formato decimal americano (ex: 65.50), manter como está
         }
         
         const numericValue = parseFloat(cleanValue);
         if (!isNaN(numericValue)) {
-          valorEstimado = `R$ ${numericValue.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+          valorEstimado = `R$ ${numericValue.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
         } else {
           valorEstimado = any.valorEstimado;
         }
       } else if (bidding.valor_estimado) {
         // Se há valor estimado da licitação original
-        const numericValue = typeof bidding.valor_estimado === 'number' ? bidding.valor_estimado : parseFloat(bidding.valor_estimado.toString());
+        const numericValue = typeof bidding.valor_estimado === "number" ? bidding.valor_estimado : parseFloat(bidding.valor_estimado.toString());
         if (!isNaN(numericValue)) {
-          valorEstimado = `R$ ${numericValue.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+          valorEstimado = `R$ ${numericValue.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
         } else {
           valorEstimado = bidding.valor_estimado.toString();
         }
@@ -397,88 +414,135 @@ export default function Favorites() {
     });
 
     return `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <meta charset="UTF-8">
-        <title>Relatório de Favoritos - JLG Consultoria</title>
-        <style>
-          body { 
-            font-family: Arial, sans-serif; 
-            margin: 20px; 
-            font-size: 12px;
-          }
-          .header {
-            text-align: center;
-            margin-bottom: 20px;
-            border-bottom: 2px solid #333;
-            padding-bottom: 10px;
-          }
-          .info {
-            margin-bottom: 20px;
-            background-color: #f5f5f5;
-            padding: 10px;
-            border-radius: 5px;
-          }
-          table { 
-            width: 100%; 
-            border-collapse: collapse; 
-            margin-top: 20px;
-            font-size: 10px;
-          }
-          th, td { 
-            border: 1px solid #ddd; 
-            padding: 6px; 
-            text-align: left;
-            word-wrap: break-word;
-          }
-          th { 
-            background-color: #f2f2f2; 
-            font-weight: bold;
-            font-size: 9px;
-          }
-          .no-break { page-break-inside: avoid; }
+    <!DOCTYPE html>
+          <html>
+          <head>
+            <meta charset="UTF-8">
+            <title>JLG Consultoria</title>
+       <style>
+      body { 
+          font-family: Arial, sans-serif; 
+          margin: 10px; 
+          font-size: 12px;
+        }
+        .header-main-row {
+          display: flex;
+          justify-content: space-between; /* Distribui os itens com espaço entre eles */
+          align-items: center; /* Alinha verticalmente ao centro */
+          border-bottom: 2px solid #333;
+          padding-bottom: 10px;
+          width: 100%; /* Garante que o contêiner ocupe toda a largura */
+        }
+        .logo-section {
+          text-align: left;
+          flex: 1; /* Ocupa uma parte do espaço */
+        }
+        .logo {
+          max-width: 120px;
+          height: auto;
+        }
+          .title-section-header {
+          text-align: center;
+          flex: 2; /* Ocupa o dobro do espaço dos outros, ajudando a centralizar */
+        }
+          .title-section-header h1 {
+          margin: 0;
+          font-size: 18px;
+          font-weight: bold;
+        }
+         .contact-section {
+          text-align: right;
+          font-size: 11px;
+          flex: 1; /* Ocupa uma parte do espaço */
+        }
+        .contact-section p {
+          margin: 2px 0; /* Reduz a margem dos parágrafos para não criar espaçamento extra */
+        }
+        .info {
+          margin-top: 20px;
+          margin-bottom: 20px;
+          background-color: #f5f5f5;
+          padding: 10px;
+          border-radius: 5px;
+          text-align: center;
+        }
+        .table { 
+          width: 100%; 
+          border-collapse: collapse; 
+          margin-top: 20px;
+          font-size: 10px;
+        }
+        .th, td { 
+          border: 1px solid #ddd; 
+          padding: 6px; 
+          text-align: left;
+          word-wrap: break-word;
+        }
+        .th 
+        { 
+          background-color: #f2f2f2;
+          font-weight: bold;
+          font-size: 9px;
+        }
+        .footer {
+          text-align: center;
+          margin-top: 30px;
+          font-size: 10px;
+          color: #777;
+        }
+        .no-break { page-break-inside: avoid; }
           @media print {
-            body { margin: 0; }
-            .header { page-break-after: avoid; }
-          }
-        </style>
-      </head>
+          body { margin: 0; }
+        .header-main-row { page-break-after: avoid; }
+        }
+      </style>
+    </head>
       <body>
-        <div class="header">
-          <h1>JLG Consultoria - Relatório de Favoritos</h1>
-          <p>Gerado em: ${format(new Date(), "dd/MM/yyyy 'às' HH:mm")}</p>
-        </div>
-        
-        <div class="info">
-          <p><strong>Filtro aplicado:</strong> ${filterTypeLabel}</p>
-          <p><strong>Período:</strong> ${dateFromStr} até ${dateToStr}</p>
-          <p><strong>Total de registros:</strong> ${sortedFavorites.length}</p>
-        </div>
-        
-        <table class="no-break">
+       <div class="header-main-row">
+       <div class="logo-section">
+      <img src="/src/imagem/logo.jpeg" alt="JLG Consultoria" class="logo" onerror="this.style.display='none'" />
+    </div>
+    <div class="title-section-header">
+        <h1>JLG Consultoria - Relatório de Novos Processos</h1>
+    </div>
+    <div class="contact-section">
+        <p><strong>Contato:</strong> Junior</p>
+        <p><strong>Tel:</strong> (11) 93461-6200</p>
+        <p><strong>E-mail:</strong> comercial@jlglicitacoes.com.br</p>
+    </div>
+  </div>
+  <div class="info">
+        <p><strong>Período Selecionado:</strong> ${dateFromStr} a ${dateToStr}</p>
+        <p><strong>Tipo de Filtro de Data:</strong> ${filterTypeLabel}</p>
+        <p><strong>Total de Licitações Favoritas:</strong> ${sortedFavorites.length}</p>
+  </div>
+  <table>
           <thead>
             <tr>
-              <th>CONTROLE</th>
-              <th>DATA</th>
-              <th>Nº PREGÃO</th>
-              <th>HORA</th>
-              <th>ÓRGÃO</th>
-              <th>OBJETO</th>
+              <th>Controle</th>
+              <th>Data</th>
+              <th>Pregão</th>
+              <th>Hora</th>
+              <th>Órgão</th>
+              <th>Objeto</th>
               <th>UF</th>
-              <th>SITE</th>
-              <th>CÓDIGO UNIDADE GESTORA</th>
-              <th>Valor Estimado Contratação</th>
+              <th>Site</th>
+              <th>Cód. Unidade</th>
+              <th>Valor Estimado</th>
             </tr>
           </thead>
           <tbody>
             ${htmlRows}
           </tbody>
         </table>
+        <div class="footer">
+          <p>Relatório gerado em ${format(new Date(), "dd/MM/yyyy HH:mm:ss")}</p>
+        </div>
       </body>
       </html>
     `;
   };
+  
 
   if (isLoading) {
     return (
@@ -515,7 +579,7 @@ export default function Favorites() {
           <p className="text-sm md:text-base text-gray-500">
             {users.find(u => u.id === effectiveUserId)?.nome ? 
               `Favoritos de ${users.find(u => u.id === effectiveUserId)?.nome}` : 
-              'Suas licitações marcadas como favoritas'
+              "Suas licitações marcadas como favoritas"
             }
           </p>
         </div>
@@ -829,86 +893,34 @@ export default function Favorites() {
                   className={cn(
                     "justify-center gap-3 h-12 font-semibold text-sm transition-all duration-300 relative overflow-hidden px-8",
                     dateRange.from && dateRange.to
-                      ? "bg-gradient-to-r from-red-500 to-red-600 border-red-500 text-white hover:from-red-600 hover:to-red-700 hover:border-red-600 shadow-lg hover:shadow-xl transform hover:scale-[1.02] active:scale-[0.98]"
-                      : "border-gray-300 text-gray-400 cursor-not-allowed opacity-50 bg-gray-50"
+                      ? "bg-gradient-to-r from-red-500 to-pink-600 text-white shadow-lg hover:from-red-600 hover:to-pink-700"
+                      : "bg-gray-200 text-gray-500 cursor-not-allowed"
                   )}
+                  onClick={generatePDF}
                   disabled={!dateRange.from || !dateRange.to}
-                  onClick={() => {
-                    if (dateRange.from && dateRange.to) {
-                      generatePDF();
-                    }
-                  }}
                 >
-                  <div className="flex items-center gap-3">
-                    <div className={cn(
-                      "p-1.5 rounded-full transition-colors",
-                      dateRange.from && dateRange.to
-                        ? "bg-white/20"
-                        : "bg-transparent"
-                    )}>
-                      <FileText className="h-4 w-4" />
-                    </div>
-                    <span className="font-bold tracking-wide">Gerar PDF</span>
-                  </div>
-                  {dateRange.from && dateRange.to && (
-                    <div className="absolute inset-0 bg-white/20 opacity-0 hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
-                  )}
+                  <FileText className="h-5 w-5" />
+                  Gerar PDF
                 </Button>
               </div>
-
             </div>
           </CardContent>
         </Card>
 
-        {/* Results Header */}
-        <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-3 md:mb-4 px-4 gap-2 md:gap-0">
-          <h2 className="text-base md:text-lg font-semibold text-gray-900">
-            {filteredFavorites.length === 0 ? 'Nenhum favorito encontrado' : `${filteredFavorites.length} favorito${filteredFavorites.length > 1 ? 's' : ''} encontrado${filteredFavorites.length > 1 ? 's' : ''}`}
-          </h2>
-          {filteredFavorites.length > 0 && filteredFavorites.length !== favorites.length && (
-            <span className="text-xs md:text-sm text-gray-500">
-              {favorites.length} total
-            </span>
-          )}
-        </div>
-
-        {/* Results */}
-        <div className="space-y-3 md:space-y-4 px-4">
-          {filteredFavorites.length === 0 ? (
-            <Card>
-              <CardContent className="p-6 md:p-12 text-center">
-                <Search className="h-8 w-8 md:h-12 md:w-12 text-gray-400 mx-auto mb-3 md:mb-4" />
-                <h3 className="text-base md:text-lg font-medium text-gray-900 mb-2">Nenhum favorito encontrado</h3>
-                <p className="text-sm md:text-base text-gray-600">
-                  {favorites.length === 0 
-                    ? "Você ainda não marcou nenhuma licitação como favorita."
-                    : "Não há favoritos que correspondam aos seus critérios de pesquisa."
-                  }
-                </p>
-              </CardContent>
-            </Card>
-          ) : (
+        {/* Bidding Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {filteredFavorites.length > 0 ? (
             filteredFavorites.map((bidding) => (
-              <BiddingCard 
-                key={bidding.id} 
-                bidding={bidding} 
-                showFavoriteIcon={true}
-                showCategorization={true}
-                favoriteData={{
-                  category: (bidding as any).category,
-                  customCategory: (bidding as any).customCategory,
-                  notes: (bidding as any).notes,
-                  uf: (bidding as any).uf,
-                  codigoUasg: (bidding as any).codigoUasg,
-                  valorEstimado: (bidding as any).valorEstimado,
-                  fornecedor: (bidding as any).fornecedor,
-                  site: (bidding as any).site
-                }}
-              />
+              <BiddingCard key={bidding.id} bidding={bidding} />
             ))
+          ) : (
+            <div className="col-span-full text-center py-10 text-gray-500">
+              Nenhum favorito encontrado com os filtros aplicados.
+            </div>
           )}
         </div>
       </div>
     </div>
   );
 }
+
