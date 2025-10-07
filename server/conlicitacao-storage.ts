@@ -2,7 +2,6 @@ import { conLicitacaoAPI } from './conlicitacao-api';
 import { Bidding, Boletim, Filtro, Acompanhamento, User, InsertUser, Favorite, InsertFavorite, favorites } from '../shared/schema';
 import { db } from "./db";
 import { eq, and } from "drizzle-orm";
-import { dataTagSymbol } from '@tanstack/react-query';
 
 export interface IConLicitacaoStorage {
   // Users (mantemos localmente)
@@ -452,9 +451,9 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
       objeto: licitacao.objeto || '', // Objeto
       situacao: situacaoNormalizada, // Situação
       datahora_abertura: licitacao.datahora_abertura || '', // Data/Hora abertura
-      datahora_documento: licitacao.datahora_documento || '', // Data/Hora documento
-      datahora_retirada: licitacao.datahora_retirada || '', // Data/Hora retirada
-      datahora_visita: licitacao.datahora_visita || '', // Data/Hora visita
+      datahora_documento: licitacao.datahora_documento || null, // Data/Hora documento
+      datahora_retirada: licitacao.datahora_retirada || null, // Data/Hora retirada
+      datahora_visita: licitacao.datahora_visita || null, // Data/Hora visita
       datahora_prazo: licitacao.datahora_prazo || '', // Data/Hora prazo
       edital: licitacao.edital || '', // Edital
       link_edital: documentoUrl, // Link edital
@@ -1024,7 +1023,6 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
         // Incluir dados de categorização salvos no favorito
         const biddingWithCategorization = {
           ...bidding,
-          data: fav.data,
           category: fav.category,
           customCategory: fav.customCategory,
           notes: fav.notes,
@@ -1047,7 +1045,6 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
       ...insertFavorite, 
       id, 
       createdAt: new Date(), // Timestamp atual preciso
-      data: null,
       category: null,
       customCategory: null,
       notes: null,
@@ -1125,7 +1122,6 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
         biddingId,
         id, 
         createdAt: new Date(), // Timestamp preciso do momento atual
-        data: date.data ?? null,
         category: data.category ?? null,
         customCategory: data.customCategory ?? null,
         notes: data.notes ?? null,

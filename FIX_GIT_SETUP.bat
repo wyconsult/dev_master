@@ -10,7 +10,7 @@ echo 3. Preparar para deploy manual em produção
 echo.
 pause
 
-cd D:\licita_tracker
+cd C:\Users\Geovani\LicitacaoTracker
 
 echo.
 echo 1) Status atual do Git...
@@ -139,6 +139,7 @@ echo   npm run build
 echo   node scripts/init-db.js  (só na primeira vez)
 echo   pm2 restart all
 echo.
+echo Login admin: admin@jlg.com / admin123
 echo.
 echo Sistema 100%% funcional e pronto!
 echo.

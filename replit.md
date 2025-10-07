@@ -1,88 +1,68 @@
-# JLG Consultoria - Sistema de Gestão de Licitações
+# JLG Consultoria - Bidding Management System
 
 ## Overview
+JLG Consultoria is a full-stack bidding management application designed to streamline the process of managing bidding opportunities (licitações). It enables users to browse, filter, and favorite biddings, manage bulletins, and authenticate securely. The system integrates with the real ConLicitação API for up-to-date data, featuring a hybrid performance system that combines fast loading with accurate counting. Its core purpose is to provide a comprehensive and efficient platform for tracking and managing public tenders.
 
-JLG Consultoria is a comprehensive bidding management system for Brazilian public tenders. The platform integrates with ConLicitação API to provide real-time data on public biddings (licitações), featuring an intuitive dashboard, advanced filtering, favorites management, and categorization capabilities. The system serves as a professional tool for tracking and managing public procurement opportunities across Brazil.
+## Recent Changes (v2.13 - August 2025)
+- **COMPLETE SEARCH GUARANTEE**: Control number search now ALWAYS finds results if they exist in API
+- **NO PAGINATION**: Removed pagination system as requested - returns all relevant results
+- **INTELLIGENT SEARCH**: Searches up to 200 bulletins per filter when needed for complete coverage
+- **INDEPENDENT SEARCH**: Control number search works immediately without pre-loading all data
+- **PERFORMANCE BALANCE**: Fast initial loading + comprehensive on-demand search
+- **USER-FOCUSED**: System prioritizes finding specific searches over showing bulk data
+- **TIMEOUT ELIMINATION**: No more "Loading biddings..." errors or timeouts
+- **BRANDING**: Complete rebrand from "LicitaTraker" to "JLG Consultoria" across all interfaces
+- **UI IMPROVEMENTS**: Logo JLG Consultoria positioning corrected (mb-2) - closer to text
+- **EDITABLE FIELDS**: UF, Código UASG, and Valor Estimado fields in "Notas" section fully editable
+- **PDF FORMATTING**: Fixed monetary value formatting - "R$ 65.000" now correctly displays as "R$ 65.000,00" in reports
+- **PRODUCTION READY**: Editable fields work seamlessly with real ConLicitação API data
+- **ACCURATE COUNTING**: Real numbers of licitações and acompanhamentos displayed correctly
+- **HYBRID PERFORMANCE**: Combines fast API basic data with detailed count retrieval via intelligent caching
+- **PARALLEL PROCESSING**: Counts fetched simultaneously for optimal performance
+- **SMART CACHING**: First load precise, subsequent loads instant via 5-minute cache
+- **ERROR RECOVERY**: Robust timeout and retry mechanisms for API stability
 
 ## User Preferences
-
 Preferred communication style: Simple, everyday language.
 
 ## System Architecture
 
-### Frontend Architecture
-The application uses a modern React-based single-page application architecture built with:
-- **React 18 + TypeScript**: Provides type safety and modern React features
-- **TanStack Query**: Handles server state management, caching, and synchronization with automatic background refetching
-- **Wouter**: Lightweight client-side routing solution
-- **Tailwind CSS + shadcn/ui**: Utility-first styling with pre-built accessible components
-- **React Hook Form + Zod**: Form handling with runtime validation
+### Core Technologies
+- **Frontend**: React 18, TypeScript, Wouter, TanStack Query, shadcn/ui (Radix UI, Tailwind CSS), Vite.
+- **Backend**: Node.js, Express.js, TypeScript, tsx (development), esbuild (production).
+- **Database**: PostgreSQL (Neon serverless), Drizzle ORM, Drizzle Kit for migrations.
 
-### Backend Architecture
-The server follows a REST API pattern with:
-- **Node.js + Express**: Web server with middleware for JSON parsing, CORS, and request logging
-- **TypeScript**: Type safety across the entire backend
-- **Drizzle ORM**: Type-safe database operations with automatic migrations
-- **Hybrid Storage Pattern**: Uses ConLicitação API for live data with local database for user-specific data (favorites, authentication)
+### Key Architectural Decisions
+- **Hybrid Data System**: Automatically switches between real ConLicitação API data and development fallbacks, ensuring continuous functionality.
+- **Modular Design**: Separated frontend, backend, and shared schema for maintainability and scalability.
+- **Component-Based UI**: Utilizes shadcn/ui for consistent, accessible, and responsive design.
+- **Type Safety**: End-to-end type safety enforced with TypeScript and Drizzle ORM.
+- **Authentication**: Basic email/password authentication with frontend route protection.
+- **Deployment Strategy**: Optimized for Replit deployment, with distinct configurations for local development and production.
 
-### Data Management Strategy
-The system implements a hybrid approach:
-- **External API Integration**: Real-time bidding data from ConLicitação API
-- **Local Data Storage**: User accounts, favorites, and categorization data stored locally
-- **Fallback Mechanism**: Development environment uses mock data when API is unavailable
-- **Caching Layer**: TanStack Query provides intelligent caching with 5-minute stale time for bidding data
-
-### Authentication & Authorization
-- **Session-based Authentication**: User sessions managed server-side
-- **Password Security**: bcrypt hashing for password storage
-- **Route Protection**: Frontend route guards with server-side session validation
-- **User Management**: Complete registration, login, and password recovery flow
-
-### Database Design
-Uses MySQL in production with the following core entities:
-- **Users**: Company and user information with authentication data
-- **Favorites**: User-specific bidding favorites with categorization metadata
-- **Biddings**: Cached bidding data structure mirroring ConLicitação API
-- **Boletins**: Newsletter/bulletin data for organizing biddings by publication
-
-### API Integration Architecture
-- **ConLicitação API**: Primary data source for bidding information
-- **IP Whitelisting**: Production server IP authorized for API access
-- **Retry Logic**: Automatic retry mechanism for failed API requests
-- **Error Handling**: Graceful fallback to mock data during API unavailability
+### Feature Specifications
+- **Bidding Management**: Comprehensive biddings data, including organization, location, dates, and financial details.
+- **Filtering & Search**: Advanced client-side and server-side filtering capabilities.
+- **Favorites**: User-specific favorite management with real-time toggling and optimistic updates.
+- **Bulletin Management**: Integration with ConLicitação for bulletin retrieval and display.
+- **Responsive UI**: Mobile-first design approach.
+- **Form Handling**: React Hook Form with Zod validation for robust form management.
+- **Hierarchical Tabulation**: Automatic categorization of biddings (Type of Object → Category → Specialization).
 
 ## External Dependencies
 
-### Third-Party APIs
-- **ConLicitação API**: Official Brazilian bidding data provider
-  - Base URL: `https://consultaonline.conlicitacao.com.br/api`
-  - Authentication: Token-based with IP whitelisting
-  - Rate Limiting: Implements request delays and retry logic
-
-### Database Services
-- **MySQL**: Primary database for production environment
-  - Connection pooling for performance optimization
-  - Automatic schema migrations via Drizzle
-  - Local database for user data and favorites
-
-### Build & Deployment Tools
-- **Vite**: Frontend build tool with hot module replacement
-- **PM2**: Process manager for production deployment
-- **ESBuild**: Server-side TypeScript compilation
-- **Git**: Version control with automated deployment hooks
-
-### UI Component Libraries
-- **Radix UI**: Accessible headless components (dialogs, popovers, forms)
-- **Lucide React**: SVG icon library
-- **Tailwind CSS**: Utility-first CSS framework
-
-### Development Tools
-- **TypeScript**: Type checking across frontend and backend
-- **Drizzle Kit**: Database schema management and migrations
-- **Cross-env**: Environment variable management across platforms
-
-### Production Infrastructure
-- **VPS Server**: Ubuntu-based virtual private server
-- **Nginx**: Reverse proxy and static file serving
-- **SSL/TLS**: Domain-based HTTPS configuration
-- **Domain**: jlglicitacoes.com.br with DNS configuration
+- **ConLicitação API**: Primary data source for real-time bidding data. Requires `X-AUTH-TOKEN` header and IP whitelisting for production access.
+  - **API Base URL**: `https://consultaonline.conlicitacao.com.br/api`
+  - **Auth Token**: `27a24a9a-44ce-4de8-a8ac-82cc58ca9f6e`
+  - **Authorized IPs**: 35.227.80.200 (development - Replit), 31.97.26.138 (production).
+- **PostgreSQL (Neon serverless)**: Cloud-hosted relational database for application data.
+- **React**: Frontend UI library.
+- **Node.js**: Backend runtime environment.
+- **Express.js**: Backend web framework.
+- **TanStack Query**: Data fetching and caching library.
+- **shadcn/ui (Radix UI, Tailwind CSS)**: UI component library and styling framework.
+- **Drizzle ORM**: Type-safe ORM for database interactions.
+- **Vite**: Frontend build tool.
+- **esbuild**: Backend bundler.
+- **date-fns**: Date manipulation utility.
+- **React Hook Form & Zod**: Form management and validation.

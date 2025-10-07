@@ -10,7 +10,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/health", async (req, res) => {
     try {
       const isProduction = process.env.NODE_ENV === 'production';
-      const healthInfo: any = {
+      const healthInfo = {
         status: 'ok',
         environment: process.env.NODE_ENV || 'development',
         storageType: isProduction ? 'MySQL' : 'Memory',
@@ -37,43 +37,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // Users routes
-  app.get("/api/users", async (req, res) => {
-    try {
-      console.log('👥 [ROUTES] Buscando lista de usuários via MySQL Storage');
-      // Para simplificar, vamos buscar usuários que já têm favoritos
-      const favorites = await storage.getFavorites(1); // Buscar alguns favoritos
-      const allFavorites = await storage.getFavorites(2); // E de outros usuários
-      const moreResults = await storage.getFavorites(5);
-
-      // Buscar dados dos usuários pelos IDs encontrados nos favoritos + IDs conhecidos
-      const userIds = new Set([1, 2, 5]); // IDs conhecidos: admin, Wilson, Moacir
-
-      const users = [];
-      for (const userId of Array.from(userIds)) {
-        try {
-          const user = await storage.getUser(userId);
-          if (user) {
-            users.push({
-              id: user.id,
-              nome: user.nome,
-              email: user.email,
-              nomeEmpresa: user.nomeEmpresa
-            });
-          }
-        } catch (error) {
-          console.log(`Usuário ${userId} não encontrado`);
-        }
-      }
-      
-      console.log('✅ [ROUTES] Usuários encontrados:', users.length);
-      res.json(users);
-    } catch (error) {
-      console.error('❌ Erro ao buscar usuários:', error);
-      res.status(500).json({ message: "Erro interno do servidor" });
-    }
-  });
-
   // Auth routes
   app.post("/api/auth/login", async (req, res) => {
     try {
@@ -235,8 +198,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       // Para o dashboard, usar usuário padrão (1) se não especificado
       const userId = 1; // Usuário padrão para desenvolvimento
-      console.log('🔍 [ROUTES] Buscando favoritos via MySQL Storage para usuário:', userId);
-      const favorites = await storage.getFavorites(userId);
+      const favorites = await conLicitacaoStorage.getFavorites(userId);
       
       // Adicionar headers para evitar cache
       res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
@@ -254,8 +216,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = parseInt(req.params.userId);
       const { date, dateFrom, dateTo } = req.query;
-      console.log('🔍 [ROUTES] Buscando favoritos via MySQL Storage para usuário:', userId);
-      const favorites = await storage.getFavorites(userId, date as string, dateFrom as string, dateTo as string);
+      const favorites = await conLicitacaoStorage.getFavorites(userId, date as string, dateFrom as string, dateTo as string);
       
       // Adicionar headers para evitar cache
       res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
@@ -276,8 +237,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "userId e biddingId são obrigatórios" });
       }
       
-      console.log('➕ [ROUTES] Adicionando favorito via MySQL Storage:', { userId, biddingId });
-      const favorite = await storage.addFavorite({ userId, biddingId });
+      const favorite = await conLicitacaoStorage.addFavorite({ userId, biddingId });
       res.status(201).json(favorite);
     } catch (error) {
       res.status(500).json({ message: "Erro interno do servidor" });
@@ -289,8 +249,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = parseInt(req.params.userId);
       const biddingId = parseInt(req.params.biddingId);
       
-      console.log('➖ [ROUTES] Removendo favorito via MySQL Storage:', { userId, biddingId });
-      await storage.removeFavorite(userId, biddingId);
+      await conLicitacaoStorage.removeFavorite(userId, biddingId);
       res.status(204).send();
     } catch (error) {
       res.status(500).json({ message: "Erro interno do servidor" });
@@ -302,8 +261,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = parseInt(req.params.userId);
       const biddingId = parseInt(req.params.biddingId);
       
-      console.log('❓ [ROUTES] Verificando favorito via MySQL Storage:', { userId, biddingId });
-      const isFavorite = await storage.isFavorite(userId, biddingId);
+      const isFavorite = await conLicitacaoStorage.isFavorite(userId, biddingId);
       res.json({ isFavorite });
     } catch (error) {
       res.status(500).json({ message: "Erro interno do servidor" });
@@ -317,11 +275,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const biddingId = parseInt(req.params.biddingId);
       const { category, customCategory, notes, uf, codigoUasg, valorEstimado, fornecedor, site } = req.body;
       
-      console.log('🏷️ [ROUTES] Categorizando favorito via MySQL Storage:', { userId, biddingId, category });
-      // Para categorização, vamos adicionar novamente o favorito com os dados de categorização
-      await storage.addFavorite({
-        userId,
-        biddingId,
+      await conLicitacaoStorage.updateFavoriteCategorization(userId, biddingId, {
         category,
         customCategory,
         notes,

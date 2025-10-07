@@ -10,13 +10,11 @@ import {
   type Favorite,
   type InsertFavorite,
   type Boletim,
-  type InsertBoletim,
-  insertBiddingSchema
+  type InsertBoletim
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, gte, lte } from "drizzle-orm";
 import bcrypt from "bcrypt";
-import { Data } from "ws";
 
 export interface IStorage {
   // Users
@@ -178,7 +176,6 @@ export class DatabaseStorage implements IStorage {
         // Incluir dados de categorização no bidding
         const biddingWithCategorization = {
           ...bidding,
-          data: fav.Date,
           category: fav.category,
           customCategory: fav.customCategory,
           notes: fav.notes,
@@ -220,7 +217,6 @@ export class DatabaseStorage implements IStorage {
       `, [
         favorite.userId,
         favorite.biddingId,
-        favorite.data || null,
         favorite.category || null,
         favorite.customCategory || null,
         favorite.notes || null,
@@ -389,7 +385,6 @@ export class MemStorage implements IStorage {
       ...insertFavorite, 
       id, 
       createdAt: new Date(),
-      data: insertFavorite.data || null,
       category: insertFavorite.category || null,
       customCategory: insertFavorite.customCategory || null,
       notes: insertFavorite.notes || null,
@@ -435,18 +430,16 @@ export class MemStorage implements IStorage {
   }
 }
 
-// Detectar ambiente corretamente: Replit vs Servidor de Produção
-const isReplit = process.env.REPLIT === '1' || process.env.NODE_ENV === 'development';
-const isProductionServer = !isReplit && process.env.NODE_ENV !== 'development';
-const forceMySQL = isProductionServer; // Usar MySQL apenas no servidor de produção
+// FORÇAR o uso do MySQL sempre que não estiver no Replit
+const isReplit = process.env.REPLIT === '1';
+const forceMySQL = !isReplit; // Usar MySQL sempre que não for Replit
 
-console.log('🔧 [STORAGE] Configurando storage:', {
+console.log('🔧 [STORAGE] Configurando storage FORÇADO:', {
   NODE_ENV: process.env.NODE_ENV,
   REPLIT: process.env.REPLIT,
   isReplit,
-  isProductionServer,
   forceMySQL,
-  storageType: forceMySQL ? 'MySQL (DatabaseStorage)' : 'Memory (MemStorage)'
+  storageType: forceMySQL ? 'MySQL (DatabaseStorage) - FORÇADO' : 'Memory (MemStorage)'
 });
 
 export const storage = forceMySQL ? new DatabaseStorage() : new MemStorage();

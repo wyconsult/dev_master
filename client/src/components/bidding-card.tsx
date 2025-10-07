@@ -323,7 +323,7 @@ export function BiddingCard({
                 }}
                 style={{ userSelect: "none" }}
               >
-                Acessar Edital
+                Acessar documento →
               </a>
             </div>
           </div>
