@@ -187,6 +187,7 @@ export default function Favorites() {
     const dateFromStr = dateRange.from ? format(dateRange.from, "dd/MM/yyyy") : "";
     const dateToStr = dateRange.to ? format(dateRange.to, "dd/MM/yyyy") : "";
     const filterTypeLabel = dateFilterType === "favorito" ? "Data de inclusão favorito" : "Data de realização";
+    const logoUrl = `${window.location.origin}/logo.jpeg`;
     
     // CORREÇÃO: Ordenar favoritos por data cronológica crescente antes de gerar PDF
     // "Não informado" sempre por último
@@ -384,7 +385,7 @@ export default function Favorites() {
       <html>
       <head>
         <meta charset="UTF-8">
-        <title>Relatório de Favoritos - JLG Consultoria</title>
+        <title>Relatório de Novos Processos - JLG Consultoria</title>
         <style>
           body { 
             font-family: Arial, sans-serif; 
@@ -392,10 +393,44 @@ export default function Favorites() {
             font-size: 12px;
           }
           .header {
-            text-align: center;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
             margin-bottom: 20px;
             border-bottom: 2px solid #333;
             padding-bottom: 10px;
+          }
+          .brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+          }
+          .brand img {
+            height: 40px;
+          }
+          .header-center {
+            flex: 1;
+            text-align: center;
+          }
+          .header-center h1 {
+            margin: 0;
+            font-size: 18px;
+          }
+          .generated {
+            margin: 4px 0 0 0;
+            font-size: 11px;
+            color: #555;
+          }
+          .header-right {
+            min-width: 240px;
+            text-align: right;
+          }
+          .header-right a {
+            color: #1a73e8;
+            text-decoration: none;
+          }
+          .header-right a:hover {
+            text-decoration: underline;
           }
           .info {
             margin-bottom: 20px;
@@ -429,10 +464,20 @@ export default function Favorites() {
       </head>
       <body>
         <div class="header">
-          <h1>JLG Consultoria - Relatório de Favoritos</h1>
-          <p>Gerado em: ${format(new Date(), "dd/MM/yyyy 'às' HH:mm")}</p>
+          <div class="brand">
+            <img src="${logoUrl}" alt="JLG Consultoria" />
+          </div>
+          <div class="header-center">
+            <h1>JLG Consultoria - Relatório de Novos Processos</h1>
+            <p class="generated">Gerado em: ${format(new Date(), "dd/MM/yyyy 'às' HH:mm")}</p>
+          </div>
+          <div class="header-right">
+            <p><strong>Contato:</strong> Junior</p>
+            <p><strong>E-mail:</strong> <a href="mailto:comercial@jlglicitacoes.com.br">comercial@jlglicitacoes.com.br</a></p>
+            <p><strong>Tel:</strong> <a href="tel:+5511934616200">(11) 93461-6200</a></p>
+          </div>
         </div>
-        
+
         <div class="info">
           <p><strong>Filtro aplicado:</strong> ${filterTypeLabel}</p>
           <p><strong>Período:</strong> ${dateFromStr} até ${dateToStr}</p>
