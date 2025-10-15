@@ -11,6 +11,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from "@/components/ui/command";
 import { Calendar } from "@/components/ui/calendar";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
@@ -57,6 +58,16 @@ const DATE_FILTER_OPTIONS = [
   { value: "realizacao", label: "Data de realização" }
 ];
 
+// Opções de datas de realização
+const REALIZACAO_DATE_OPTIONS = [
+  { value: "todos", label: "Todos" },
+  { value: "abertura", label: "Abertura" },
+  { value: "prazo", label: "Prazo" },
+  { value: "documento", label: "Documento" },
+  { value: "retirada", label: "Retirada" },
+  { value: "visita", label: "Visita" },
+] as const;
+
 export default function Favorites() {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -66,6 +77,8 @@ export default function Favorites() {
   const [selectedUFs, setSelectedUFs] = useState<string[]>([]);
   const [dateRange, setDateRange] = useState<{from?: Date, to?: Date}>({});
   const [dateFilterType, setDateFilterType] = useState<"favorito" | "realizacao">("favorito");
+  const [realizacaoDateKind, setRealizacaoDateKind] = useState<"todos" | "abertura" | "prazo" | "documento" | "retirada" | "visita">("todos");
+  const [realizacaoPopoverOpen, setRealizacaoPopoverOpen] = useState(false);
   const [orgaoPopoverOpen, setOrgaoPopoverOpen] = useState(false);
   const [ufPopoverOpen, setUfPopoverOpen] = useState(false);
   const [userPopoverOpen, setUserPopoverOpen] = useState(false);
@@ -101,32 +114,61 @@ export default function Favorites() {
     // Date filter logic - check by type of date filter selected
     let matchesDateRange = true;
     if (dateRange.from && dateRange.to) {
-      let biddingDate: Date;
-      
+      const startDate = new Date(dateRange.from);
+      const endDate = new Date(dateRange.to);
+      // Normalize range bounds
+      startDate.setHours(0, 0, 0, 0);
+      endDate.setHours(23, 59, 59, 999);
+
       if (dateFilterType === "favorito") {
         // Filter by favorite creation date
         const favoriteData = bidding as any;
-        if (favoriteData.createdAt) {
-          biddingDate = new Date(favoriteData.createdAt);
-        } else {
-          // Se não tem data de criação, usar data atual (novo favorito)
-          biddingDate = new Date();
-        }
+        const biddingDate = favoriteData.createdAt ? new Date(favoriteData.createdAt) : new Date();
+        biddingDate.setHours(0, 0, 0, 0);
+        matchesDateRange = biddingDate >= startDate && biddingDate <= endDate;
       } else {
-        // Filter by datahora_abertura (data de realização)
-        if (!bidding.datahora_abertura) return false; // Skip if no opening date
-        biddingDate = new Date(bidding.datahora_abertura);
+        // Filtro por realização: conforme tipo selecionado no dropdown
+        const keyMap: Record<typeof realizacaoDateKind, keyof Bidding | string> = {
+          todos: 'todos',
+          abertura: 'datahora_abertura',
+          prazo: 'datahora_prazo',
+          documento: 'datahora_documento',
+          retirada: 'datahora_retirada',
+          visita: 'datahora_visita',
+        };
+
+        if (realizacaoDateKind === 'todos') {
+          const dateKeys = [
+            'datahora_abertura',
+            'datahora_prazo', 
+            'datahora_documento',
+            'datahora_retirada',
+            'datahora_visita'
+          ] as const;
+          matchesDateRange = dateKeys.some((key) => {
+            const val = (bidding as any)[key];
+            if (!val || typeof val !== 'string' || val.trim() === '') return false;
+            const d = new Date(val);
+            if (isNaN(d.getTime())) return false;
+            d.setHours(0, 0, 0, 0);
+            return d >= startDate && d <= endDate;
+          });
+        } else {
+          const key = keyMap[realizacaoDateKind] as string;
+          const val = (bidding as any)[key];
+          if (!val || typeof val !== 'string' || val.trim() === '') {
+            matchesDateRange = false;
+          } else {
+            const d = new Date(val);
+            if (isNaN(d.getTime())) {
+              matchesDateRange = false;
+            } else {
+              d.setHours(0, 0, 0, 0);
+              matchesDateRange = d >= startDate && d <= endDate;
+            }
+          }
+        }
       }
-      
-      const startDate = new Date(dateRange.from);
-      const endDate = new Date(dateRange.to);
-      
-      // Set time to beginning/end of day for accurate comparison
-      startDate.setHours(0, 0, 0, 0);
-      endDate.setHours(23, 59, 59, 999);
-      biddingDate.setHours(0, 0, 0, 0);
-      
-      matchesDateRange = biddingDate >= startDate && biddingDate <= endDate;
     }
 
     return matchesNumeroControle && matchesOrgao && matchesUF && matchesDateRange;
@@ -175,6 +217,8 @@ export default function Favorites() {
     if (printWindow) {
       printWindow.document.write(htmlContent);
       printWindow.document.close();
+      // Definir título da janela para evitar exibir about:blank no cabeçalho
+      try { printWindow.document.title = 'Relatório de Novos Processos - JLG Consultoria'; } catch {}
       printWindow.focus();
       setTimeout(() => {
         printWindow.print();
@@ -186,7 +230,17 @@ export default function Favorites() {
   const createPDFContent = () => {
     const dateFromStr = dateRange.from ? format(dateRange.from, "dd/MM/yyyy") : "";
     const dateToStr = dateRange.to ? format(dateRange.to, "dd/MM/yyyy") : "";
-    const filterTypeLabel = dateFilterType === "favorito" ? "Data de inclusão favorito" : "Data de realização";
+    const realizacaoLabelMap: Record<typeof realizacaoDateKind, string> = {
+      todos: "Todos",
+      abertura: "Abertura",
+      prazo: "Prazo",
+      documento: "Documento",
+      retirada: "Retirada",
+      visita: "Visita",
+    };
+    const filterTypeLabel = dateFilterType === "favorito" 
+      ? "Data de inclusão favorito" 
+      : `Data de realização${realizacaoDateKind === 'todos' ? '' : ` - ${realizacaoLabelMap[realizacaoDateKind]}`}`;
     const logoUrl = `${window.location.origin}/logo.jpeg`;
     
     // CORREÇÃO: Ordenar favoritos por data cronológica crescente antes de gerar PDF
@@ -455,10 +509,14 @@ export default function Favorites() {
             font-weight: bold;
             font-size: 9px;
           }
-          .no-break { page-break-inside: avoid; }
           @media print {
             body { margin: 0; }
             .header { page-break-after: avoid; }
+            .info { page-break-after: avoid; }
+            thead { display: table-header-group; }
+            tfoot { display: table-footer-group; }
+            table { page-break-inside: auto; }
+            tr { page-break-inside: avoid; page-break-after: auto; }
           }
         </style>
       </head>
@@ -484,7 +542,7 @@ export default function Favorites() {
           <p><strong>Total de registros:</strong> ${sortedFavorites.length}</p>
         </div>
         
-        <table class="no-break">
+        <table>
           <thead>
             <tr>
               <th>CONTROLE</th>
@@ -613,6 +671,7 @@ export default function Favorites() {
 
             {/* Demais filtros com mais espaço para o calendário */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
+              {/* Dropdown de realização agora abre ao clicar na label da opção "Data de realização" abaixo */}
               {/* Número de Controle */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -756,30 +815,90 @@ export default function Favorites() {
                   </div>
                   <div className="grid grid-cols-1 gap-3">
                     {DATE_FILTER_OPTIONS.map((option) => (
-                      <label 
-                        key={option.value} 
-                        className="flex items-center gap-3 cursor-pointer hover:bg-white/60 p-2 rounded-lg transition-colors"
-                        onClick={() => setDateFilterType(option.value as "favorito" | "realizacao")}
-                      >
-                        <div className={cn(
-                          "w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all",
-                          dateFilterType === option.value 
-                            ? "border-blue-600 bg-blue-600 shadow-md" 
-                            : "border-gray-400 hover:border-blue-400"
-                        )}>
-                          {dateFilterType === option.value && (
-                            <div className="w-2.5 h-2.5 rounded-full bg-white"></div>
-                          )}
-                        </div>
-                        <span className={cn(
-                          "text-sm font-medium transition-colors",
-                          dateFilterType === option.value 
-                            ? "text-blue-800" 
-                            : "text-gray-700 hover:text-blue-700"
-                        )}>
-                          {option.label}
-                        </span>
-                      </label>
+                      option.value === 'realizacao' ? (
+                        <Popover key={option.value} open={realizacaoPopoverOpen} onOpenChange={setRealizacaoPopoverOpen}>
+                          <PopoverTrigger asChild>
+                            <label
+                              className="cursor-pointer hover:bg-white/60 p-2 rounded-lg transition-colors"
+                              onClick={() => { setDateFilterType('realizacao'); setRealizacaoPopoverOpen(true); }}
+                            >
+                              <div className="flex items-center gap-3">
+                                <div className={cn(
+                                  "w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all",
+                                  dateFilterType === option.value 
+                                    ? "border-blue-600 bg-blue-600 shadow-md" 
+                                    : "border-gray-400 hover:border-blue-400"
+                                )}>
+                                  {dateFilterType === option.value && (
+                                    <div className="w-2.5 h-2.5 rounded-full bg-white"></div>
+                                  )}
+                                </div>
+                                <span className={cn(
+                                  "text-sm font-medium transition-colors",
+                                  dateFilterType === option.value 
+                                    ? "text-blue-800" 
+                                    : "text-gray-700 hover:text-blue-700"
+                                )}>
+                                  {option.label}
+                                </span>
+                              </div>
+                              {dateFilterType === 'realizacao' && (
+                                <span
+                                  className={cn(
+                                    "mt-1 ml-8 text-sm font-medium",
+                                    dateFilterType === option.value 
+                                      ? "text-blue-800" 
+                                      : "text-gray-700"
+                                  )}
+                                >
+                                  {REALIZACAO_DATE_OPTIONS.find(o => o.value === realizacaoDateKind)?.label || 'Todos'}
+                                </span>
+                              )}
+                            </label>
+                          </PopoverTrigger>
+                          <PopoverContent side="right" align="start" className="w-56 p-1 z-50 bg-white border border-blue-200 shadow-lg">
+                            <div className="flex flex-col">
+                              {REALIZACAO_DATE_OPTIONS.map(opt => (
+                                <button
+                                  key={opt.value}
+                                  className={cn(
+                                    "text-left px-3 py-2 rounded-md hover:bg-blue-50 text-sm",
+                                    realizacaoDateKind === opt.value ? "bg-blue-100 text-blue-800 font-semibold" : "text-gray-700"
+                                  )}
+                                  onClick={() => { setRealizacaoDateKind(opt.value); setRealizacaoPopoverOpen(false); }}
+                                >
+                                  {opt.label}
+                                </button>
+                              ))}
+                            </div>
+                          </PopoverContent>
+                        </Popover>
+                      ) : (
+                        <label 
+                          key={option.value} 
+                          className="flex items-center gap-3 cursor-pointer hover:bg-white/60 p-2 rounded-lg transition-colors"
+                          onClick={() => setDateFilterType(option.value as "favorito" | "realizacao")}
+                        >
+                          <div className={cn(
+                            "w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all",
+                            dateFilterType === option.value 
+                              ? "border-blue-600 bg-blue-600 shadow-md" 
+                              : "border-gray-400 hover:border-blue-400"
+                          )}>
+                            {dateFilterType === option.value && (
+                              <div className="w-2.5 h-2.5 rounded-full bg-white"></div>
+                            )}
+                          </div>
+                          <span className={cn(
+                            "text-sm font-medium transition-colors",
+                            dateFilterType === option.value 
+                              ? "text-blue-800" 
+                              : "text-gray-700 hover:text-blue-700"
+                          )}>
+                            {option.label}
+                          </span>
+                        </label>
+                      )
                     ))}
                   </div>
                 </div>

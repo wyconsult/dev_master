@@ -134,8 +134,16 @@ export class DatabaseStorage implements IStorage {
     uf?: string[];
     numero_controle?: string;
   }): Promise<Bidding[]> {
-    // Para manter compatibilidade, retorna dados do ConLicitacaoStorage
-    return [];
+    // Delegar para ConLicitacaoStorage para obter dados (mock/API)
+    try {
+      const { conLicitacaoStorage } = await import("./conlicitacao-storage");
+      // Usar caminho não paginado simples para compatibilidade
+      const biddings = await conLicitacaoStorage.getBiddings(filters);
+      return biddings;
+    } catch (error) {
+      console.warn('⚠️ [DatabaseStorage] Falha ao obter licitações via ConLicitacaoStorage, retornando vazio:', error);
+      return [];
+    }
   }
 
   async getBidding(id: number): Promise<Bidding | undefined> {
@@ -367,16 +375,92 @@ export class MemStorage implements IStorage {
     uf?: string[];
     numero_controle?: string;
   }): Promise<Bidding[]> {
-    // No local biddings - should use ConLicitação API only
-    return [];
+    // Delegar para ConLicitacaoStorage para manter dados de mock consistentes
+    try {
+      const { conLicitacaoStorage } = await import("./conlicitacao-storage");
+      return await conLicitacaoStorage.getBiddings(filters);
+    } catch (error) {
+      console.warn('⚠️ [MemStorage] Falha ao obter licitações via ConLicitacaoStorage:', error);
+      return [];
+    }
   }
 
   async getBidding(id: number): Promise<Bidding | undefined> {
-    return undefined;
+    try {
+      const { conLicitacaoStorage } = await import("./conlicitacao-storage");
+      return await conLicitacaoStorage.getBidding(id);
+    } catch {
+      return undefined;
+    }
   }
 
   async getFavorites(userId: number, date?: string, dateFrom?: string, dateTo?: string): Promise<Bidding[]> {
-    return [];
+    // Filtrar favoritos do usuário
+    let userFavorites = Array.from(this.favorites.values())
+      .filter(fav => fav.userId === userId);
+
+    // Filtros por data na data de criação do favorito
+    if (date) {
+      const target = new Date(date);
+      const start = new Date(target);
+      const end = new Date(target);
+      start.setHours(0,0,0,0);
+      end.setHours(23,59,59,999);
+      userFavorites = userFavorites.filter(fav => {
+        const created = fav.createdAt instanceof Date ? fav.createdAt : new Date(fav.createdAt!);
+        return created >= start && created <= end;
+      });
+    } else if (dateFrom || dateTo) {
+      const start = dateFrom ? new Date(dateFrom) : undefined;
+      const end = dateTo ? new Date(dateTo) : undefined;
+      if (start) start.setHours(0,0,0,0);
+      if (end) end.setHours(23,59,59,999);
+      userFavorites = userFavorites.filter(fav => {
+        const created = fav.createdAt instanceof Date ? fav.createdAt : new Date(fav.createdAt!);
+        const afterStart = start ? created >= start : true;
+        const beforeEnd = end ? created <= end : true;
+        return afterStart && beforeEnd;
+      });
+    }
+
+    // Preparar cache de licitações antes de mapear
+    const { conLicitacaoStorage } = await import("./conlicitacao-storage");
+    if (!(conLicitacaoStorage as any).cachedBiddings || (conLicitacaoStorage as any).cachedBiddings.size === 0) {
+      // Carregamento inicial rápido para popular o cache
+      try {
+        await conLicitacaoStorage.getBiddingsPaginated(undefined, 1, 50);
+      } catch {}
+    }
+
+    // Mapear para biddings com dados de categorização
+    const favoriteBiddings: Bidding[] = [];
+    for (const fav of userFavorites) {
+      let bidding = await conLicitacaoStorage.getBidding(fav.biddingId);
+      if (!bidding) {
+        // Tentar carregar especificamente pelo ID (via numero_controle)
+        try {
+          await conLicitacaoStorage.getBiddingsPaginated({ numero_controle: String(fav.biddingId) }, 1, 50);
+          bidding = await conLicitacaoStorage.getBidding(fav.biddingId);
+        } catch {}
+      }
+      if (bidding) {
+        const biddingWithFavorite = {
+          ...bidding,
+          category: fav.category,
+          customCategory: fav.customCategory,
+          notes: fav.notes,
+          uf: fav.uf,
+          codigoUasg: fav.codigoUasg,
+          valorEstimado: fav.valorEstimado,
+          fornecedor: fav.fornecedor,
+          site: fav.site,
+          createdAt: fav.createdAt
+        } as any;
+        favoriteBiddings.push(biddingWithFavorite);
+      }
+    }
+
+    return favoriteBiddings;
   }
 
   async addFavorite(insertFavorite: InsertFavorite): Promise<Favorite> {
