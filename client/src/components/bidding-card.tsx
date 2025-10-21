@@ -47,51 +47,10 @@ export function BiddingCard({
 
   const isFavorite = (favoriteStatus as any)?.isFavorite || showCategorization; // In favorites page, always show as favorited
 
-  // Função para expandir status truncados da API
-  const expandTruncatedStatus = (status: string) => {
-    if (!status) return "NOVA";
-    
-    const truncatedMappings: { [key: string]: string } = {
-      "URGEN": "URGENTE",
-      "RET": "RETIFICAÇÃO", 
-      "ADIA": "ADIADA",
-      "PRO": "PRORROGADA",
-      "ALTER": "ALTERADA",
-      "REAB": "REABERTA",
-      "CANCE": "CANCELADA",
-      "SUS": "SUSPENSA",
-      "REVO": "REVOGADA",
-      "ABERTA": "ABERTA", 
-      "NOVA": "NOVA",
-      "EM_ANAL": "EM ANÁLISE",
-      "PRORROG": "PRORROGADA",
-      "ALTERA": "ALTERADA",
-      "FINALI": "FINALIZADA",
-      "SUSP": "SUSPENSA",
-      "CANCEL": "CANCELADA",
-      "DESERTA": "DESERTA",
-      "FRACAS": "FRACASSADA"
-    };
-
-    const upperStatus = status.toString().toUpperCase().trim();
-    
-    // Procura por correspondência exata primeiro
-    if (truncatedMappings[upperStatus]) {
-      return truncatedMappings[upperStatus];
-    }
-    
-    // Procura por correspondência parcial (status truncado)
-    for (const [truncated, full] of Object.entries(truncatedMappings)) {
-      if (truncated.startsWith(upperStatus) || upperStatus.startsWith(truncated)) {
-        return full;
-      }
-    }
-    
-    return upperStatus;
-  };
+  // Status já vem expandido do backend - não precisa mais de expansão no frontend
 
   const getStatusColor = (status: string) => {
-    const expandedStatus = expandTruncatedStatus(status);
+    const expandedStatus = status?.toUpperCase() || "NOVA"; // Status já vem expandido do backend
     
     switch (expandedStatus) {
       case "NOVA":
@@ -245,7 +204,7 @@ export function BiddingCard({
                 letterSpacing: "0.5px"
               }}
             >
-              {expandTruncatedStatus(bidding.situacao || "")}
+              {bidding.situacao || "NOVA"}
             </div>
             {/* Favorite icon */}
             {showFavoriteIcon && (

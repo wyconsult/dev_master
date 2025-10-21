@@ -73,6 +73,10 @@ export default function Biddings() {
   // Estado para controlar expansão dos filtros avançados
   const [filtrosAvancadosExpandidos, setFiltrosAvancadosExpandidos] = useState(false);
 
+  // Paginação
+  const [page, setPage] = useState(1);
+  const [perPage, setPerPage] = useState(50);
+
   const buildFilters = () => {
     const filters: any = {};
     if (numeroControlePesquisado) filters.numero_controle = numeroControlePesquisado;
@@ -86,21 +90,20 @@ export default function Biddings() {
     setNumeroControlePesquisado(numeroControle);
   };
 
-  // Query otimizada - SÓ busca quando há numero_controle pesquisado ou filtros
-  const { data: allBiddings = [], isLoading, error, isFetching } = useQuery<Bidding[]>({
-    queryKey: ["/api/biddings", numeroControlePesquisado, selectedOrgaos, selectedUFs],
+  // Query com paginação
+  const { data: biddingsResp, isLoading, error, isFetching } = useQuery<{ biddings: Bidding[]; total: number; page: number; per_page: number; }>({
+    queryKey: ["/api/biddings", numeroControlePesquisado, selectedOrgaos, selectedUFs, page, perPage],
     queryFn: async () => {
       const params = new URLSearchParams();
       if (numeroControlePesquisado) params.append('numero_controle', numeroControlePesquisado);
       if (selectedOrgaos.length) selectedOrgaos.forEach(orgao => params.append('orgao', orgao));
       if (selectedUFs.length) selectedUFs.forEach(uf => params.append('uf', uf));
+      params.append('page', String(page));
+      params.append('per_page', String(perPage));
       
       const response = await fetch(`/api/biddings?${params.toString()}`);
       if (!response.ok) throw new Error('Erro ao carregar licitações');
-      const data = await response.json();
-      
-      // Se retornou dados paginados, extrair só os biddings
-      return data.biddings || data;
+      return await response.json();
     },
     staleTime: 30000,
     refetchOnWindowFocus: false,
@@ -109,23 +112,11 @@ export default function Biddings() {
     refetchInterval: false,
   });
   
-  // Contagem total (para o cabeçalho)
-  const totalBiddings = allBiddings.length;
+  const allBiddings = (biddingsResp?.biddings ?? []) as Bidding[];
+  const totalBiddings = biddingsResp?.total ?? allBiddings.length;
+  const totalPages = Math.max(1, Math.ceil(totalBiddings / perPage));
 
-  // Debug específico para mobile
-  React.useEffect(() => {
-    if (typeof window !== 'undefined') {
-      console.log('[MOBILE DEBUG] Biddings page loaded');
-      console.log('[MOBILE DEBUG] Window width:', window.innerWidth);
-      console.log('[MOBILE DEBUG] User agent:', navigator.userAgent.includes('Mobile'));
-      console.log('[MOBILE DEBUG] Biddings data:', allBiddings?.length || 0);
-      console.log('[MOBILE DEBUG] Loading state:', isLoading);
-      if (error) console.error('[MOBILE DEBUG] Biddings error:', error);
-    }
-  }, [allBiddings, isLoading, error]);
 
-  // Debug para verificar o estado
-  console.log("Biddings Query State:", { isLoading, error, dataLength: allBiddings.length, totalBiddings });
 
   // Extrair órgãos únicos dos dados reais
   const uniqueOrgaos = Array.from(new Set(allBiddings.map(b => b.orgao_nome))).sort();
@@ -620,6 +611,24 @@ export default function Biddings() {
 
         {/* Results */}
         <div className="space-y-3 md:space-y-4 px-4">
+          {/* Pagination controls */}
+          <div className="flex items-center justify-between mb-2">
+            <div className="text-sm text-gray-600">Página {page} de {totalPages} — {totalBiddings} resultados</div>
+            <div className="flex items-center gap-2">
+              <select
+                className="border rounded px-2 py-1 text-sm"
+                value={perPage}
+                onChange={(e) => { setPage(1); setPerPage(parseInt(e.target.value) || 50); }}
+              >
+                <option value={25}>25</option>
+                <option value={50}>50</option>
+                <option value={100}>100</option>
+              </select>
+              <Button variant="outline" size="sm" disabled={page <= 1 || isFetching} onClick={() => setPage(p => Math.max(1, p - 1))}>Anterior</Button>
+              <Button variant="outline" size="sm" disabled={page >= totalPages || isFetching} onClick={() => setPage(p => Math.min(totalPages, p + 1))}>Próxima</Button>
+            </div>
+          </div>
+
           {filteredBiddings.length === 0 ? (
             <Card>
               <CardContent className="p-6 md:p-12 text-center">

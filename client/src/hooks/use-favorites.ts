@@ -31,16 +31,6 @@ export function useFavorites() {
 
       // Optimistically update the favorite status for all related queries
       client.setQueryData([`/api/favorites/${user.id}/${biddingId}`], { isFavorite: true });
-
-      // Force immediate refetch and update
-      setTimeout(() => {
-        client.invalidateQueries({ 
-          predicate: (query) => {
-            const key = query.queryKey[0]?.toString() || '';
-            return key.includes('/api/favorites');
-          }
-        });
-      }, 50);
     },
     onSuccess: (data, biddingId) => {
       if (user) {
@@ -84,16 +74,6 @@ export function useFavorites() {
 
       // Optimistically update the favorite status for all related queries
       client.setQueryData([`/api/favorites/${user.id}/${biddingId}`], { isFavorite: false });
-
-      // Force immediate refetch and update
-      setTimeout(() => {
-        client.invalidateQueries({ 
-          predicate: (query) => {
-            const key = query.queryKey[0]?.toString() || '';
-            return key.includes('/api/favorites');
-          }
-        });
-      }, 50);
     },
     onSuccess: (data, biddingId) => {
       if (user) {

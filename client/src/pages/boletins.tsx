@@ -22,21 +22,32 @@ export default function Boletins() {
   const queryClient = useQueryClient();
   const isMobile = useIsMobile();
 
-  const { data: boletins = [], isLoading, error } = useQuery<Boletim[]>({
-    queryKey: ["/api/boletins"],
+  // Paginação
+  const [page, setPage] = useState(1);
+  const [perPage, setPerPage] = useState(50);
+
+  // Paginação das licitações no detalhe do boletim
+  const [licPage, setLicPage] = useState(1);
+  const [licPerPage, setLicPerPage] = useState(50);
+
+  const { data: boletinsResp, isLoading, error } = useQuery<{ boletins: Boletim[]; total: number; page?: number; per_page?: number; }>({
+    queryKey: ["/api/boletins", page, perPage],
     retry: 3,
     staleTime: 5 * 60 * 1000, // 5 minutos
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      params.append('page', String(page));
+      params.append('per_page', String(perPage));
+      const res = await fetch(`/api/boletins?${params.toString()}`);
+      if (!res.ok) throw new Error('Erro ao carregar boletins');
+      return await res.json();
+    }
   });
 
-  // Debug para mobile
-  React.useEffect(() => {
-    if (typeof window !== 'undefined') {
-      console.log('[MOBILE DEBUG] Boletins page loaded - isMobile:', isMobile);
-      console.log('[MOBILE DEBUG] Boletins data:', boletins?.length || 0);
-      console.log('[MOBILE DEBUG] Loading state:', isLoading);
-      if (error) console.error('[MOBILE DEBUG] Error:', error);
-    }
-  }, [isMobile, boletins, isLoading, error]);
+  const boletins = (boletinsResp?.boletins ?? []) as Boletim[];
+  const totalBoletins = boletinsResp?.total ?? boletins.length;
+  const totalPages = Math.max(1, Math.ceil(totalBoletins / perPage));
+
 
   // Query para buscar dados específicos do boletim selecionado
   const { data: boletimData, isLoading: isLoadingBoletimData } = useQuery<{
@@ -47,6 +58,11 @@ export default function Boletins() {
     queryKey: [`/api/boletim/${selectedBoletim}`],
     enabled: !!selectedBoletim,
   });
+
+  // Resetar paginação ao trocar de boletim ou aba
+  React.useEffect(() => {
+    setLicPage(1);
+  }, [selectedBoletim, activeTab]);
 
   const markAsViewedMutation = useMutation({
     mutationFn: async (boletimId: number) => {
@@ -62,38 +78,16 @@ export default function Boletins() {
     markAsViewedMutation.mutate(boletimId, {
       onSuccess: () => {
         setSelectedBoletim(boletimId);
-        // Invalidar todas as queries relevantes para atualização imediata
+        // Invalidar apenas boletins - outras queries não são afetadas por marcar como visualizado
         queryClient.invalidateQueries({ queryKey: ["/api/boletins"] });
-        queryClient.invalidateQueries({ queryKey: ["/api/biddings"] });
-        queryClient.invalidateQueries({ queryKey: ["/api/favorites"] });
-        queryClient.invalidateQueries({ queryKey: ["/api/filtros"] });
-        // Forçar múltiplas atualizações do calendário para garantir visualização imediata
-        setTimeout(() => {
-          queryClient.invalidateQueries({ queryKey: ["/api/boletins"] });
-        }, 50);
-        setTimeout(() => {
-          queryClient.invalidateQueries({ queryKey: ["/api/boletins"] });
-        }, 200);
       }
     });
   };
 
   const handleBackToCalendar = () => {
     setSelectedBoletim(null);
-    // Invalidar todas as queries relacionadas para forçar atualização completa do calendário
+    // Apenas invalidar boletins - voltar ao calendário não afeta outras queries
     queryClient.invalidateQueries({ queryKey: ["/api/boletins"] });
-    queryClient.invalidateQueries({ queryKey: ["/api/biddings"] });
-    queryClient.invalidateQueries({ queryKey: ["/api/favorites"] });
-    // Múltiplas atualizações para garantir que as cores das tarjas sejam atualizadas
-    setTimeout(() => {
-      queryClient.invalidateQueries({ queryKey: ["/api/boletins"] });
-    }, 25);
-    setTimeout(() => {
-      queryClient.invalidateQueries({ queryKey: ["/api/boletins"] });
-    }, 100);
-    setTimeout(() => {
-      queryClient.invalidateQueries({ queryKey: ["/api/boletins"] });
-    }, 300);
   };
 
   const monthStart = startOfMonth(currentDate);
@@ -186,6 +180,11 @@ export default function Boletins() {
 
   // Se um boletim estiver selecionado, mostrar as licitações
   if (selectedBoletim && boletimData) {
+    const licitacoes = boletimData.licitacoes || [];
+    const totalLic = licitacoes.length;
+    const licTotalPages = Math.max(1, Math.ceil(totalLic / licPerPage));
+    const paginatedLicitacoes = licitacoes.slice((licPage - 1) * licPerPage, licPage * licPerPage);
+
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
         <Navbar />
@@ -244,19 +243,37 @@ export default function Boletins() {
 
           {/* Conteúdo baseado na aba ativa */}
           {activeTab === 'licitacoes' && (
-            <div className="grid gap-6">
-              {boletimData.licitacoes.map((licitacao) => (
-                <BiddingCard 
-                  key={licitacao.id} 
-                  bidding={licitacao} 
-                  showFavoriteIcon={true} 
-                />
-              ))}
-              {boletimData.licitacoes.length === 0 && (
-                <div className="text-center py-12">
-                  <p className="text-gray-500 text-lg">Nenhuma licitação encontrada neste boletim.</p>
+            <div>
+              <div className="mb-4 flex items-center justify-between">
+                <div className="text-sm text-gray-600">Página {licPage} de {licTotalPages} — {totalLic} licitações</div>
+                <div className="flex items-center gap-2">
+                  <select
+                    className="border rounded px-2 py-1 text-sm"
+                    value={licPerPage}
+                    onChange={(e) => { setLicPage(1); setLicPerPage(parseInt(e.target.value) || 10); }}
+                  >
+                    <option value={10}>10</option>
+                    <option value={25}>25</option>
+                    <option value={50}>50</option>
+                  </select>
+                  <Button variant="outline" size="sm" disabled={licPage <= 1} onClick={() => setLicPage(p => Math.max(1, p - 1))}>Anterior</Button>
+                  <Button variant="outline" size="sm" disabled={licPage >= licTotalPages} onClick={() => setLicPage(p => Math.min(licTotalPages, p + 1))}>Próxima</Button>
                 </div>
-              )}
+              </div>
+              <div className="grid gap-6">
+                {paginatedLicitacoes.map((licitacao) => (
+                  <BiddingCard 
+                    key={licitacao.id} 
+                    bidding={licitacao} 
+                    showFavoriteIcon={true} 
+                  />
+                ))}
+                {totalLic === 0 && (
+                  <div className="text-center py-12">
+                    <p className="text-gray-500 text-lg">Nenhuma licitação encontrada neste boletim.</p>
+                  </div>
+                )}
+              </div>
             </div>
           )}
 
@@ -305,6 +322,21 @@ export default function Boletins() {
           <p className="text-sm md:text-base text-gray-500">
             Visualize boletins de licitações organizados por data
           </p>
+          {/* Pagination controls */}
+          <div className="mt-3 flex items-center justify-center gap-2">
+            <div className="text-sm text-gray-600">Página {page} de {totalPages} — {totalBoletins} boletins</div>
+            <select
+              className="border rounded px-2 py-1 text-sm"
+              value={perPage}
+              onChange={(e) => { setPage(1); setPerPage(parseInt(e.target.value) || 50); }}
+            >
+              <option value={25}>25</option>
+              <option value={50}>50</option>
+              <option value={100}>100</option>
+            </select>
+            <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage(p => Math.max(1, p - 1))}>Anterior</Button>
+            <Button variant="outline" size="sm" disabled={page >= totalPages} onClick={() => setPage(p => Math.min(totalPages, p + 1))}>Próxima</Button>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6 lg:gap-8">

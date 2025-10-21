@@ -28,15 +28,15 @@ export default function Dashboard() {
     queryKey: ["/api/biddings/count"],
   });
 
-  const { data: boletins = [], isLoading: isLoadingBoletins } = useQuery<Boletim[]>({
+  const { data: boletinsResp = { boletins: [], total: 0 }, isLoading: isLoadingBoletins } = useQuery<{ boletins: Boletim[]; total: number }>({
     queryKey: ["/api/boletins"],
   });
 
-  const { data: favorites = [], isLoading: isLoadingFavorites } = useQuery<Bidding[]>({
+  const { data: favoritesResp = { favorites: [], total: 0 }, isLoading: isLoadingFavorites } = useQuery<{ favorites: Bidding[]; total: number }>({
     queryKey: ["/api/favorites"],
-    refetchOnWindowFocus: true,
-    staleTime: 30000, // 30 segundos
-    refetchInterval: 5000, // Atualizar a cada 5 segundos
+    refetchOnWindowFocus: false, // Evitar refetch desnecessário ao focar na janela
+    staleTime: 60000, // 1 minuto - dados de favoritos não mudam frequentemente
+    refetchInterval: 30000, // Atualizar a cada 30 segundos - menos agressivo
     refetchOnMount: true,
   });
 
@@ -45,9 +45,10 @@ export default function Dashboard() {
   // Para estatísticas mais avançadas, usaremos estimativa baseada na contagem total
   const licitacoesAtivas = Math.round(totalLicitacoes * 0.3); // Estimativa: 30% das licitações estão ativas
 
+  const boletins = boletinsResp.boletins || [];
   const totalBoletins = boletins.length;
   const boletinsNaoVisualizados = boletins.filter(b => !b.visualizado).length;
-  const totalFavoritos = favorites.length;
+  const totalFavoritos = (favoritesResp.total ?? favoritesResp.favorites.length) || 0;
 
   const dashboardCards = [
     {

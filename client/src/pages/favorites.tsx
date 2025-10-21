@@ -83,6 +83,9 @@ export default function Favorites() {
   const [ufPopoverOpen, setUfPopoverOpen] = useState(false);
   const [userPopoverOpen, setUserPopoverOpen] = useState(false);
 
+  // Paginação
+  const [page, setPage] = useState(1);
+  const [perPage, setPerPage] = useState(50);
 
   // Buscar lista de usuários
   const { data: users = [] } = useQuery<any[]>({
@@ -92,11 +95,23 @@ export default function Favorites() {
   // Usar o primeiro usuário disponível se nenhum estiver selecionado
   const effectiveUserId = selectedUserId || users[0]?.id || user?.id;
   
-  const { data: favorites = [], isLoading } = useQuery<Bidding[]>({
-    queryKey: [`/api/favorites/${effectiveUserId}`],
+  const { data: favoritesResp, isLoading, isFetching } = useQuery<{ favorites: Bidding[]; total: number; page?: number; per_page?: number; }>({
+    queryKey: [`/api/favorites/${effectiveUserId}`, page, perPage],
     enabled: !!effectiveUserId,
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      params.append('page', String(page));
+      params.append('per_page', String(perPage));
+      const res = await fetch(`/api/favorites/${effectiveUserId}?${params.toString()}`);
+      if (!res.ok) throw new Error('Erro ao carregar favoritos');
+      return await res.json();
+    },
   });
 
+  const favorites = (favoritesResp?.favorites ?? []) as Bidding[];
+  const totalFavorites = favoritesResp?.total ?? favorites.length;
+  const totalPages = Math.max(1, Math.ceil(totalFavorites / perPage));
+  
   // Extrair órgãos únicos dos favoritos
   const uniqueOrgaos = Array.from(new Set(favorites.map(b => b.orgao_nome))).sort();
 
@@ -371,16 +386,6 @@ export default function Favorites() {
       const uf = any.uf || bidding.orgao_uf || "";
       const site = any.site || "";
       const codigoUnidade = any.codigoUasg || bidding.orgao_codigo || "";
-      
-      // Debug log para verificar dados do site no PDF
-      console.log(`🔍 PDF DEBUG - Licitação ID ${bidding.id}:`, {
-        biddingId: bidding.id,
-        siteFromAny: any.site,
-        site: site,
-        categoria: any.category,
-        customCategory: any.customCategory,
-        todasPropriedades: Object.keys(any)
-      });
       
       // Formatação correta do valor estimado
       let valorEstimado = "Não Informado";
@@ -1012,22 +1017,40 @@ export default function Favorites() {
           <h2 className="text-base md:text-lg font-semibold text-gray-900">
             {filteredFavorites.length === 0 ? 'Nenhum favorito encontrado' : `${filteredFavorites.length} favorito${filteredFavorites.length > 1 ? 's' : ''} encontrado${filteredFavorites.length > 1 ? 's' : ''}`}
           </h2>
-          {filteredFavorites.length > 0 && filteredFavorites.length !== favorites.length && (
+          {filteredFavorites.length > 0 && filteredFavorites.length !== totalFavorites && (
             <span className="text-xs md:text-sm text-gray-500">
-              {favorites.length} total
+              {totalFavorites} total
             </span>
           )}
         </div>
 
         {/* Results */}
         <div className="space-y-3 md:space-y-4 px-4">
+          {/* Pagination controls */}
+          <div className="flex items-center justify-between mb-2">
+            <div className="text-sm text-gray-600">Página {page} de {totalPages} — {totalFavorites} resultados</div>
+            <div className="flex items-center gap-2">
+              <select
+                className="border rounded px-2 py-1 text-sm"
+                value={perPage}
+                onChange={(e) => { setPage(1); setPerPage(parseInt(e.target.value) || 50); }}
+              >
+                <option value={25}>25</option>
+                <option value={50}>50</option>
+                <option value={100}>100</option>
+              </select>
+              <Button variant="outline" size="sm" disabled={page <= 1 || isFetching} onClick={() => setPage(p => Math.max(1, p - 1))}>Anterior</Button>
+              <Button variant="outline" size="sm" disabled={page >= totalPages || isFetching} onClick={() => setPage(p => Math.min(totalPages, p + 1))}>Próxima</Button>
+            </div>
+          </div>
+
           {filteredFavorites.length === 0 ? (
             <Card>
               <CardContent className="p-6 md:p-12 text-center">
                 <Search className="h-8 w-8 md:h-12 md:w-12 text-gray-400 mx-auto mb-3 md:mb-4" />
                 <h3 className="text-base md:text-lg font-medium text-gray-900 mb-2">Nenhum favorito encontrado</h3>
                 <p className="text-sm md:text-base text-gray-600">
-                  {favorites.length === 0 
+                  {totalFavorites === 0 
                     ? "Você ainda não marcou nenhuma licitação como favorita."
                     : "Não há favoritos que correspondam aos seus critérios de pesquisa."
                   }

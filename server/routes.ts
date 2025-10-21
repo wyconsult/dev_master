@@ -182,10 +182,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Debug endpoint para validar fonte dos dados
+  app.get("/api/debug/data-sources", async (req, res) => {
+    try {
+      const debugInfo = await conLicitacaoStorage.getDataSourcesDebugInfo();
+      res.json(debugInfo);
+    } catch (error) {
+      console.error('Erro ao buscar informações de debug:', error);
+      res.status(500).json({ message: "Erro interno do servidor" });
+    }
+  });
+
   // Biddings routes
   app.get("/api/biddings", async (req, res) => {
     try {
-      const { conlicitacao_id, orgao, uf, numero_controle } = req.query;
+      const { numero_controle, orgao, uf, conlicitacao_id, page, per_page } = req.query as any;
       const filters: any = {};
       
       if (conlicitacao_id) filters.conlicitacao_id = conlicitacao_id as string;
@@ -197,8 +208,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         filters.uf = Array.isArray(uf) ? uf : [uf];
       }
       
-      const biddings = await conLicitacaoStorage.getBiddings(filters);
-      res.json(biddings);
+      const pageNum = parseInt(page as string) || 1;
+      const perPageNum = parseInt(per_page as string) || 50;
+      
+      const { biddings, total } = await conLicitacaoStorage.getBiddingsPaginated(filters, pageNum, perPageNum);
+      res.json({ biddings, total, page: pageNum, per_page: perPageNum });
     } catch (error) {
       res.status(500).json({ message: "Erro interno do servidor" });
     }
@@ -235,15 +249,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       // Para o dashboard, usar usuário padrão (1) se não especificado
       const userId = 1; // Usuário padrão para desenvolvimento
-      console.log('🔍 [ROUTES] Buscando favoritos via MySQL Storage para usuário:', userId);
+      const { page, per_page } = req.query as any;
       const favorites = await storage.getFavorites(userId);
+
+      const pageNum = parseInt(page as string) || 1;
+      const perPageNum = parseInt(per_page as string) || 50;
+      const total = favorites.length;
+      const startIndex = (pageNum - 1) * perPageNum;
+      const paginated = favorites.slice(startIndex, startIndex + perPageNum);
       
       // Adicionar headers para evitar cache
       res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
       res.set('Pragma', 'no-cache');
       res.set('Expires', '0');
       
-      res.json(favorites);
+      res.json({ favorites: paginated, total, page: pageNum, per_page: perPageNum });
     } catch (error) {
       console.error('Erro ao buscar favoritos:', error);
       res.status(500).json({ message: "Erro interno do servidor" });
@@ -253,16 +273,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/favorites/:userId", async (req, res) => {
     try {
       const userId = parseInt(req.params.userId);
-      const { date, dateFrom, dateTo } = req.query;
-      console.log('🔍 [ROUTES] Buscando favoritos via MySQL Storage para usuário:', userId);
+      const { date, dateFrom, dateTo, page, per_page } = req.query as any;
       const favorites = await storage.getFavorites(userId, date as string, dateFrom as string, dateTo as string);
+
+      const pageNum = parseInt(page as string) || 1;
+      const perPageNum = parseInt(per_page as string) || 50;
+      const total = favorites.length;
+      const startIndex = (pageNum - 1) * perPageNum;
+      const paginated = favorites.slice(startIndex, startIndex + perPageNum);
       
       // Adicionar headers para evitar cache
       res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
       res.set('Pragma', 'no-cache');
       res.set('Expires', '0');
       
-      res.json(favorites);
+      res.json({ favorites: paginated, total, page: pageNum, per_page: perPageNum });
     } catch (error) {
       res.status(500).json({ message: "Erro interno do servidor" });
     }
@@ -276,7 +301,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "userId e biddingId são obrigatórios" });
       }
       
-      console.log('➕ [ROUTES] Adicionando favorito via MySQL Storage:', { userId, biddingId });
       const favorite = await storage.addFavorite({ userId, biddingId });
       res.status(201).json(favorite);
     } catch (error) {
@@ -289,7 +313,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = parseInt(req.params.userId);
       const biddingId = parseInt(req.params.biddingId);
       
-      console.log('➖ [ROUTES] Removendo favorito via MySQL Storage:', { userId, biddingId });
       await storage.removeFavorite(userId, biddingId);
       res.status(204).send();
     } catch (error) {
@@ -302,7 +325,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = parseInt(req.params.userId);
       const biddingId = parseInt(req.params.biddingId);
       
-      console.log('❓ [ROUTES] Verificando favorito via MySQL Storage:', { userId, biddingId });
       const isFavorite = await storage.isFavorite(userId, biddingId);
       res.json({ isFavorite });
     } catch (error) {
@@ -317,7 +339,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const biddingId = parseInt(req.params.biddingId);
       const { category, customCategory, notes, uf, codigoUasg, valorEstimado, fornecedor, site } = req.body;
       
-      console.log('🏷️ [ROUTES] Categorizando favorito via MySQL Storage:', { userId, biddingId, category });
       // Para categorização, vamos adicionar novamente o favorito com os dados de categorização
       await storage.addFavorite({
         userId,
@@ -385,14 +406,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Rota compatível para a interface atual de boletins
   app.get("/api/boletins", async (req, res) => {
     try {
+      const { page, per_page } = req.query as any;
+      const pageNum = parseInt(page as string) || 1;
+      const perPageNum = parseInt(per_page as string) || 50;
       // Buscar o primeiro filtro disponível e seus boletins
       const filtros = await conLicitacaoStorage.getFiltros();
       if (filtros.length === 0) {
-        return res.json([]);
+        return res.json({ boletins: [], total: 0, page: pageNum, per_page: perPageNum });
       }
       
-      const { boletins } = await conLicitacaoStorage.getBoletins(filtros[0].id, 1, 50);
-      res.json(boletins);
+      const { boletins, total } = await conLicitacaoStorage.getBoletins(filtros[0].id, pageNum, perPageNum);
+      res.json({ boletins, total, page: pageNum, per_page: perPageNum });
     } catch (error) {
       console.error('Erro ao buscar boletins:', error);
       res.status(500).json({ message: "Erro interno do servidor" });

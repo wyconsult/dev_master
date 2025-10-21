@@ -51,10 +51,10 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
   private viewedBoletins: Set<number>; // Armazena IDs dos boletins visualizados
   private currentUserId: number;
   private currentFavoriteId: number;
-  private cachedBiddings: Map<number, Bidding>; // Cache das licitações
+  private cachedBiddings: Map<number, Bidding & { cacheTimestamp: number, dataSource: 'api' | 'mock' }>; // Cache das licitações com metadata
   private lastCacheUpdate: number;
   private readonly CACHE_DURATION = 10 * 60 * 1000; // 10 minutos
-  private boletimCache = new Map<number, { data: any, timestamp: number }>();
+  private boletimCache = new Map<number, { data: any, timestamp: number, dataSource: 'api' | 'mock' }>();
   private readonly CACHE_TTL = 5 * 60 * 1000; // 5 minutos
   private fullLoadCompleted: boolean = false;
   private backgroundLoadingInProgress: boolean = false;
@@ -220,7 +220,17 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
 
       return {
         boletins: boletinsWithCounts,
-        total: response.filtro.total_boletins
+        total: (typeof (response as any)?.total === 'number'
+          ? (response as any).total
+          : (typeof (response as any)?.filtro?.total_boletins === 'number'
+            ? (response as any).filtro.total_boletins
+            : (typeof (response as any)?.total_boletins === 'number'
+              ? (response as any).total_boletins
+              : (typeof (response as any)?.pagination?.total === 'number'
+                ? (response as any).pagination.total
+                : (Array.isArray((response as any)?.boletins)
+                  ? (response as any).boletins.length
+                  : 0))))
       };
     } catch (error: any) {
       if (error.message === 'IP_NOT_AUTHORIZED') {
@@ -282,14 +292,27 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
     // Verificar cache primeiro
     const cached = this.boletimCache.get(id);
     if (cached && (Date.now() - cached.timestamp < this.CACHE_TTL)) {
-      console.log(`🎯 Cache hit para boletim ${id}`);
+      console.log(`🎯 Cache hit para boletim ${id} (fonte: ${cached.dataSource})`);
       return cached.data;
     }
     
     console.log(`📡 Buscando dados frescos para boletim ${id}`);
-    const data = await conLicitacaoAPI.getBoletimData(id);
-    this.boletimCache.set(id, { data, timestamp: Date.now() });
-    return data;
+    try {
+      const data = await conLicitacaoAPI.getBoletimData(id);
+      this.boletimCache.set(id, { data, timestamp: Date.now(), dataSource: 'api' });
+      console.log(`✅ Dados do boletim ${id} obtidos da API real`);
+      return data;
+    } catch (error: any) {
+      if (error.message === 'IP_NOT_AUTHORIZED') {
+        console.log(`⚠️ IP não autorizado para boletim ${id}, usando dados mock se disponíveis`);
+        // Se temos dados em cache (mesmo expirados), usar eles
+        if (cached) {
+          console.log(`🔄 Usando cache expirado para boletim ${id} (fonte: ${cached.dataSource})`);
+          return cached.data;
+        }
+      }
+      throw error;
+    }
   }
 
 
@@ -299,7 +322,8 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
       const response = await this.getCachedBoletimData(id);
       
       // Transformar licitações e acompanhamentos primeiro para contar corretamente
-      const licitacoes: Bidding[] = (response.licitacoes || []).map((licitacao: any) => this.transformLicitacaoFromAPI(licitacao, id));
+      const dataSource = this.boletimCache.get(id)?.dataSource || 'api';
+      const licitacoes: Bidding[] = (response.licitacoes || []).map((licitacao: any) => this.transformLicitacaoFromAPI(licitacao, id, dataSource));
       const acompanhamentos: Acompanhamento[] = (response.acompanhamentos || []).map((acomp: any) => ({
         id: acomp.id,
         conlicitacao_id: acomp.id,
@@ -1109,8 +1133,51 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
 
 
 
+  // Função para expandir status truncados da API (centralizada no backend)
+  private expandTruncatedStatus(status: string): string {
+    if (!status) return "NOVA";
+    
+    const truncatedMappings: { [key: string]: string } = {
+      "URGEN": "URGENTE",
+      "RET": "RETIFICAÇÃO", 
+      "ADIA": "ADIADA",
+      "PRO": "PRORROGADA",
+      "ALTER": "ALTERADA",
+      "REAB": "REABERTA",
+      "CANCE": "CANCELADA",
+      "SUS": "SUSPENSA",
+      "REVO": "REVOGADA",
+      "ABERTA": "ABERTA", 
+      "NOVA": "NOVA",
+      "EM_ANAL": "EM ANÁLISE",
+      "PRORROG": "PRORROGADA",
+      "ALTERA": "ALTERADA",
+      "FINALI": "FINALIZADA",
+      "SUSP": "SUSPENSA",
+      "CANCEL": "CANCELADA",
+      "DESERTA": "DESERTA",
+      "FRACAS": "FRACASSADA"
+    };
+
+    const upperStatus = status.toString().toUpperCase().trim();
+    
+    // Procura por correspondência exata primeiro
+    if (truncatedMappings[upperStatus]) {
+      return truncatedMappings[upperStatus];
+    }
+    
+    // Procura por correspondência parcial (status truncado)
+    for (const [truncated, full] of Object.entries(truncatedMappings)) {
+      if (truncated.startsWith(upperStatus) || upperStatus.startsWith(truncated)) {
+        return full;
+      }
+    }
+    
+    return upperStatus;
+  }
+
   // Transformar licitação conforme estrutura da documentação da API ConLicitação
-  private transformLicitacaoFromAPI(licitacao: any, boletimId: number): Bidding {
+  private transformLicitacaoFromAPI(licitacao: any, boletimId: number, dataSource: 'api' | 'mock' = 'api'): Bidding & { cacheTimestamp: number, dataSource: 'api' | 'mock' } {
     // Processar telefones conforme estrutura da API: orgao.telefone[].ddd, numero, ramal
     const telefones = licitacao.orgao?.telefone?.map((tel: any) => 
       `${tel.ddd ? '(' + tel.ddd + ')' : ''} ${tel.numero}${tel.ramal ? ' ramal ' + tel.ramal : ''}`
@@ -1129,9 +1196,14 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
       }
     }
 
-    // Normalizar situação (campo 'situacao' da API)
-    const situacao = licitacao.situacao || 'NOVA';
-    const situacaoNormalizada = situacao.toString().toUpperCase();
+    // Normalizar situação (campo 'situacao' da API) com expansão de truncamentos
+    const situacaoOriginal = licitacao.situacao || 'NOVA';
+    const situacaoExpandida = this.expandTruncatedStatus(situacaoOriginal);
+    
+    // Log de debug para rastrear transformações de status
+    if (situacaoOriginal !== situacaoExpandida) {
+      console.log(`🔄 Status expandido: "${situacaoOriginal}" → "${situacaoExpandida}" (ID: ${licitacao.id})`);
+    }
 
     return {
       id: licitacao.id, // Número ConLicitação
@@ -1144,7 +1216,7 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
       orgao_telefone: telefones, // Telefone processado
       orgao_site: licitacao.orgao?.site || '', // Site
       objeto: licitacao.objeto || '', // Objeto
-      situacao: situacaoNormalizada, // Situação
+      situacao: situacaoExpandida, // Situação (expandida no backend)
       datahora_abertura: licitacao.datahora_abertura || '', // Data/Hora abertura
       datahora_documento: licitacao.datahora_documento || null, // Data/Hora documento
       datahora_retirada: licitacao.datahora_retirada || null, // Data/Hora retirada
@@ -1159,6 +1231,9 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
       preco_edital: licitacao.preco_edital || 0, // Valor do edital
       valor_estimado: licitacao.valor_estimado || 0, // Valor estimado
       boletim_id: boletimId,
+      // Metadata de cache
+      cacheTimestamp: Date.now(),
+      dataSource: dataSource,
     };
   }
 
@@ -1173,30 +1248,28 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
     numero_controle?: string;
   }): Promise<Bidding[]> {
     // NOVO SISTEMA: SÓ carregar dados quando há filtros específicos
-    
+
     // Se não há filtros, retornar apenas dados de exemplo mínimos
     if (!filters || (!filters.numero_controle && !filters.conlicitacao_id && 
         (!filters.orgao || filters.orgao.length === 0) && 
         (!filters.uf || filters.uf.length === 0))) {
-      console.log('📋 Sem filtros específicos, carregando dados mínimos...');
       await this.loadMinimalSampleData();
-      return Array.from(this.cachedBiddings.values()).slice(0, 50); // Máximo 50 para não travar
+      const result = Array.from(this.cachedBiddings.values()).slice(0, 50);
+      return result;
     }
 
     // Se há busca por número de controle, fazer busca específica
     if (filters.numero_controle) {
-      console.log(`🎯 Busca específica por número de controle: ${filters.numero_controle}`);
       return await this.searchByControlNumber(filters.numero_controle);
     }
 
     // Para outros filtros, carregar dados limitados
     if (this.cachedBiddings.size === 0) {
-      console.log('⚡ Carregando dados básicos para filtros...');
       await this.loadMinimalSampleData();
     }
 
     let biddings = Array.from(this.cachedBiddings.values());
-    
+
     if (filters?.conlicitacao_id) {
       biddings = biddings.filter(b => 
         b.conlicitacao_id.toString().includes(filters.conlicitacao_id!)
@@ -1989,7 +2062,7 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
                 
                 if (boletimData.licitacoes) {
                   boletimData.licitacoes.forEach((licitacao: any) => {
-                    const transformedLicitacao = this.transformLicitacaoFromAPI(licitacao, boletim.id);
+                    const transformedLicitacao = this.transformLicitacaoFromAPI(licitacao, boletim.id, 'api');
                     // Sempre adicionar/atualizar no cache para garantir dados mais recentes
                     this.cachedBiddings.set(transformedLicitacao.id, transformedLicitacao);
                   });
@@ -2801,7 +2874,7 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
               
               if (boletimData.licitacoes) {
                 boletimData.licitacoes.forEach((licitacao: any) => {
-                  const transformedLicitacao = this.transformLicitacaoFromAPI(licitacao, boletim.id);
+                  const transformedLicitacao = this.transformLicitacaoFromAPI(licitacao, boletim.id, 'api');
                   this.cachedBiddings.set(transformedLicitacao.id, transformedLicitacao);
                 });
               }
@@ -2845,7 +2918,8 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
 
   // Nova função específica para busca por número de controle
   private async searchByControlNumber(numeroControle: string): Promise<Bidding[]> {
-    console.log(`🎯 Iniciando busca por número de controle: ${numeroControle}`);
+    console.log(`🎯 [DEBUG] Iniciando busca por número de controle: ${numeroControle}`);
+    console.log(`📊 [DEBUG] Cache atual contém ${this.cachedBiddings.size} licitações`);
     
     // Primeiro verificar no cache
     let biddings = Array.from(this.cachedBiddings.values()).filter(b => 
@@ -2856,10 +2930,17 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
     );
     
     if (biddings.length > 0) {
-      console.log(`✅ Encontrado no cache: ${biddings.length} licitações`);
+      console.log(`✅ [DEBUG] Encontrado no cache: ${biddings.length} licitações`);
+      // Log das fontes dos dados encontrados
+      const sourcesFound = biddings.reduce((acc, b) => {
+        acc[b.dataSource] = (acc[b.dataSource] || 0) + 1;
+        return acc;
+      }, {} as Record<string, number>);
+      console.log(`📈 [DEBUG] Fontes dos dados encontrados:`, sourcesFound);
       return biddings;
     }
     
+    console.log(`🔍 [DEBUG] Não encontrado no cache, iniciando busca específica...`);
     // Se não encontrou no cache, fazer busca específica
     await this.searchSpecificBidding(numeroControle);
     
@@ -2871,7 +2952,14 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
       b.edital?.toLowerCase().includes(numeroControle.toLowerCase())
     );
     
-    console.log(`✅ Busca específica finalizada: ${biddings.length} licitações encontradas`);
+    console.log(`✅ [DEBUG] Busca específica finalizada: ${biddings.length} licitações encontradas`);
+    if (biddings.length > 0) {
+      const sourcesFound = biddings.reduce((acc, b) => {
+        acc[b.dataSource] = (acc[b.dataSource] || 0) + 1;
+        return acc;
+      }, {} as Record<string, number>);
+      console.log(`📈 [DEBUG] Fontes dos dados encontrados após busca:`, sourcesFound);
+    }
     return biddings;
   }
 
@@ -2918,7 +3006,7 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
                   
                   // Carregar TODAS as licitações deste boletim (não só as que correspondem)
                   boletimData.licitacoes.forEach((licitacao: any) => {
-                    const transformedLicitacao = this.transformLicitacaoFromAPI(licitacao, boletim.id);
+                    const transformedLicitacao = this.transformLicitacaoFromAPI(licitacao, boletim.id, 'api');
                     this.cachedBiddings.set(transformedLicitacao.id, transformedLicitacao);
                   });
                   
@@ -3180,6 +3268,125 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
       };
       this.favorites.set(id, favorite);
     }
+  }
+
+  // Método de debug para validar fonte dos dados
+  async getDataSourcesDebugInfo() {
+    console.log('🔍 [DEBUG] Coletando informações de fonte dos dados...');
+    
+    const now = Date.now();
+    const cacheStats = {
+      biddings: {
+        total: this.cachedBiddings.size,
+        byDataSource: {} as Record<string, number>,
+        oldestEntry: null as string | null,
+        newestEntry: null as string | null,
+        cacheAge: null as number | null
+      },
+      boletins: {
+        total: this.boletimCache.size,
+        byDataSource: {} as Record<string, number>,
+        oldestEntry: null as string | null,
+        newestEntry: null as string | null,
+        cacheAge: null as number | null
+      }
+    };
+
+    // Analisar cache de biddings
+    let oldestBiddingTime = Infinity;
+    let newestBiddingTime = 0;
+    
+    for (const bidding of this.cachedBiddings.values()) {
+      const dataSource = bidding.dataSource || 'unknown';
+      cacheStats.biddings.byDataSource[dataSource] = (cacheStats.biddings.byDataSource[dataSource] || 0) + 1;
+      
+      if (bidding.cacheTimestamp) {
+        if (bidding.cacheTimestamp < oldestBiddingTime) {
+          oldestBiddingTime = bidding.cacheTimestamp;
+          cacheStats.biddings.oldestEntry = new Date(bidding.cacheTimestamp).toISOString();
+        }
+        if (bidding.cacheTimestamp > newestBiddingTime) {
+          newestBiddingTime = bidding.cacheTimestamp;
+          cacheStats.biddings.newestEntry = new Date(bidding.cacheTimestamp).toISOString();
+        }
+      }
+    }
+    
+    if (newestBiddingTime > 0) {
+      cacheStats.biddings.cacheAge = Math.round((now - newestBiddingTime) / 1000 / 60); // em minutos
+    }
+
+    // Analisar cache de boletins
+    let oldestBoletimTime = Infinity;
+    let newestBoletimTime = 0;
+    
+    for (const boletim of this.boletimCache.values()) {
+      const dataSource = boletim.dataSource || 'unknown';
+      cacheStats.boletins.byDataSource[dataSource] = (cacheStats.boletins.byDataSource[dataSource] || 0) + 1;
+      
+      if (boletim.cacheTimestamp) {
+        if (boletim.cacheTimestamp < oldestBoletimTime) {
+          oldestBoletimTime = boletim.cacheTimestamp;
+          cacheStats.boletins.oldestEntry = new Date(boletim.cacheTimestamp).toISOString();
+        }
+        if (boletim.cacheTimestamp > newestBoletimTime) {
+          newestBoletimTime = boletim.cacheTimestamp;
+          cacheStats.boletins.newestEntry = new Date(boletim.cacheTimestamp).toISOString();
+        }
+      }
+    }
+    
+    if (newestBoletimTime > 0) {
+      cacheStats.boletins.cacheAge = Math.round((now - newestBoletimTime) / 1000 / 60); // em minutos
+    }
+
+    // Testar conectividade com API
+    let apiStatus = 'unknown';
+    let apiError = null;
+    
+    try {
+      console.log('🔍 [DEBUG] Testando conectividade com API ConLicitação...');
+      const testResponse = await conLicitacaoAPI.getFiltros();
+      apiStatus = Array.isArray(testResponse) && testResponse.length > 0 ? 'connected' : 'empty_response';
+    } catch (error) {
+      apiStatus = 'error';
+      apiError = error instanceof Error ? error.message : 'Unknown error';
+      console.log('❌ [DEBUG] Erro na conectividade com API:', apiError);
+    }
+
+    const debugInfo = {
+      timestamp: new Date().toISOString(),
+      environment: process.env.NODE_ENV || 'development',
+      apiStatus,
+      apiError,
+      cache: cacheStats,
+      dataQuality: {
+        potentialFallbackData: cacheStats.biddings.byDataSource['fallback'] || 0,
+        realApiData: cacheStats.biddings.byDataSource['api'] || 0,
+        unknownSource: cacheStats.biddings.byDataSource['unknown'] || 0
+      },
+      recommendations: []
+    };
+
+    // Adicionar recomendações baseadas na análise
+    if (apiStatus === 'error') {
+      debugInfo.recommendations.push('API ConLicitação não está acessível - dados podem estar desatualizados');
+    }
+    
+    if (cacheStats.biddings.cacheAge && cacheStats.biddings.cacheAge > 60) {
+      debugInfo.recommendations.push(`Cache de biddings está antigo (${cacheStats.biddings.cacheAge} minutos) - considere atualizar`);
+    }
+    
+    if (debugInfo.dataQuality.potentialFallbackData > 0) {
+      debugInfo.recommendations.push(`${debugInfo.dataQuality.potentialFallbackData} registros podem ser dados de fallback`);
+    }
+    
+    if (debugInfo.dataQuality.unknownSource > 0) {
+      debugInfo.recommendations.push(`${debugInfo.dataQuality.unknownSource} registros têm fonte desconhecida - verificar integridade`);
+    }
+
+    console.log('✅ [DEBUG] Informações de debug coletadas:', debugInfo);
+    return debugInfo;
   }
 }
 
