@@ -220,17 +220,14 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
 
       return {
         boletins: boletinsWithCounts,
-        total: (typeof (response as any)?.total === 'number'
-          ? (response as any).total
-          : (typeof (response as any)?.filtro?.total_boletins === 'number'
-            ? (response as any).filtro.total_boletins
-            : (typeof (response as any)?.total_boletins === 'number'
-              ? (response as any).total_boletins
-              : (typeof (response as any)?.pagination?.total === 'number'
-                ? (response as any).pagination.total
-                : (Array.isArray((response as any)?.boletins)
-                  ? (response as any).boletins.length
-                  : 0))))
+        total: (() => {
+          const r: any = response as any;
+          const candidates = [r?.total, r?.filtro?.total_boletins, r?.total_boletins, r?.pagination?.total];
+          const found = candidates.find((v: any) => typeof v === 'number');
+          return typeof found === 'number'
+            ? found
+            : (Array.isArray(r?.boletins) ? r.boletins.length : 0);
+        })()
       };
     } catch (error: any) {
       if (error.message === 'IP_NOT_AUTHORIZED') {
