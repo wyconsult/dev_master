@@ -611,24 +611,6 @@ export default function Biddings() {
 
         {/* Results */}
         <div className="space-y-3 md:space-y-4 px-4">
-          {/* Pagination controls */}
-          <div className="flex items-center justify-between mb-2">
-            <div className="text-sm text-gray-600">Página {page} de {totalPages} — {totalBiddings} resultados</div>
-            <div className="flex items-center gap-2">
-              <select
-                className="border rounded px-2 py-1 text-sm"
-                value={perPage}
-                onChange={(e) => { setPage(1); setPerPage(parseInt(e.target.value) || 50); }}
-              >
-                <option value={25}>25</option>
-                <option value={50}>50</option>
-                <option value={100}>100</option>
-              </select>
-              <Button variant="outline" size="sm" disabled={page <= 1 || isFetching} onClick={() => setPage(p => Math.max(1, p - 1))}>Anterior</Button>
-              <Button variant="outline" size="sm" disabled={page >= totalPages || isFetching} onClick={() => setPage(p => Math.min(totalPages, p + 1))}>Próxima</Button>
-            </div>
-          </div>
-
           {filteredBiddings.length === 0 ? (
             <Card>
               <CardContent className="p-6 md:p-12 text-center">
@@ -644,6 +626,24 @@ export default function Biddings() {
               ))}
             </>
           )}
+
+          {/* Pagination controls - moved to bottom */}
+          <div className="mt-4 flex items-center justify-between">
+            <div className="text-sm text-gray-600">Página {page} de {totalPages} — {totalBiddings} resultados</div>
+            <div className="flex items-center gap-2">
+              <select
+                className="border rounded px-2 py-1 text-sm"
+                value={perPage}
+                onChange={(e) => { setPage(1); setPerPage(parseInt(e.target.value) || 50); }}
+              >
+                <option value={25}>25</option>
+                <option value={50}>50</option>
+                <option value={100}>100</option>
+              </select>
+              <Button variant="outline" size="sm" disabled={page <= 1 || isFetching} onClick={() => setPage(p => Math.max(1, p - 1))}>Anterior</Button>
+              <Button variant="outline" size="sm" disabled={page >= totalPages || isFetching} onClick={() => setPage(p => Math.min(totalPages, p + 1))}>Próxima</Button>
+            </div>
+          </div>
         </div>
       </div>
     </div>

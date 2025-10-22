@@ -244,7 +244,21 @@ export default function Boletins() {
           {/* Conteúdo baseado na aba ativa */}
           {activeTab === 'licitacoes' && (
             <div>
-              <div className="mb-4 flex items-center justify-between">
+              <div className="grid gap-6">
+                {paginatedLicitacoes.map((licitacao) => (
+                  <BiddingCard 
+                    key={licitacao.id} 
+                    bidding={licitacao} 
+                    showFavoriteIcon={true} 
+                  />
+                ))}
+                {totalLic === 0 && (
+                  <div className="text-center py-12">
+                    <p className="text-gray-500 text-lg">Nenhuma licitação encontrada neste boletim.</p>
+                  </div>
+                )}
+              </div>
+              <div className="mt-6 flex items-center justify-between">
                 <div className="text-sm text-gray-600">Página {licPage} de {licTotalPages} — {totalLic} licitações</div>
                 <div className="flex items-center gap-2">
                   <select
@@ -259,20 +273,6 @@ export default function Boletins() {
                   <Button variant="outline" size="sm" disabled={licPage <= 1} onClick={() => setLicPage(p => Math.max(1, p - 1))}>Anterior</Button>
                   <Button variant="outline" size="sm" disabled={licPage >= licTotalPages} onClick={() => setLicPage(p => Math.min(licTotalPages, p + 1))}>Próxima</Button>
                 </div>
-              </div>
-              <div className="grid gap-6">
-                {paginatedLicitacoes.map((licitacao) => (
-                  <BiddingCard 
-                    key={licitacao.id} 
-                    bidding={licitacao} 
-                    showFavoriteIcon={true} 
-                  />
-                ))}
-                {totalLic === 0 && (
-                  <div className="text-center py-12">
-                    <p className="text-gray-500 text-lg">Nenhuma licitação encontrada neste boletim.</p>
-                  </div>
-                )}
               </div>
             </div>
           )}
@@ -322,21 +322,7 @@ export default function Boletins() {
           <p className="text-sm md:text-base text-gray-500">
             Visualize boletins de licitações organizados por data
           </p>
-          {/* Pagination controls */}
-          <div className="mt-3 flex items-center justify-center gap-2">
-            <div className="text-sm text-gray-600">Página {page} de {totalPages} — {totalBoletins} boletins</div>
-            <select
-              className="border rounded px-2 py-1 text-sm"
-              value={perPage}
-              onChange={(e) => { setPage(1); setPerPage(parseInt(e.target.value) || 50); }}
-            >
-              <option value={25}>25</option>
-              <option value={50}>50</option>
-              <option value={100}>100</option>
-            </select>
-            <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage(p => Math.max(1, p - 1))}>Anterior</Button>
-            <Button variant="outline" size="sm" disabled={page >= totalPages} onClick={() => setPage(p => Math.min(totalPages, p + 1))}>Próxima</Button>
-          </div>
+
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6 lg:gap-8">
@@ -575,8 +561,9 @@ export default function Boletins() {
               </CardContent>
             </Card>
           </div>
-        </div>
+
       </div>
     </div>
+  </div>
   );
 }
