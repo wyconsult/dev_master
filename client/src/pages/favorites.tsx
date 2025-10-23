@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Navbar } from "@/components/navbar";
 import { Button } from "@/components/ui/button";
@@ -87,7 +87,10 @@ export default function Favorites() {
   const [page, setPage] = useState(1);
   const [perPage, setPerPage] = useState(50);
 
-  // Buscar lista de usuários
+  // Ao mudar de página, rola para o topo
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, [page]);
   const { data: users = [] } = useQuery<any[]>({
     queryKey: ['/api/users'],
   });

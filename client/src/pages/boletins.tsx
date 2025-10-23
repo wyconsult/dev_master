@@ -26,10 +26,19 @@ export default function Boletins() {
   const [page, setPage] = useState(1);
   const [perPage, setPerPage] = useState(50);
 
+  // Ao mudar de página da lista de boletins, rola para o topo
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, [page]);
+
   // Paginação das licitações no detalhe do boletim
   const [licPage, setLicPage] = useState(1);
   const [licPerPage, setLicPerPage] = useState(50);
 
+  // Ao mudar de página das licitações do boletim, rola para o topo
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, [licPage]);
   const { data: boletinsResp, isLoading, error } = useQuery<{ boletins: Boletim[]; total: number; page?: number; per_page?: number; }>({
     queryKey: ["/api/boletins", page, perPage],
     retry: 3,
@@ -299,6 +308,19 @@ export default function Boletins() {
               )}
             </div>
           )}
+
+          {/* Botão de voltar ao calendário no rodapé */}
+          <div className="mt-8 px-4">
+            <Button 
+              variant="outline" 
+              onClick={handleBackToCalendar}
+              className="text-sm"
+              size="sm"
+            >
+              <ArrowLeft className="h-3 w-3 md:h-4 md:w-4 mr-2" />
+              Voltar ao Calendário
+            </Button>
+          </div>
         </div>
       </div>
     );

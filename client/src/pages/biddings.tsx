@@ -77,6 +77,10 @@ export default function Biddings() {
   const [page, setPage] = useState(1);
   const [perPage, setPerPage] = useState(50);
 
+  // Ao mudar de página, rola para o topo
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, [page]);
   const buildFilters = () => {
     const filters: any = {};
     if (numeroControlePesquisado) filters.numero_controle = numeroControlePesquisado;
