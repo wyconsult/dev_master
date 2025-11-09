@@ -38,6 +38,16 @@ export interface IStorage {
   addFavorite(favorite: InsertFavorite): Promise<Favorite>;
   removeFavorite(userId: number, biddingId: number): Promise<void>;
   isFavorite(userId: number, biddingId: number): Promise<boolean>;
+  updateFavoriteCategorization(userId: number, biddingId: number, data: {
+    category?: string;
+    customCategory?: string;
+    notes?: string;
+    uf?: string;
+    codigoUasg?: string;
+    valorEstimado?: string;
+    fornecedor?: string;
+    site?: string;
+  }): Promise<void>;
   
   // Boletins
   getBoletins(): Promise<Boletim[]>;
@@ -278,6 +288,52 @@ export class DatabaseStorage implements IStorage {
     return !!favorite;
   }
 
+  async updateFavoriteCategorization(userId: number, biddingId: number, data: {
+    category?: string;
+    customCategory?: string;
+    notes?: string;
+    uf?: string;
+    codigoUasg?: string;
+    valorEstimado?: string;
+    fornecedor?: string;
+    site?: string;
+  }): Promise<void> {
+    // Usar MySQL2 diretamente para executar UPDATE por (user_id, bidding_id)
+    const mysql = await import('mysql2/promise');
+    const pool = mysql.createPool({
+      host: process.env.DB_HOST || 'localhost',
+      user: process.env.DB_USER || 'geovani',
+      password: process.env.DB_PASSWORD || 'Vermelho006@',
+      database: process.env.DB_NAME || 'jlg_consultoria',
+    });
+
+    const [result] = await pool.execute(
+      `UPDATE favorites
+       SET category = ?, custom_category = ?, notes = ?, uf = ?, codigo_uasg = ?, valor_estimado = ?, fornecedor = ?, site = ?
+       WHERE user_id = ? AND bidding_id = ?`,
+      [
+        data.category ?? null,
+        data.customCategory ?? null,
+        data.notes ?? null,
+        data.uf ?? null,
+        data.codigoUasg ?? null,
+        data.valorEstimado ?? null,
+        data.fornecedor ?? null,
+        data.site ?? null,
+        userId,
+        biddingId,
+      ]
+    );
+
+    await pool.end();
+
+    const affected = (result as any).affectedRows as number | undefined;
+    if (!affected || affected === 0) {
+      // Nenhum registro encontrado para atualizar; lançar erro para a rota tratar
+      throw new Error('FAVORITE_NOT_FOUND');
+    }
+  }
+
   async getBoletins(): Promise<Boletim[]> {
     return await db.select().from(boletins);
   }
@@ -494,6 +550,38 @@ export class MemStorage implements IStorage {
   async isFavorite(userId: number, biddingId: number): Promise<boolean> {
     return Array.from(this.favorites.values())
       .some(fav => fav.userId === userId && fav.biddingId === biddingId);
+  }
+
+  async updateFavoriteCategorization(userId: number, biddingId: number, data: {
+    category?: string;
+    customCategory?: string;
+    notes?: string;
+    uf?: string;
+    codigoUasg?: string;
+    valorEstimado?: string;
+    fornecedor?: string;
+    site?: string;
+  }): Promise<void> {
+    const favoriteToUpdate = Array.from(this.favorites.values())
+      .find(fav => fav.userId === userId && fav.biddingId === biddingId);
+
+    if (!favoriteToUpdate) {
+      throw new Error('FAVORITE_NOT_FOUND');
+    }
+
+    const updated: Favorite = {
+      ...favoriteToUpdate,
+      category: data.category ?? null,
+      customCategory: data.customCategory ?? null,
+      notes: data.notes ?? null,
+      uf: data.uf ?? null,
+      codigoUasg: data.codigoUasg ?? null,
+      valorEstimado: data.valorEstimado ?? null,
+      fornecedor: data.fornecedor ?? null,
+      site: data.site ?? null,
+    };
+
+    this.favorites.set(updated.id, updated);
   }
 
   async getBoletins(): Promise<Boletim[]> {

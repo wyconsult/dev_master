@@ -108,11 +108,7 @@ export function TabulationDialog({
       site: selectedSite?.trim() || null,
     };
 
-    // Debug log para verificar se o site está sendo salvo
-    console.log('🔍 DEBUG - Dados sendo salvos:', {
-      site: selectedSite,
-      categorizationData
-    });
+    // Logs removidos para produção
 
     try {
       // Apenas salva a categorização - que também adiciona aos favoritos se necessário
@@ -123,7 +119,6 @@ export function TabulationDialog({
         description: "Licitação adicionada aos favoritos com categorização completa.",
       });
     } catch (error) {
-      console.error('❌ Erro ao salvar categorização:', error);
       toast({
         title: "Erro",
         description: "Erro ao salvar categorização.",

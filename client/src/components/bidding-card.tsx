@@ -120,6 +120,45 @@ export function BiddingCard({
     return dates;
   };
 
+  // Preferir dados editados (favoritos) quando disponíveis
+  const displayUf = favoriteData?.uf || bidding.orgao_uf;
+  const displayCodigoUasg = favoriteData?.codigoUasg || bidding.orgao_codigo;
+  const displayValorEstimado = (() => {
+    if (favoriteData?.valorEstimado) {
+      try {
+        const clean = favoriteData.valorEstimado.toString().replace(/[^\d,.]/g, '');
+        let normalized = clean;
+        if (normalized.includes('.') && normalized.includes(',')) {
+          normalized = normalized.replace(/\./g, '').replace(',', '.');
+        } else if (normalized.includes('.') && !normalized.includes(',')) {
+          const parts = normalized.split('.');
+          if (parts.length === 2 && parts[1].length === 3) {
+            normalized = normalized.replace('.', '');
+          }
+        }
+        const num = parseFloat(normalized);
+        if (!isNaN(num)) {
+          return `R$ ${num.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+        }
+        return favoriteData.valorEstimado;
+      } catch {
+        return favoriteData.valorEstimado;
+      }
+    }
+    if (bidding.valor_estimado) {
+      const num = typeof bidding.valor_estimado === 'number' 
+        ? bidding.valor_estimado 
+        : parseFloat(bidding.valor_estimado.toString());
+      if (!isNaN(num)) {
+        return `R$ ${num.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+      }
+      return bidding.valor_estimado?.toString() || '--';
+    }
+    return '--';
+  })();
+
+  // Logs removidos para produção
+
   const handleFavoriteClick = () => {
     if (user) {
       if (!isFavorite) {
@@ -155,13 +194,7 @@ export function BiddingCard({
       bidding.documento_url === null ||
       bidding.documento_url === undefined;
 
-    // Log para debug em desenvolvimento
-    console.log(`🔗 DEBUG LINK - Licitação ${bidding.id}:`, {
-      documento_url: bidding.documento_url,
-      link_edital: bidding.link_edital,
-      documentLink: documentLink,
-      isInvalidLink: isInvalidLink
-    });
+    // Logs removidos para produção
 
     if (isInvalidLink) {
       // Mostrar popup de erro ao invés de abrir link inválido
@@ -261,17 +294,14 @@ export function BiddingCard({
 
           <div className="grid grid-cols-1 gap-2">
             <span className="text-gray-700">
-              <strong>Órgão:</strong> {bidding.orgao_codigo ? `${bidding.orgao_codigo} - ${bidding.orgao_nome}` : bidding.orgao_nome}
+              <strong>Órgão:</strong> {displayCodigoUasg ? `${displayCodigoUasg} - ${bidding.orgao_nome}` : bidding.orgao_nome}
             </span>
             <span className="text-gray-700">
-              <strong>Valor Estimado:</strong> {bidding.valor_estimado 
-                ? `R$ ${bidding.valor_estimado.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` 
-                : '--'
-              }
+              <strong>Valor Estimado:</strong> {displayValorEstimado}
             </span>
             <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-2 md:gap-0">
               <span className="text-gray-700">
-                <strong>Cidade:</strong> {bidding.orgao_cidade} - {bidding.orgao_uf}
+                <strong>Cidade:</strong> {bidding.orgao_cidade} - {displayUf}
               </span>
               <a
                 href="#"
@@ -313,6 +343,18 @@ export function BiddingCard({
                 </div>
               )}
             </div>
+
+            {/* Campos categorizados visíveis quando presentes */}
+            {(favoriteData?.site || favoriteData?.fornecedor) && (
+              <div className="mt-2 grid grid-cols-1 md:grid-cols-2 gap-2 text-xs text-gray-600">
+                {favoriteData?.site && (
+                  <span><strong>Site:</strong> {favoriteData.site}</span>
+                )}
+                {favoriteData?.fornecedor && (
+                  <span><strong>Fornecedor:</strong> {favoriteData.fornecedor}</span>
+                )}
+              </div>
+            )}
           </div>
         )}
       </CardContent>

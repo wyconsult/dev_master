@@ -338,11 +338,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = parseInt(req.params.userId);
       const biddingId = parseInt(req.params.biddingId);
       const { category, customCategory, notes, uf, codigoUasg, valorEstimado, fornecedor, site } = req.body;
-      
-      // Para categorização, vamos adicionar novamente o favorito com os dados de categorização
-      await storage.addFavorite({
-        userId,
-        biddingId,
+
+      // Garantir que o favorito existe antes de atualizar para evitar duplicação
+      const exists = await storage.isFavorite(userId, biddingId);
+      if (!exists) {
+        return res.status(404).json({ message: "Favorito não encontrado para categorização" });
+      }
+
+      await storage.updateFavoriteCategorization(userId, biddingId, {
         category,
         customCategory,
         notes,
@@ -350,9 +353,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         codigoUasg,
         valorEstimado,
         fornecedor,
-        site
+        site,
       });
-      
+
+      // Evitar cache em responses para refletir imediatamente
+      res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+      res.set('Pragma', 'no-cache');
+      res.set('Expires', '0');
       res.json({ success: true });
     } catch (error) {
       console.error('Erro ao atualizar categorização:', error);
