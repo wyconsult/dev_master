@@ -10,7 +10,9 @@ module.exports = {
     max_memory_restart: '1G',
     env: {
       NODE_ENV: 'production',
-      PORT: 5000
+      PORT: 5000,
+      // Forçar resolução DNS priorizando IPv4 para chamadas externas
+      NODE_OPTIONS: '--dns-result-order=ipv4first'
     },
     error_file: 'logs/err.log',
     out_file: 'logs/out.log',

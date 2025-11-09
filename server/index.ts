@@ -1,3 +1,7 @@
+import 'dotenv/config';
+import dns from 'node:dns';
+// Priorizar IPv4 para evitar uso de IPv6 não autorizado na API externa
+dns.setDefaultResultOrder('ipv4first');
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
