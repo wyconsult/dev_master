@@ -95,8 +95,8 @@ export default function Favorites() {
     queryKey: ['/api/users'],
   });
 
-  // Usar o primeiro usuário disponível se nenhum estiver selecionado
-  const effectiveUserId = selectedUserId || users[0]?.id || user?.id;
+  // Selecionar por padrão o usuário logado; se não houver, usar o primeiro da lista
+  const effectiveUserId = selectedUserId ?? user?.id ?? users[0]?.id;
   
   const { data: favoritesResp, isLoading, isFetching } = useQuery<{ favorites: Bidding[]; total: number; page?: number; per_page?: number; }>({
     queryKey: [`/api/favorites/${effectiveUserId}`, page, perPage],
