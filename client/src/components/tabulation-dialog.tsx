@@ -22,6 +22,7 @@ interface TabulationDialogProps {
   bidding: Bidding;
   isOpen: boolean;
   onClose: () => void;
+  alreadyFavorite?: boolean;
   currentCategory?: string;
   currentCustomCategory?: string;
   currentNotes?: string;
@@ -36,6 +37,7 @@ export function TabulationDialog({
   bidding, 
   isOpen,
   onClose,
+  alreadyFavorite = false,
   currentCategory = "",
   currentCustomCategory = "",
   currentNotes = "",
@@ -108,15 +110,19 @@ export function TabulationDialog({
       site: selectedSite?.trim() || null,
     };
 
-    // Logs removidos para produção
+    try {  
+      if (!alreadyFavorite) {
+        await addToFavorites(bidding.id).catch(() => {});
+      }
 
-    try {
       // Apenas salva a categorização - que também adiciona aos favoritos se necessário
       await updateCategorization(categorizationData);
 
       toast({
         title: "Categorização salva",
-        description: "Licitação adicionada aos favoritos com categorização completa.",
+        description: alreadyFavorite 
+          ? "Categorização atualizada com sucesso."
+          : "Licitação adicionada aos favoritos com categorização completa.",
       });
     } catch (error) {
       toast({

@@ -364,6 +364,7 @@ export function BiddingCard({
         bidding={bidding}
         isOpen={showTabulationDialog}
         onClose={() => setShowTabulationDialog(false)}
+        alreadyFavorite={isFavorite}
         currentCategory={favoriteData?.category}
         currentCustomCategory={favoriteData?.customCategory}
         currentNotes={favoriteData?.notes}
