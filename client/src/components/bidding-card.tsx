@@ -126,13 +126,18 @@ export function BiddingCard({
   const displayValorEstimado = (() => {
     if (favoriteData?.valorEstimado) {
       try {
-        const clean = favoriteData.valorEstimado.toString().replace(/[^\d,.]/g, '');
+        const raw = favoriteData.valorEstimado.toString();
+        const clean = raw.replace(/[^\d.,-]/g, '');
         let normalized = clean;
-        if (normalized.includes('.') && normalized.includes(',')) {
+        if (normalized.includes(',') && normalized.includes('.')) {
           normalized = normalized.replace(/\./g, '').replace(',', '.');
-        } else if (normalized.includes('.') && !normalized.includes(',')) {
+        } else if (normalized.includes(',')) {
+          normalized = normalized.replace(',', '.');
+        } else if (normalized.includes('.')) {
           const parts = normalized.split('.');
-          if (parts.length === 2 && parts[1].length === 3) {
+          if (parts.length > 2) {
+            normalized = normalized.replace(/\./g, '');
+          } else if (parts.length === 2 && parts[1].length === 3) {
             normalized = normalized.replace('.', '');
           }
         }

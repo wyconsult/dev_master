@@ -63,7 +63,15 @@ export function FavoriteCategorization({
   const [uf, setUf] = useState(initialUf || bidding.orgao_uf || "");
   const [codigoUasg, setCodigoUasg] = useState(initialCodigoUasg || bidding.orgao_codigo || "");
   const [valorEstimado, setValorEstimado] = useState(
-    initialEstimatedValue || (bidding.valor_estimado ? `R$ ${bidding.valor_estimado.toLocaleString('pt-BR')}` : "")
+    initialEstimatedValue || (
+      bidding.valor_estimado
+        ? `R$ ${(
+            typeof bidding.valor_estimado === 'number'
+              ? bidding.valor_estimado
+              : parseFloat(bidding.valor_estimado.toString())
+          ).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+        : ""
+    )
   );
   const [fornecedor, setFornecedor] = useState(initialFornecedor || "");
   const [selectedSite, setSelectedSite] = useState(initialSite);

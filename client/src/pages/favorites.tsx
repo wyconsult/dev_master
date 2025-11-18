@@ -390,26 +390,21 @@ export default function Favorites() {
       const site = any.site || "";
       const codigoUnidade = any.codigoUasg || bidding.orgao_codigo || "";
       
-      // Formatação correta do valor estimado
       let valorEstimado = "Não Informado";
       if (any.valorEstimado) {
-        // Se valor estimado foi preenchido na categorização
-        let cleanValue = any.valorEstimado.toString().replace(/[^\d,.]/g, '');
-        
-        // Tratar formato brasileiro: R$ 65.000,00 ou R$ 65.000 ou R$ 65000
-        if (cleanValue.includes('.') && cleanValue.includes(',')) {
-          // Formato: 65.000,00 - ponto é separador de milhares, vírgula é decimal
+        let cleanValue = any.valorEstimado.toString().replace(/[^\d.,-]/g, '');
+        if (cleanValue.includes(',') && cleanValue.includes('.')) {
           cleanValue = cleanValue.replace(/\./g, '').replace(',', '.');
-        } else if (cleanValue.includes('.') && !cleanValue.includes(',')) {
-          // Formato: 65.000 - assumir que ponto é separador de milhares se valor >= 1000
+        } else if (cleanValue.includes(',')) {
+          cleanValue = cleanValue.replace(',', '.');
+        } else if (cleanValue.includes('.')) {
           const parts = cleanValue.split('.');
-          if (parts.length === 2 && parts[1].length === 3) {
-            // Provável separador de milhares (ex: 65.000)
+          if (parts.length > 2) {
+            cleanValue = cleanValue.replace(/\./g, '');
+          } else if (parts.length === 2 && parts[1].length === 3) {
             cleanValue = cleanValue.replace('.', '');
           }
-          // Se for formato decimal americano (ex: 65.50), manter como está
         }
-        
         const numericValue = parseFloat(cleanValue);
         if (!isNaN(numericValue)) {
           valorEstimado = `R$ ${numericValue.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -417,7 +412,6 @@ export default function Favorites() {
           valorEstimado = any.valorEstimado;
         }
       } else if (bidding.valor_estimado) {
-        // Se há valor estimado da licitação original
         const numericValue = typeof bidding.valor_estimado === 'number' ? bidding.valor_estimado : parseFloat(bidding.valor_estimado.toString());
         if (!isNaN(numericValue)) {
           valorEstimado = `R$ ${numericValue.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;

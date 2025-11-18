@@ -59,7 +59,17 @@ export function TabulationDialog({
   const [siteOpen, setSiteOpen] = useState(false);
   const [uf, setUf] = useState(currentUf || bidding.orgao_uf || '');
   const [codigoUasg, setCodigoUasg] = useState(currentCodigoUasg || bidding.orgao_codigo || '');
-  const [valorEstimado, setValorEstimado] = useState(currentValorEstimado || (bidding.valor_estimado ? `R$ ${bidding.valor_estimado.toLocaleString('pt-BR')}` : ''));
+  const [valorEstimado, setValorEstimado] = useState(
+    currentValorEstimado || (
+      bidding.valor_estimado
+        ? `R$ ${(
+            typeof bidding.valor_estimado === 'number'
+              ? bidding.valor_estimado
+              : parseFloat(bidding.valor_estimado.toString())
+          ).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+        : ''
+    )
+  );
   // Sites disponíveis (incluindo o selecionado se não estiver na lista)
   const allSites = [...SITES_LIST, ...(selectedSite && !SITES_LIST.includes(selectedSite) ? [selectedSite] : [])];
   
