@@ -52,6 +52,8 @@ export const favorites = mysqlTable("favorites", {
   valorEstimado: varchar("valor_estimado", { length: 100 }), // Valor estimado/contratado
   fornecedor: varchar("fornecedor", { length: 255 }), // Fornecedor/UASG do fornecedor
   site: varchar("site", { length: 255 }), // Site de origem da licitação
+  orgaoLicitante: varchar("orgao_licitante", { length: 500 }), // Orgão licitante (editável)
+  status: varchar("status", { length: 100 }), // Status editável da licitação
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 

@@ -3221,6 +3221,8 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
     valorEstimado?: string;
     fornecedor?: string;
     site?: string;
+    orgaoLicitante?: string;
+    status?: string;
   }): Promise<void> {
     // Buscar o favorito existente
     let foundFavoriteId: number | undefined;
@@ -3245,6 +3247,8 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
         valorEstimado: data.valorEstimado ?? null,
         fornecedor: data.fornecedor ?? null,
         site: data.site ?? null,
+        orgaoLicitante: (data as any).orgaoLicitante ?? (foundFavorite as any).orgaoLicitante ?? null,
+        status: (data as any).status ?? (foundFavorite as any).status ?? null,
       });
     } else {
       // Criar novo favorito com categorização e timestamp atual
@@ -3262,6 +3266,8 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
         valorEstimado: data.valorEstimado ?? null,
         fornecedor: data.fornecedor ?? null,
         site: data.site ?? null,
+        orgaoLicitante: (data as any).orgaoLicitante ?? null,
+        status: (data as any).status ?? null,
       };
       this.favorites.set(id, favorite);
     }

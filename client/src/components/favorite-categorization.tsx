@@ -100,6 +100,8 @@ export function FavoriteCategorization({
       valorEstimado: valorEstimado.trim() || null,
       fornecedor: fornecedor.trim() || null,
       site: selectedSite || null,
+      orgaoLicitante: null,
+      status: null,
     };
 
     updateCategorization(categorizationData);

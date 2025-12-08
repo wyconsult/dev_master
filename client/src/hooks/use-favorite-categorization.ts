@@ -9,6 +9,8 @@ interface FavoriteCategorizationData {
   valorEstimado: string | null;
   fornecedor: string | null;
   site: string | null;
+  orgaoLicitante: string | null;
+  status: string | null;
 }
 
 export function useFavoriteCategorization(userId: number, biddingId: number) {

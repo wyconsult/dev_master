@@ -337,7 +337,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = parseInt(req.params.userId);
       const biddingId = parseInt(req.params.biddingId);
-      const { category, customCategory, notes, uf, codigoUasg, valorEstimado, fornecedor, site } = req.body;
+      const { category, customCategory, notes, uf, codigoUasg, valorEstimado, fornecedor, site, orgaoLicitante, status } = req.body;
 
       // Garantir que o favorito existe antes de atualizar para evitar duplicação
       const exists = await storage.isFavorite(userId, biddingId);
@@ -354,6 +354,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         valorEstimado,
         fornecedor,
         site,
+        orgaoLicitante,
+        status,
       });
 
       // Evitar cache em responses para refletir imediatamente

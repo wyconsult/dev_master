@@ -46,6 +46,7 @@ export function BiddingCard({
   });
 
   const isFavorite = (favoriteStatus as any)?.isFavorite || showCategorization; // In favorites page, always show as favorited
+  const displayStatus = (favoriteData as any)?.status || bidding.situacao || "NOVA";
 
   // Status já vem expandido do backend - não precisa mais de expansão no frontend
 
@@ -232,7 +233,7 @@ export function BiddingCard({
             <div
               className={cn(
                 "rounded text-white text-xs font-bold px-2 md:px-3 py-1",
-                getStatusColor(bidding.situacao || "")
+                getStatusColor(displayStatus || "")
               )}
               style={{
                 minWidth: "60px",
@@ -242,7 +243,7 @@ export function BiddingCard({
                 letterSpacing: "0.5px"
               }}
             >
-              {bidding.situacao || "NOVA"}
+              {displayStatus || "NOVA"}
             </div>
             {/* Favorite icon */}
             {showFavoriteIcon && (
@@ -299,7 +300,7 @@ export function BiddingCard({
 
           <div className="grid grid-cols-1 gap-2">
             <span className="text-gray-700">
-              <strong>Órgão:</strong> {displayCodigoUasg ? `${displayCodigoUasg} - ${bidding.orgao_nome}` : bidding.orgao_nome}
+              <strong>Órgão:</strong> {displayCodigoUasg ? `${displayCodigoUasg} - ${(favoriteData as any)?.orgaoLicitante || bidding.orgao_nome}` : ((favoriteData as any)?.orgaoLicitante || bidding.orgao_nome)}
             </span>
             <span className="text-gray-700">
               <strong>Valor Estimado:</strong> {displayValorEstimado}
@@ -378,6 +379,8 @@ export function BiddingCard({
         currentCodigoUasg={favoriteData?.codigoUasg}
         currentValorEstimado={favoriteData?.valorEstimado}
         currentFornecedor={favoriteData?.fornecedor}
+        currentOrgaoLicitante={(favoriteData as any)?.orgaoLicitante}
+        currentStatus={(favoriteData as any)?.status}
       />
 
       {/* Dialog de Erro de Documento */}

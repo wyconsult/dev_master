@@ -353,8 +353,10 @@ export default function Favorites() {
       const pregao = bidding.edital || "";
       const hora = dateInfo.time;
       
-      // Data extraída seguindo prioridade P1-P5 sem prefixos
-      const orgao = bidding.orgao_nome || "";
+      // Usar órgão editado se disponível
+      const orgao = (any.orgaoLicitante && any.orgaoLicitante.trim()) || bidding.orgao_nome || "";
+      // Usar status editado se disponível
+      const status = (any.status && any.status.trim()) || (bidding.situacao || "");
       
       // USAR CATEGORIA TABULADA NO LUGAR DO OBJETO ORIGINAL
       // Mostrar apenas a categoria (segundo nível da hierarquia)
@@ -427,6 +429,7 @@ export default function Favorites() {
           <td>${pregao}</td>
           <td>${hora}</td>
           <td>${orgao}</td>
+          <td>${status}</td>
           <td>${objeto}</td>
           <td>${uf}</td>
           <td>${site}</td>
@@ -552,6 +555,7 @@ export default function Favorites() {
               <th>Nº PREGÃO</th>
               <th>HORA</th>
               <th>ÓRGÃO</th>
+              <th>STATUS</th>
               <th>OBJETO</th>
               <th>UF</th>
               <th>SITE</th>
@@ -1051,7 +1055,9 @@ export default function Favorites() {
                   codigoUasg: (bidding as any).codigoUasg,
                   valorEstimado: (bidding as any).valorEstimado,
                   fornecedor: (bidding as any).fornecedor,
-                  site: (bidding as any).site
+                  site: (bidding as any).site,
+                  orgaoLicitante: (bidding as any).orgaoLicitante,
+                  status: (bidding as any).status
                 }}
               />
             ))

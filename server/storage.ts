@@ -47,6 +47,8 @@ export interface IStorage {
     valorEstimado?: string;
     fornecedor?: string;
     site?: string;
+    orgaoLicitante?: string;
+    status?: string;
   }): Promise<void>;
   
   // Boletins
@@ -202,6 +204,8 @@ export class DatabaseStorage implements IStorage {
           valorEstimado: fav.valorEstimado,
           fornecedor: fav.fornecedor,
           site: fav.site,
+          orgaoLicitante: (fav as any).orgaoLicitante,
+          status: (fav as any).status,
           createdAt: fav.createdAt
         } as any;
         
@@ -297,6 +301,8 @@ export class DatabaseStorage implements IStorage {
     valorEstimado?: string;
     fornecedor?: string;
     site?: string;
+    orgaoLicitante?: string;
+    status?: string;
   }): Promise<void> {
     // Usar MySQL2 diretamente para executar UPDATE por (user_id, bidding_id)
     const mysql = await import('mysql2/promise');
@@ -309,7 +315,7 @@ export class DatabaseStorage implements IStorage {
 
     const [result] = await pool.execute(
       `UPDATE favorites
-       SET category = ?, custom_category = ?, notes = ?, uf = ?, codigo_uasg = ?, valor_estimado = ?, fornecedor = ?, site = ?
+       SET category = ?, custom_category = ?, notes = ?, uf = ?, codigo_uasg = ?, valor_estimado = ?, fornecedor = ?, site = ?, orgao_licitante = ?, status = ?
        WHERE user_id = ? AND bidding_id = ?`,
       [
         data.category ?? null,
@@ -320,6 +326,8 @@ export class DatabaseStorage implements IStorage {
         data.valorEstimado ?? null,
         data.fornecedor ?? null,
         data.site ?? null,
+        data.orgaoLicitante ?? null,
+        data.status ?? null,
         userId,
         biddingId,
       ]
@@ -510,6 +518,8 @@ export class MemStorage implements IStorage {
           valorEstimado: fav.valorEstimado,
           fornecedor: fav.fornecedor,
           site: fav.site,
+          orgaoLicitante: (fav as any).orgaoLicitante,
+          status: (fav as any).status,
           createdAt: fav.createdAt
         } as any;
         favoriteBiddings.push(biddingWithFavorite);
@@ -532,7 +542,9 @@ export class MemStorage implements IStorage {
       codigoUasg: insertFavorite.codigoUasg || null,
       valorEstimado: insertFavorite.valorEstimado || null,
       fornecedor: insertFavorite.fornecedor || null,
-      site: insertFavorite.site || null
+      site: insertFavorite.site || null,
+      orgaoLicitante: (insertFavorite as any).orgaoLicitante ?? null,
+      status: (insertFavorite as any).status ?? null
     };
     this.favorites.set(id, favorite);
     return favorite;
@@ -561,6 +573,8 @@ export class MemStorage implements IStorage {
     valorEstimado?: string;
     fornecedor?: string;
     site?: string;
+    orgaoLicitante?: string;
+    status?: string;
   }): Promise<void> {
     const favoriteToUpdate = Array.from(this.favorites.values())
       .find(fav => fav.userId === userId && fav.biddingId === biddingId);
@@ -579,6 +593,8 @@ export class MemStorage implements IStorage {
       valorEstimado: data.valorEstimado ?? null,
       fornecedor: data.fornecedor ?? null,
       site: data.site ?? null,
+      orgaoLicitante: (data as any).orgaoLicitante ?? (favoriteToUpdate as any).orgaoLicitante ?? null,
+      status: (data as any).status ?? (favoriteToUpdate as any).status ?? null,
     };
 
     this.favorites.set(updated.id, updated);

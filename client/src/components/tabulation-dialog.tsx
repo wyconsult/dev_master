@@ -31,6 +31,8 @@ interface TabulationDialogProps {
   currentValorEstimado?: string;
   currentFornecedor?: string;
   currentSite?: string;
+  currentOrgaoLicitante?: string;
+  currentStatus?: string;
 }
 
 export function TabulationDialog({ 
@@ -45,7 +47,9 @@ export function TabulationDialog({
   currentCodigoUasg = "",
   currentValorEstimado = "",
   currentFornecedor = "",
-  currentSite = ""
+  currentSite = "",
+  currentOrgaoLicitante = "",
+  currentStatus = ""
 }: TabulationDialogProps) {
   // Estados para seleção hierárquica
   const categoryParts = currentCategory ? currentCategory.split('|') : [];
@@ -70,6 +74,8 @@ export function TabulationDialog({
         : ''
     )
   );
+  const [orgaoLicitante, setOrgaoLicitante] = useState(currentOrgaoLicitante || bidding.orgao_nome || '');
+  const [status, setStatus] = useState(currentStatus || bidding.situacao || '');
   // Sites disponíveis (incluindo o selecionado se não estiver na lista)
   const allSites = [...SITES_LIST, ...(selectedSite && !SITES_LIST.includes(selectedSite) ? [selectedSite] : [])];
   
@@ -118,6 +124,8 @@ export function TabulationDialog({
       valorEstimado: valorEstimado?.trim() || null,
       fornecedor: null,
       site: selectedSite?.trim() || null,
+      orgaoLicitante: orgaoLicitante?.trim() || null,
+      status: status?.trim() || null,
     };
 
     try {  
@@ -178,6 +186,36 @@ export function TabulationDialog({
             <p className="text-sm text-gray-700 leading-relaxed">
               {bidding.objeto}
             </p>
+          </div>
+
+          {/* Campos adicionais: Orgão Licitante e Status */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-2">
+              <Label className="text-sm font-medium text-gray-700">Orgão Licitante</Label>
+              <Input
+                value={orgaoLicitante}
+                onChange={(e) => setOrgaoLicitante(e.target.value)}
+                placeholder="Ex: Prefeitura Municipal de ..."
+                className="text-sm"
+              />
+              <p className="text-xs text-gray-500">Campo editável; não altera a fonte original da API.</p>
+            </div>
+            <div className="space-y-2">
+              <Label className="text-sm font-medium text-gray-700">Status</Label>
+              <Select value={status} onValueChange={setStatus}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Selecione o status..." />
+                </SelectTrigger>
+                <SelectContent className="bg-white border border-gray-200 shadow-lg z-50">
+                  {[
+                    'NOVA','ABERTA','EM ANÁLISE','URGENTE','PRORROGADA','ALTERADA','FINALIZADA','ADIADA','RETIFICAÇÃO','SUSPENSA','CANCELADA','REVOGADA','DESERTA','FRACASSADA'
+                  ].map((s) => (
+                    <SelectItem key={s} value={s}>{s}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-gray-500">Campo editável; afeta apenas exibição e PDF.</p>
+            </div>
           </div>
 
           {/* Layout otimizado: Categoria e Site em duas colunas */}
