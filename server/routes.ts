@@ -369,6 +369,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post("/api/favorites/:userId/:biddingId/categorize", async (req, res) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      const biddingId = parseInt(req.params.biddingId);
+      const { category, customCategory, notes, uf, codigoUasg, valorEstimado, fornecedor, site, orgaoLicitante, status } = req.body;
+
+      const exists = await storage.isFavorite(userId, biddingId);
+      if (!exists) {
+        return res.status(404).json({ message: "Favorito não encontrado para categorização" });
+      }
+
+      await storage.updateFavoriteCategorization(userId, biddingId, {
+        category,
+        customCategory,
+        notes,
+        uf,
+        codigoUasg,
+        valorEstimado,
+        fornecedor,
+        site,
+        orgaoLicitante,
+        status,
+      });
+
+      res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+      res.set('Pragma', 'no-cache');
+      res.set('Expires', '0');
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Erro ao atualizar categorização (POST fallback):', error);
+      res.status(500).json({ message: "Erro interno do servidor" });
+    }
+  });
+
   // Filtros da ConLicitação
   app.get("/api/filtros", async (req, res) => {
     try {
