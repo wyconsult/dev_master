@@ -357,6 +357,15 @@ export default function Favorites() {
       const orgao = (any.orgaoLicitante && any.orgaoLicitante.trim()) || bidding.orgao_nome || "";
       // Usar status editado se disponível
       const status = (any.status && any.status.trim()) || (bidding.situacao || "");
+      const normStatus = status.trim().toLowerCase();
+      let statusStyle = "";
+      if (normStatus === "nova") {
+        statusStyle = "background-color:#00AEEF;color:#000;";
+      } else if (normStatus === "urgente") {
+        statusStyle = "background-color:#FFFFFF;color:#D32F2F;";
+      } else if (normStatus) {
+        statusStyle = "background-color:#FFFF00;color:#000;";
+      }
       
       // USAR CATEGORIA TABULADA NO LUGAR DO OBJETO ORIGINAL
       // Mostrar apenas a categoria (segundo nível da hierarquia)
@@ -429,12 +438,12 @@ export default function Favorites() {
           <td>${pregao}</td>
           <td>${hora}</td>
           <td>${orgao}</td>
-          <td>${status}</td>
           <td>${objeto}</td>
           <td>${uf}</td>
           <td>${site}</td>
           <td>${codigoUnidade}</td>
           <td>${valorEstimado}</td>
+          <td style="${statusStyle}"><strong>${status.toUpperCase()}</strong></td>
         </tr>
       `;
     });
@@ -555,12 +564,12 @@ export default function Favorites() {
               <th>Nº PREGÃO</th>
               <th>HORA</th>
               <th>ÓRGÃO</th>
-              <th>STATUS</th>
               <th>OBJETO</th>
               <th>UF</th>
               <th>SITE</th>
               <th>CÓDIGO UNIDADE GESTORA</th>
               <th>Valor Estimado Contratação</th>
+              <th>STATUS</th>
             </tr>
           </thead>
           <tbody>
