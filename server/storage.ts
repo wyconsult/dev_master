@@ -304,7 +304,6 @@ export class DatabaseStorage implements IStorage {
     orgaoLicitante?: string;
     status?: string;
   }): Promise<void> {
-    // Usar MySQL2 diretamente para executar UPDATE por (user_id, bidding_id)
     const mysql = await import('mysql2/promise');
     const pool = mysql.createPool({
       host: process.env.DB_HOST || 'localhost',
@@ -313,31 +312,43 @@ export class DatabaseStorage implements IStorage {
       database: process.env.DB_NAME || 'jlg_consultoria',
     });
 
-    const [result] = await pool.execute(
-      `UPDATE favorites
-       SET category = ?, custom_category = ?, notes = ?, uf = ?, codigo_uasg = ?, valor_estimado = ?, fornecedor = ?, site = ?, orgao_licitante = ?, status = ?
-       WHERE user_id = ? AND bidding_id = ?`,
-      [
-        data.category ?? null,
-        data.customCategory ?? null,
-        data.notes ?? null,
-        data.uf ?? null,
-        data.codigoUasg ?? null,
-        data.valorEstimado ?? null,
-        data.fornecedor ?? null,
-        data.site ?? null,
-        data.orgaoLicitante ?? null,
-        data.status ?? null,
-        userId,
-        biddingId,
-      ]
-    );
+    const [columnsRows] = await pool.query('SHOW COLUMNS FROM favorites');
+    const columnSet = new Set((columnsRows as any[]).map(r => r.Field));
+
+    const candidates: Array<{ col: string; val: any }> = [
+      { col: 'category', val: data.category ?? null },
+      { col: 'custom_category', val: data.customCategory ?? null },
+      { col: 'notes', val: data.notes ?? null },
+      { col: 'uf', val: data.uf ?? null },
+      { col: 'codigo_uasg', val: data.codigoUasg ?? null },
+      { col: 'valor_estimado', val: data.valorEstimado ?? null },
+      { col: 'fornecedor', val: data.fornecedor ?? null },
+      { col: 'site', val: data.site ?? null },
+      { col: 'orgao_licitante', val: data.orgaoLicitante ?? null },
+      { col: 'status', val: data.status ?? null },
+    ];
+
+    const setParts: string[] = [];
+    const params: any[] = [];
+    for (const c of candidates) {
+      if (columnSet.has(c.col)) {
+        setParts.push(`${c.col} = ?`);
+        params.push(c.val);
+      }
+    }
+
+    if (setParts.length === 0) {
+      await pool.end();
+      return;
+    }
+
+    const sql = `UPDATE favorites SET ${setParts.join(', ')} WHERE user_id = ? AND bidding_id = ?`;
+    const [result] = await pool.execute(sql, [...params, userId, biddingId]);
 
     await pool.end();
 
     const affected = (result as any).affectedRows as number | undefined;
     if (!affected || affected === 0) {
-      // Nenhum registro encontrado para atualizar; lançar erro para a rota tratar
       throw new Error('FAVORITE_NOT_FOUND');
     }
   }
