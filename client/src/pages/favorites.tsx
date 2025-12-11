@@ -358,13 +358,14 @@ export default function Favorites() {
       // Usar status editado se disponível
       const status = (any.status && any.status.trim()) || (bidding.situacao || "");
       const normStatus = status.trim().toLowerCase();
+      const colorAdjust = "-webkit-print-color-adjust: exact; print-color-adjust: exact;";
       let statusStyle = "";
       if (normStatus === "nova") {
-        statusStyle = "background-color:#00AEEF;color:#000;";
+        statusStyle = `${colorAdjust}background-color:#00AEEF;color:#000;`;
       } else if (normStatus === "urgente") {
-        statusStyle = "background-color:#FFFFFF;color:#D32F2F;";
+        statusStyle = `${colorAdjust}background-color:#FFFFFF;color:#D32F2F;`;
       } else if (normStatus) {
-        statusStyle = "background-color:#FFFF00;color:#000;";
+        statusStyle = `${colorAdjust}background-color:#FFFF00;color:#000;`;
       }
       
       // USAR CATEGORIA TABULADA NO LUGAR DO OBJETO ORIGINAL
