@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import * as React from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Navbar } from "@/components/navbar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -76,6 +76,8 @@ export default function Biddings() {
   // Paginação
   const [page, setPage] = useState(1);
   const [perPage, setPerPage] = useState(50);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const queryClient = useQueryClient();
 
   // Ao mudar de página, rola para o topo
   useEffect(() => {
@@ -95,7 +97,7 @@ export default function Biddings() {
   };
 
   // Query com paginação
-  const { data: biddingsResp, isLoading, error, isFetching } = useQuery<{ biddings: Bidding[]; total: number; page: number; per_page: number; }>({
+  const { data: biddingsResp, isLoading, error, isFetching, refetch } = useQuery<{ biddings: Bidding[]; total: number; page: number; per_page: number; }>({
     queryKey: ["/api/biddings", numeroControlePesquisado, selectedOrgaos, selectedUFs, page, perPage],
     queryFn: async () => {
       const params = new URLSearchParams();
@@ -115,6 +117,18 @@ export default function Biddings() {
     enabled: true,
     refetchInterval: false,
   });
+  
+  const handleManualRefresh = async () => {
+    try {
+      setIsRefreshing(true);
+      const response = await fetch('/api/biddings/refresh', { method: 'POST' });
+      if (!response.ok) throw new Error('Falha ao atualizar boletins');
+      await refetch();
+    } catch (e) {
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
   
   const allBiddings = (biddingsResp?.biddings ?? []) as Bidding[];
   const totalBiddings = biddingsResp?.total ?? allBiddings.length;
@@ -461,6 +475,14 @@ export default function Biddings() {
               >
                 <Search className="mr-2 h-4 w-4" />
                 Pesquisar
+              </Button>
+              <Button 
+                variant="outline" 
+                onClick={handleManualRefresh} 
+                className="border-gray-300 text-gray-700 hover:bg-gray-50"
+                disabled={isRefreshing || isFetching}
+              >
+                {isRefreshing ? 'Atualizando...' : 'Atualizar boletins'}
               </Button>
               {(numeroControle || selectedOrgaos.length > 0 || selectedUFs.length > 0 || cidade || objeto || valorMinimo || valorMaximo || mostrarSemValor || dataInicio || dataFim) && (
                 <Button variant="outline" onClick={clearFilters} className="border-gray-300 text-gray-700 hover:bg-gray-50">

@@ -58,6 +58,8 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
   private readonly CACHE_TTL = 5 * 60 * 1000; // 5 minutos
   private fullLoadCompleted: boolean = false;
   private backgroundLoadingInProgress: boolean = false;
+  private periodicRefreshInProgress: boolean = false;
+  private autoRefreshTimer?: NodeJS.Timeout;
 
   constructor() {
     this.users = new Map();
@@ -69,6 +71,7 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
     this.lastCacheUpdate = 0;
     
     this.initializeMockData();
+    this.startAutoRefresh();
   }
 
 
@@ -87,6 +90,48 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
 
     // Sistema configurado para usar apenas dados reais da API ConLicitação
     // Cache será populado quando IP estiver autorizado
+  }
+
+  private startAutoRefresh() {
+    if (this.autoRefreshTimer) return;
+    this.autoRefreshTimer = setInterval(() => {
+      this.refreshRecentBoletins().catch(() => {});
+    }, this.CACHE_DURATION);
+    setTimeout(() => {
+      this.refreshRecentBoletins().catch(() => {});
+    }, 2000);
+  }
+
+  private async refreshRecentBoletins(): Promise<void> {
+    if (this.periodicRefreshInProgress) return;
+    this.periodicRefreshInProgress = true;
+    try {
+      const filtros = await this.getFiltros();
+      for (const filtro of filtros) {
+        try {
+          const boletinsResponse = await this.getBoletins(filtro.id, 1, 30);
+          for (const boletim of boletinsResponse.boletins) {
+            try {
+              const boletimData = await this.getCachedBoletimData(boletim.id);
+              if (boletimData?.licitacoes) {
+                boletimData.licitacoes.forEach((licitacao: any) => {
+                  const transformed = this.transformLicitacaoFromAPI(licitacao, boletim.id, 'api');
+                  this.cachedBiddings.set(transformed.id, transformed);
+                });
+              }
+            } catch {}
+          }
+        } catch {}
+      }
+      this.lastCacheUpdate = Date.now();
+    } catch {}
+    this.periodicRefreshInProgress = false;
+  }
+
+  public async manualRefreshBoletins(): Promise<{ updated: number; lastUpdate: number }> {
+    const before = this.cachedBiddings.size;
+    await this.refreshRecentBoletins();
+    return { updated: this.cachedBiddings.size - before, lastUpdate: this.lastCacheUpdate };
   }
 
   // Métodos de usuário (mantemos localmente)

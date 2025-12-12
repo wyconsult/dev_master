@@ -218,6 +218,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post("/api/biddings/refresh", async (_req, res) => {
+    try {
+      const result = await conLicitacaoStorage.manualRefreshBoletins();
+      res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+      res.set('Pragma', 'no-cache');
+      res.set('Expires', '0');
+      res.json({ success: true, updated: result.updated, last_update: result.lastUpdate });
+    } catch (error) {
+      res.status(500).json({ message: "Erro interno do servidor" });
+    }
+  });
+
   // Rota para contar total de licitações (para dashboard)
   app.get("/api/biddings/count", async (req, res) => {
     try {
