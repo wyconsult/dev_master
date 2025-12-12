@@ -106,6 +106,7 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
     if (this.periodicRefreshInProgress) return;
     this.periodicRefreshInProgress = true;
     try {
+      const newCache = new Map<number, Bidding & { cacheTimestamp: number, dataSource: 'api' | 'mock' }>();
       const filtros = await this.getFiltros();
       for (const filtro of filtros) {
         try {
@@ -116,22 +117,22 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
               if (boletimData?.licitacoes) {
                 boletimData.licitacoes.forEach((licitacao: any) => {
                   const transformed = this.transformLicitacaoFromAPI(licitacao, boletim.id, 'api');
-                  this.cachedBiddings.set(transformed.id, transformed);
+                  newCache.set(transformed.id, transformed);
                 });
               }
             } catch {}
           }
         } catch {}
       }
+      this.cachedBiddings = newCache;
       this.lastCacheUpdate = Date.now();
     } catch {}
     this.periodicRefreshInProgress = false;
   }
 
   public async manualRefreshBoletins(): Promise<{ updated: number; lastUpdate: number }> {
-    const before = this.cachedBiddings.size;
     await this.refreshRecentBoletins();
-    return { updated: this.cachedBiddings.size - before, lastUpdate: this.lastCacheUpdate };
+    return { updated: this.cachedBiddings.size, lastUpdate: this.lastCacheUpdate };
   }
 
   // Métodos de usuário (mantemos localmente)
@@ -1247,9 +1248,10 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
       console.log(`🔄 Status expandido: "${situacaoOriginal}" → "${situacaoExpandida}" (ID: ${licitacao.id})`);
     }
 
+    const normalizedId = Number(licitacao.id);
     return {
-      id: licitacao.id, // Número ConLicitação
-      conlicitacao_id: licitacao.id,
+      id: normalizedId, 
+      conlicitacao_id: normalizedId,
       orgao_nome: licitacao.orgao?.nome || '', // Unidade licitante
       orgao_codigo: licitacao.orgao?.codigo || '', // Código UASG
       orgao_cidade: licitacao.orgao?.cidade || '', // Cidade
@@ -2156,15 +2158,8 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
 
   // Carregamento mínimo apenas para demonstração
   private async loadMinimalSampleData(): Promise<void> {
-    if (this.cachedBiddings.size > 0 && Date.now() - this.lastCacheUpdate < this.CACHE_DURATION) return; // Já tem dados frescos
-    
-    console.log('📋 Carregando dados mínimos de exemplo...');
-    
-    // Garantir dados de teste primeiro
-    await this.refreshBiddingsCache();
-    
-    this.lastCacheUpdate = Date.now();
-    console.log(`✅ Dados mínimos carregados: ${this.cachedBiddings.size} licitações`);
+    // Desativado: não carregar mocks; usar apenas dados reais
+    return;
   }
 
   // Carregamento inicial rápido - apenas boletins mais recentes
@@ -3117,10 +3112,8 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
     uf?: string[];
     numero_controle?: string;
   }, page: number = 1, limit: number = 50): Promise<{ biddings: Bidding[], total: number }> {
-    // Carregamento inicial básico apenas
     if (this.cachedBiddings.size === 0 || Date.now() - this.lastCacheUpdate > this.CACHE_DURATION) {
-      console.log('⚡ Carregamento inicial rápido para paginação...');
-      await this.loadInitialBiddings();
+      await this.refreshRecentBoletins();
     }
     
     let biddings = Array.from(this.cachedBiddings.values());
