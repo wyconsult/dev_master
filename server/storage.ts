@@ -511,6 +511,15 @@ export class MemStorage implements IStorage {
     const favoriteBiddings: Bidding[] = [];
     for (const fav of userFavorites) {
       let bidding = await conLicitacaoStorage.getBidding(fav.biddingId);
+      const raw = (conLicitacaoStorage as any).cachedBiddings?.get(fav.biddingId);
+      const cacheTimestamp = raw?.cacheTimestamp as number | undefined;
+      const isStale = cacheTimestamp ? (Date.now() - cacheTimestamp > 10 * 60 * 1000) : false;
+      if (bidding && isStale) {
+        try {
+          await (conLicitacaoStorage as any).refreshBoletimForBidding(fav.biddingId);
+          bidding = await conLicitacaoStorage.getBidding(fav.biddingId);
+        } catch {}
+      }
       if (!bidding) {
         // Tentar carregar especificamente pelo ID (via numero_controle)
         try {

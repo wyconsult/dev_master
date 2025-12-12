@@ -1251,6 +1251,9 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
         (!filters.orgao || filters.orgao.length === 0) && 
         (!filters.uf || filters.uf.length === 0))) {
       await this.loadMinimalSampleData();
+      if (Date.now() - this.lastCacheUpdate > this.CACHE_DURATION) {
+        this.loadAllBiddingsInBackground().catch(() => {});
+      }
       const result = Array.from(this.cachedBiddings.values()).slice(0, 50);
       return result;
     }
@@ -1287,11 +1290,15 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
       );
     }
     
+    if (Date.now() - this.lastCacheUpdate > this.CACHE_DURATION) {
+      this.loadAllBiddingsInBackground().catch(() => {});
+    }
+    
     return biddings;
   }
 
   private async refreshBiddingsCache(): Promise<void> {
-    // Sempre garantir que dados de teste estejam disponíveis primeiro
+    const newCache = new Map<number, Bidding & { cacheTimestamp: number, dataSource: 'api' | 'mock' }>();
     const licitacoesTeste: Bidding[] = [
       {
         id: 1,
@@ -2025,9 +2032,8 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
       }
     ];
     
-    // Adicionar dados de teste ao cache
     licitacoesTeste.forEach(licitacao => {
-      this.cachedBiddings.set(licitacao.id, licitacao);
+      newCache.set(licitacao.id, licitacao as any);
     });
     
     try {
@@ -2060,8 +2066,7 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
                 if (boletimData.licitacoes) {
                   boletimData.licitacoes.forEach((licitacao: any) => {
                     const transformedLicitacao = this.transformLicitacaoFromAPI(licitacao, boletim.id, 'api');
-                    // Sempre adicionar/atualizar no cache para garantir dados mais recentes
-                    this.cachedBiddings.set(transformedLicitacao.id, transformedLicitacao);
+                    newCache.set(transformedLicitacao.id, transformedLicitacao);
                   });
                 }
               } catch (error) {
@@ -2092,10 +2097,12 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
 
       
       this.lastCacheUpdate = Date.now();
+      this.cachedBiddings = newCache;
       console.log(`✅ Pré-carregamento concluído: ${this.cachedBiddings.size} licitações disponíveis para busca`);
       
     } catch (error: any) {
       console.log('🚫 Usando dados de teste - IP não autorizado para API real');
+      this.cachedBiddings = newCache;
     }
     
     // Garantir que sempre tenha dados no cache
@@ -3039,6 +3046,27 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
     return this.cachedBiddings.get(id);
   }
 
+  // Atualiza dados de uma licitação via boletim associado
+  public async refreshBoletimForBidding(biddingId: number): Promise<void> {
+    const existing = this.cachedBiddings.get(biddingId);
+    const boletimId = existing?.boletim_id;
+    if (!boletimId) {
+      return;
+    }
+    try {
+      const boletimData = await conLicitacaoAPI.getBoletimData(boletimId);
+      if (boletimData?.licitacoes) {
+        boletimData.licitacoes.forEach((licitacao: any) => {
+          const transformed = this.transformLicitacaoFromAPI(licitacao, boletimId, 'api');
+          this.cachedBiddings.set(transformed.id, transformed);
+        });
+        this.lastCacheUpdate = Date.now();
+      }
+    } catch {
+      // silencioso
+    }
+  }
+
   // Nova versão paginada e otimizada
   async getBiddingsPaginated(filters?: { 
     conlicitacao_id?: string; 
@@ -3100,21 +3128,16 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
     const startIndex = (page - 1) * limit;
     const paginatedBiddings = biddings.slice(startIndex, startIndex + limit);
     
+    if (Date.now() - this.lastCacheUpdate > this.CACHE_DURATION) {
+      this.loadAllBiddingsInBackground().catch(() => {});
+    }
+    
     return { biddings: paginatedBiddings, total };
   }
 
   // Contagem estimada fixa para evitar carregar dados
   async getBiddingsCount(): Promise<number> {
-    console.log('📊 Retornando contagem estimada fixa...');
-    
-    // Se já temos alguns dados no cache, usar como referência
-    if (this.cachedBiddings.size > 0) {
-      return Math.min(this.cachedBiddings.size * 100, 18000); // Estimar baseado no cache existente
-    }
-    
-    // Valor fixo estimado para evitar carregar dados
-    console.log('📊 Contagem estimada fixa: 15.000 licitações');
-    return 15000; // Valor fixo para não sobrecarregar
+    return this.cachedBiddings.size;
   }
 
   // Métodos de favoritos com timestamps precisos em memória
