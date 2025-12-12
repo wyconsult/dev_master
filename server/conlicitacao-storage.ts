@@ -108,9 +108,10 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
     try {
       const newCache = new Map<number, Bidding & { cacheTimestamp: number, dataSource: 'api' | 'mock' }>();
       const filtros = await this.getFiltros();
-      for (const filtro of filtros) {
+      const targetFiltros = filtros.slice(0, 1);
+      for (const filtro of targetFiltros) {
         try {
-          const boletinsResponse = await this.getBoletins(filtro.id, 1, 30);
+          const boletinsResponse = await this.getBoletins(filtro.id, 1, 10);
           for (const boletim of boletinsResponse.boletins) {
             try {
               const boletimData = await this.getCachedBoletimData(boletim.id);
@@ -1299,7 +1300,7 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
         (!filters.uf || filters.uf.length === 0))) {
       await this.loadMinimalSampleData();
       if (Date.now() - this.lastCacheUpdate > this.CACHE_DURATION) {
-        this.loadAllBiddingsInBackground().catch(() => {});
+        this.refreshRecentBoletins().catch(() => {});
       }
       const result = Array.from(this.cachedBiddings.values()).slice(0, 50);
       return result;
@@ -1338,7 +1339,7 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
     }
     
     if (Date.now() - this.lastCacheUpdate > this.CACHE_DURATION) {
-      this.loadAllBiddingsInBackground().catch(() => {});
+      this.refreshRecentBoletins().catch(() => {});
     }
     
     return biddings;
@@ -3165,7 +3166,7 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
     const paginatedBiddings = biddings.slice(startIndex, startIndex + limit);
     
     if (Date.now() - this.lastCacheUpdate > this.CACHE_DURATION) {
-      this.loadAllBiddingsInBackground().catch(() => {});
+      this.refreshRecentBoletins().catch(() => {});
     }
     
     return { biddings: paginatedBiddings, total };
