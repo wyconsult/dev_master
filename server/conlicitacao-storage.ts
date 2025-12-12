@@ -2111,7 +2111,7 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
 
   // Carregamento mínimo apenas para demonstração
   private async loadMinimalSampleData(): Promise<void> {
-    if (this.cachedBiddings.size > 0) return; // Já tem dados
+    if (this.cachedBiddings.size > 0 && Date.now() - this.lastCacheUpdate < this.CACHE_DURATION) return; // Já tem dados frescos
     
     console.log('📋 Carregando dados mínimos de exemplo...');
     
@@ -2124,6 +2124,7 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
 
   // Carregamento inicial rápido - apenas boletins mais recentes
   private async loadInitialBiddings(): Promise<void> {
+    this.cachedBiddings = new Map<number, any>();
     // Dados de teste primeiro
     const licitacoesTeste: Bidding[] = [
       {
@@ -2989,43 +2990,38 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
           for (let page = 1; page <= Math.min(totalPages, 10); page++) { // Limite: máximo 10 páginas (200 boletins) por filtro
             const pageBoletins = await this.getBoletins(filtro.id, page, batchSize);
             
-            for (const boletim of pageBoletins.boletins) {
-              try {
-                const boletimData = await conLicitacaoAPI.getBoletimData(boletim.id);
-                totalBuscados++;
-                
-                if (boletimData.licitacoes) {
-                  // Procurar por correspondências
-                  const found = boletimData.licitacoes.some((licitacao: any) => 
-                    licitacao.id?.toString().includes(numeroControle) ||
-                    licitacao.orgao?.codigo?.toLowerCase().includes(numeroControle.toLowerCase()) ||
-                    licitacao.processo?.toLowerCase().includes(numeroControle.toLowerCase()) ||
-                    licitacao.edital?.toLowerCase().includes(numeroControle.toLowerCase())
-                  );
-                  
-                  if (found) {
-                    console.log(`🎯 ENCONTRADO em boletim ${boletim.id}!`);
-                    encontrou = true;
+            const chunkSize = 5;
+            for (let i = 0; i < pageBoletins.boletins.length; i += chunkSize) {
+              const chunk = pageBoletins.boletins.slice(i, i + chunkSize);
+              const results = await Promise.all(chunk.map(async (boletim) => {
+                try {
+                  const boletimData = await this.getCachedBoletimData(boletim.id);
+                  totalBuscados++;
+                  if (boletimData.licitacoes) {
+                    const matching = boletimData.licitacoes.filter((licitacao: any) => 
+                      licitacao.id?.toString().includes(numeroControle) ||
+                      licitacao.orgao?.codigo?.toLowerCase().includes(numeroControle.toLowerCase()) ||
+                      licitacao.processo?.toLowerCase().includes(numeroControle.toLowerCase()) ||
+                      licitacao.edital?.toLowerCase().includes(numeroControle.toLowerCase())
+                    );
+                    matching.forEach((licitacao: any) => {
+                      const transformedLicitacao = this.transformLicitacaoFromAPI(licitacao, boletim.id, 'api');
+                      this.cachedBiddings.set(transformedLicitacao.id, transformedLicitacao);
+                    });
+                    if (matching.length > 0) {
+                      console.log(`🎯 ENCONTRADO em boletim ${boletim.id}!`);
+                      return true;
+                    }
                   }
-                  
-                  // Carregar TODAS as licitações deste boletim (não só as que correspondem)
-                  boletimData.licitacoes.forEach((licitacao: any) => {
-                    const transformedLicitacao = this.transformLicitacaoFromAPI(licitacao, boletim.id, 'api');
-                    this.cachedBiddings.set(transformedLicitacao.id, transformedLicitacao);
-                  });
-                  
-                  if (found) {
-                    console.log(`✅ Busca específica finalizada - SUCESSO! Total boletins verificados: ${totalBuscados}`);
-                    return; // Encontrou! Sair da função
-                  }
+                } catch (error) {
+                  console.log(`⚠️ Erro em boletim ${boletim.id}, continuando...`);
                 }
-              } catch (error) {
-                // Ignorar erros de boletins específicos e continuar
-                console.log(`⚠️ Erro em boletim ${boletim.id}, continuando...`);
+                return false;
+              }));
+              if (results.some(r => r)) {
+                console.log(`✅ Busca específica finalizada - SUCESSO! Total boletins verificados: ${totalBuscados}`);
+                return;
               }
-              
-              // Pequena pausa para não sobrecarregar a API
-              await new Promise(resolve => setTimeout(resolve, 50));
             }
           }
         } catch (error) {
@@ -3066,6 +3062,8 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
       // silencioso
     }
   }
+  
+  
 
   // Nova versão paginada e otimizada
   async getBiddingsPaginated(filters?: { 
