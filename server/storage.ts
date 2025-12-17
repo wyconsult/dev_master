@@ -164,42 +164,92 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getFavorites(userId: number, date?: string, dateFrom?: string, dateTo?: string): Promise<Bidding[]> {
-    let conditions = [eq(favorites.userId, userId)];
-
-    // Aplicar filtros de data na data de criação do favorito
-    if (date) {
-      const startDate = new Date(date + "T00:00:00");
-      const endDate = new Date(date + "T23:59:59");
-      conditions.push(gte(favorites.createdAt, startDate));
-      conditions.push(lte(favorites.createdAt, endDate));
-    } else if (dateFrom || dateTo) {
-      if (dateFrom) {
-        const startDate = new Date(dateFrom + "T00:00:00");
-        conditions.push(gte(favorites.createdAt, startDate));
-      }
-      
-      if (dateTo) {
-        const endDate = new Date(dateTo + "T23:59:59");
-        conditions.push(lte(favorites.createdAt, endDate));
-      }
+    // Buscar todos os favoritos do usuário (sem filtrar data de criação no SQL)
+    const favoritesList = await db.select().from(favorites).where(eq(favorites.userId, userId));
+    
+    if (favoritesList.length === 0) {
+      return [];
     }
 
-    const favoritesList = await db.select().from(favorites).where(and(...conditions));
-    
-    // Buscar dados das licitações do ConLicitacaoStorage
-    const biddingsWithFavoriteData: Bidding[] = [];
+    // Buscar dados das licitações em lote (Batch Fetching) para evitar N+1
     const { conLicitacaoStorage } = await import("./conlicitacao-storage");
+    const biddingIds = favoritesList.map(f => f.biddingId);
     
+    // Buscar licitações no banco
+    const biddingsList = await conLicitacaoStorage.getBiddingsByIds(biddingIds);
+    const biddingsMap = new Map(biddingsList.map(b => [b.id, b]));
+
+    const favoriteBiddings: Bidding[] = [];
+
+    // Helper para parsear data "dd/mm/yyyy hh:mm" ou ISO
+    const parseDate = (dateStr?: string | null): Date | null => {
+      if (!dateStr) return null;
+      // Tentar ISO primeiro
+      let d = new Date(dateStr);
+      if (!isNaN(d.getTime())) return d;
+      
+      // Tentar formato BR: dd/mm/yyyy HH:mm
+      const parts = dateStr.split(' ');
+      const dateParts = parts[0].split('/');
+      if (dateParts.length === 3) {
+        const timeParts = parts[1] ? parts[1].split(':') : ['00', '00', '00'];
+        // Mês em JS é 0-indexado
+        return new Date(
+          parseInt(dateParts[2]), 
+          parseInt(dateParts[1]) - 1, 
+          parseInt(dateParts[0]),
+          parseInt(timeParts[0] || '0'),
+          parseInt(timeParts[1] || '0')
+        );
+      }
+      return null;
+    };
+
+    // Filtros de data para aplicação em memória
+    let startDate: Date | undefined;
+    let endDate: Date | undefined;
+
+    if (date) {
+      // Data específica: intervalo do dia inteiro
+      startDate = new Date(date + "T00:00:00");
+      endDate = new Date(date + "T23:59:59");
+    } else {
+      if (dateFrom) startDate = new Date(dateFrom + "T00:00:00");
+      if (dateTo) endDate = new Date(dateTo + "T23:59:59");
+    }
+
     for (const fav of favoritesList) {
-      const bidding = await conLicitacaoStorage.getBidding(fav.biddingId);
+      let bidding = biddingsMap.get(fav.biddingId);
+      
+      // Se não encontrou no lote (ex: não está no banco local), tentar buscar individualmente (fallback)
+      if (!bidding) {
+        try {
+          // Tentar carregar/sincronizar se necessário
+          await conLicitacaoStorage.getBiddingsPaginated({ numero_controle: String(fav.biddingId) }, 1, 50);
+          bidding = await conLicitacaoStorage.getBidding(fav.biddingId);
+        } catch {}
+      }
+      
       if (bidding) {
         // Garantir que a licitação seja pinada na memória
         try {
           await conLicitacaoStorage.pinBidding(bidding);
         } catch {}
 
-        // Incluir dados de categorização no bidding
-        const biddingWithCategorization = {
+        // Aplicar Filtro de Data (Data de Realização / Abertura)
+        if (startDate || endDate) {
+          const biddingDate = parseDate(bidding.datahora_abertura);
+          if (!biddingDate) {
+            // Se não tem data, e estamos filtrando por data, exclui? 
+            // Geralmente sim.
+            continue; 
+          }
+          
+          if (startDate && biddingDate < startDate) continue;
+          if (endDate && biddingDate > endDate) continue;
+        }
+
+        const biddingWithFavorite = {
           ...bidding,
           category: fav.category,
           customCategory: fav.customCategory,
@@ -214,11 +264,11 @@ export class DatabaseStorage implements IStorage {
           createdAt: fav.createdAt
         } as any;
         
-        biddingsWithFavoriteData.push(biddingWithCategorization);
+        favoriteBiddings.push(biddingWithFavorite);
       }
     }
-    
-    return biddingsWithFavoriteData;
+
+    return favoriteBiddings;
   }
 
   async addFavorite(favorite: InsertFavorite): Promise<Favorite> {
