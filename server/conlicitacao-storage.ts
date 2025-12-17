@@ -3083,10 +3083,6 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
     }
   }
 
-  async getBidding(id: number): Promise<Bidding | undefined> {
-    return this.cachedBiddings.get(id);
-  }
-
   // Atualiza dados de uma licitação via boletim associado
   public async refreshBoletimForBidding(biddingId: number): Promise<void> {
     const existing = this.cachedBiddings.get(biddingId);
