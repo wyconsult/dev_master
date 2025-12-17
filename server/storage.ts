@@ -138,26 +138,8 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getFavorites(userId: number, date?: string, dateFrom?: string, dateTo?: string): Promise<Bidding[]> {
-    let conditions = [eq(favorites.userId, userId)];
-
-    // Aplicar filtros de data na data de criação do favorito
-    if (date) {
-      const startDate = new Date(date + "T00:00:00");
-      const endDate = new Date(date + "T23:59:59");
-      conditions.push(gte(favorites.createdAt, startDate));
-      conditions.push(lte(favorites.createdAt, endDate));
-    } else if (dateFrom || dateTo) {
-      if (dateFrom) {
-        const startDate = new Date(dateFrom + "T00:00:00");
-        conditions.push(gte(favorites.createdAt, startDate));
-      }
-      
-      if (dateTo) {
-        const endDate = new Date(dateTo + "T23:59:59");
-        conditions.push(lte(favorites.createdAt, endDate));
-      }
-    }
-
+    // Buscar todos os favoritos do usuário sem filtro de data inicial (pois o filtro deve ser na data da licitação)
+    const conditions = [eq(favorites.userId, userId)];
     const favoritesList = await db.select().from(favorites).where(and(...conditions));
     
     // Buscar dados das licitações do ConLicitacaoStorage
@@ -168,9 +150,49 @@ export class DatabaseStorage implements IStorage {
     const biddingsList = await conLicitacaoStorage.getBiddingsByIds(biddingIds);
     const biddingsMap = new Map(biddingsList.map(b => [b.id, b]));
 
+    // Definir datas de filtro
+    let filterStart: Date | null = null;
+    let filterEnd: Date | null = null;
+
+    if (date) {
+      filterStart = new Date(date + "T00:00:00");
+      filterEnd = new Date(date + "T23:59:59");
+    } else if (dateFrom || dateTo) {
+      if (dateFrom) filterStart = new Date(dateFrom + "T00:00:00");
+      if (dateTo) filterEnd = new Date(dateTo + "T23:59:59");
+    }
+
     for (const fav of favoritesList) {
       const bidding = biddingsMap.get(fav.biddingId);
       if (bidding) {
+        // Parse da data de realização (abertura)
+        // Formatos possíveis: ISO ou DD/MM/YYYY HH:mm
+        let biddingDate: Date | null = null;
+        if (bidding.datahora_abertura) {
+          // Tentar ISO
+          const isoDate = new Date(bidding.datahora_abertura);
+          if (!isNaN(isoDate.getTime())) {
+            biddingDate = isoDate;
+          } else {
+            // Tentar DD/MM/YYYY
+            const parts = bidding.datahora_abertura.split(' ');
+            const dateParts = parts[0].split('/');
+            if (dateParts.length === 3) {
+              const day = parseInt(dateParts[0]);
+              const month = parseInt(dateParts[1]) - 1;
+              const year = parseInt(dateParts[2]);
+              biddingDate = new Date(year, month, day);
+            }
+          }
+        }
+
+        // Aplicar filtro de data se necessário
+        if (filterStart && biddingDate && biddingDate < filterStart) continue;
+        if (filterEnd && biddingDate && biddingDate > filterEnd) continue;
+        // Se tem filtro mas a licitação não tem data, decidimos se mostra ou não. 
+        // Geralmente se filtra por data, espera-se que tenha data. Se não tiver, ignora.
+        if ((filterStart || filterEnd) && !biddingDate) continue;
+
         // Garantir que a licitação seja pinada na memória
         try {
           await conLicitacaoStorage.pinBidding(bidding);

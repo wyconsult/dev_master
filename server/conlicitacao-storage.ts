@@ -252,9 +252,26 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
 
     const boletim = boletimResult[0];
 
-    const licitacoesList = await db.select()
+    let licitacoesList = await db.select()
       .from(biddings)
       .where(eq(biddings.boletim_id, id));
+
+    // Auto-repair: Se a quantidade de licitações no banco for muito menor que a esperada, forçar re-sync
+    // Aceitamos uma margem de erro pequena, mas se tiver 0 ou muito poucas vs 113, algo deu errado.
+    if (boletim.quantidade_licitacoes > 0 && licitacoesList.length < boletim.quantidade_licitacoes * 0.9) {
+      console.log(`⚠️ Boletim ${id} tem ${boletim.quantidade_licitacoes} licitações declaradas mas apenas ${licitacoesList.length} no banco. Forçando re-sync...`);
+      try {
+        await this.processBoletim({ id });
+        // Re-fetch após sync
+        licitacoesList = await db.select()
+          .from(biddings)
+          .where(eq(biddings.boletim_id, id));
+        
+        console.log(`✅ Re-sync do Boletim ${id} concluído. Agora com ${licitacoesList.length} licitações.`);
+      } catch (error) {
+        console.error(`❌ Falha no auto-repair do Boletim ${id}:`, error);
+      }
+    }
 
     const acompanhamentosList = await db.select()
       .from(acompanhamentos)
