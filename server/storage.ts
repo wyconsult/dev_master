@@ -83,41 +83,15 @@ export class DatabaseStorage implements IStorage {
         email: insertUser.email
       });
       
-      // Importar o pool do MySQL2 diretamente
-      const mysql = await import('mysql2/promise');
-      const pool = mysql.createPool({
-        host: process.env.DB_HOST || 'localhost',
-        user: process.env.DB_USER || 'geovani',
-        password: process.env.DB_PASSWORD || 'Vermelho006@',
-        database: process.env.DB_NAME || 'jlg_consultoria',
+      const [result] = await db.insert(users).values({
+        ...insertUser,
+        createdAt: new Date()
       });
       
-      const connection = await pool.execute(`
-        INSERT INTO users (nome_empresa, cnpj, nome, email, password, created_at) 
-        VALUES (?, ?, ?, ?, ?, NOW())
-      `, [
-        insertUser.nomeEmpresa,
-        insertUser.cnpj,
-        insertUser.nome,
-        insertUser.email,
-        insertUser.password
-      ]);
+      console.log('✅ [DatabaseStorage] Insert realizado, id:', result.insertId);
       
-      console.log('✅ [DatabaseStorage] Insert realizado, resultado:', connection[0]);
-      
-      // Para MySQL2, o insertId está em connection[0].insertId
-      const insertId = (connection[0] as any).insertId as number;
-      console.log('🆔 [DatabaseStorage] ID gerado:', insertId);
-      
-      await pool.end(); // Fechar pool temporário
-      
-      if (!insertId || isNaN(Number(insertId))) {
-        throw new Error('Falha ao obter ID do usuário inserido');
-      }
-      
-      // Buscar o usuário inserido para retornar com dados completos
-      const user = await this.getUser(Number(insertId));
-      console.log('✅ [DatabaseStorage] Usuário criado:', user?.id);
+      const id = result.insertId;
+      const user = await this.getUser(id);
       
       if (!user) {
         throw new Error('Usuário inserido mas não encontrado');
@@ -190,8 +164,12 @@ export class DatabaseStorage implements IStorage {
     const biddingsWithFavoriteData: Bidding[] = [];
     const { conLicitacaoStorage } = await import("./conlicitacao-storage");
     
+    const biddingIds = favoritesList.map(f => f.biddingId);
+    const biddingsList = await conLicitacaoStorage.getBiddingsByIds(biddingIds);
+    const biddingsMap = new Map(biddingsList.map(b => [b.id, b]));
+
     for (const fav of favoritesList) {
-      const bidding = await conLicitacaoStorage.getBidding(fav.biddingId);
+      const bidding = biddingsMap.get(fav.biddingId);
       if (bidding) {
         // Garantir que a licitação seja pinada na memória
         try {
@@ -240,41 +218,25 @@ export class DatabaseStorage implements IStorage {
         category: favorite.category
       });
       
-      // Usar MySQL2 diretamente para garantir insertId
-      const mysql = await import('mysql2/promise');
-      const pool = mysql.createPool({
-        host: process.env.DB_HOST || 'localhost',
-        user: process.env.DB_USER || 'geovani',
-        password: process.env.DB_PASSWORD || 'Vermelho006@',
-        database: process.env.DB_NAME || 'jlg_consultoria',
+      const [result] = await db.insert(favorites).values({
+        userId: favorite.userId,
+        biddingId: favorite.biddingId,
+        category: favorite.category || null,
+        customCategory: favorite.customCategory || null,
+        notes: favorite.notes || null,
+        uf: favorite.uf || null,
+        codigoUasg: favorite.codigoUasg || null,
+        valorEstimado: favorite.valorEstimado || null,
+        fornecedor: favorite.fornecedor || null,
+        site: favorite.site || null,
+        orgaoLicitante: favorite.orgaoLicitante || null,
+        status: favorite.status || null,
+        createdAt: new Date()
       });
       
-      const connection = await pool.execute(`
-        INSERT INTO favorites (user_id, bidding_id, category, custom_category, notes, uf, codigo_uasg, valor_estimado, fornecedor, site, created_at) 
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
-      `, [
-        favorite.userId,
-        favorite.biddingId,
-        favorite.category || null,
-        favorite.customCategory || null,
-        favorite.notes || null,
-        favorite.uf || null,
-        favorite.codigoUasg || null,
-        favorite.valorEstimado || null,
-        favorite.fornecedor || null,
-        favorite.site || null
-      ]);
+      console.log('✅ [DatabaseStorage] Favorito inserido, id:', result.insertId);
       
-      console.log('✅ [DatabaseStorage] Favorito inserido, resultado:', connection[0]);
-      
-      const insertId = (connection[0] as any).insertId as number;
-      console.log('🆔 [DatabaseStorage] ID do favorito:', insertId);
-      
-      await pool.end();
-      
-      if (!insertId || isNaN(Number(insertId))) {
-        throw new Error('Falha ao obter ID do favorito inserido');
-      }
+      const insertId = result.insertId;
       
       // Buscar o favorito inserido para retornar com dados completos
       const [insertedFavorite] = await db.select().from(favorites).where(eq(favorites.id, insertId));
@@ -443,6 +405,10 @@ export class MemStorage implements IStorage {
     return Array.from(this.users.values()).find(user => user.email === username);
   }
 
+  async getUsers(): Promise<User[]> {
+    return Array.from(this.users.values());
+  }
+
   async createUser(insertUser: InsertUser): Promise<User> {
     const id = this.currentUserId++;
     const user: User = { ...insertUser, id, createdAt: new Date() };
@@ -516,33 +482,25 @@ export class MemStorage implements IStorage {
 
     // Preparar cache de licitações antes de mapear
     const { conLicitacaoStorage } = await import("./conlicitacao-storage");
-    if (!(conLicitacaoStorage as any).cachedBiddings || (conLicitacaoStorage as any).cachedBiddings.size === 0) {
-      // Carregamento inicial rápido para popular o cache
-      try {
-        await conLicitacaoStorage.getBiddingsPaginated(undefined, 1, 50);
-      } catch {}
-    }
+    
+    // Otimização: buscar todas as licitações de uma vez
+    const userFavoriteBiddingIds = userFavorites.map(f => f.biddingId);
+    const biddingsList = await conLicitacaoStorage.getBiddingsByIds(userFavoriteBiddingIds);
+    const biddingsMap = new Map(biddingsList.map(b => [b.id, b]));
 
     // Mapear para biddings com dados de categorização
     const favoriteBiddings: Bidding[] = [];
     for (const fav of userFavorites) {
-      let bidding = await conLicitacaoStorage.getBidding(fav.biddingId);
-      const raw = (conLicitacaoStorage as any).cachedBiddings?.get(fav.biddingId);
-      const cacheTimestamp = raw?.cacheTimestamp as number | undefined;
-      const isStale = cacheTimestamp ? (Date.now() - cacheTimestamp > 10 * 60 * 1000) : false;
-      if (bidding && isStale) {
-        try {
-          await (conLicitacaoStorage as any).refreshBoletimForBidding(fav.biddingId);
-          bidding = await conLicitacaoStorage.getBidding(fav.biddingId);
-        } catch {}
-      }
+      let bidding = biddingsMap.get(fav.biddingId);
+      
       if (!bidding) {
-        // Tentar carregar especificamente pelo ID (via numero_controle)
+        // Tentar carregar especificamente pelo ID (via numero_controle) se não encontrado
         try {
           await conLicitacaoStorage.getBiddingsPaginated({ numero_controle: String(fav.biddingId) }, 1, 50);
           bidding = await conLicitacaoStorage.getBidding(fav.biddingId);
         } catch {}
       }
+      
       if (bidding) {
         // Garantir que a licitação seja pinada na memória para não sumir
         try {

@@ -41,30 +41,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/users", async (req, res) => {
     try {
       console.log('👥 [ROUTES] Buscando lista de usuários via MySQL Storage');
-      // Para simplificar, vamos buscar usuários que já têm favoritos
-      const favorites = await storage.getFavorites(1); // Buscar alguns favoritos
-      const allFavorites = await storage.getFavorites(2); // E de outros usuários
-      const moreResults = await storage.getFavorites(5);
-
-      // Buscar dados dos usuários pelos IDs encontrados nos favoritos + IDs conhecidos
-      const userIds = new Set([1, 2, 5]); // IDs conhecidos: admin, Wilson, Moacir
-
-      const users = [];
-      for (const userId of Array.from(userIds)) {
-        try {
-          const user = await storage.getUser(userId);
-          if (user) {
-            users.push({
-              id: user.id,
-              nome: user.nome,
-              email: user.email,
-              nomeEmpresa: user.nomeEmpresa
-            });
-          }
-        } catch (error) {
-          console.log(`Usuário ${userId} não encontrado`);
-        }
-      }
+      
+      const allUsers = await storage.getUsers();
+      
+      const users = allUsers.map(user => ({
+        id: user.id,
+        nome: user.nome,
+        email: user.email,
+        nomeEmpresa: user.nomeEmpresa
+      }));
       
       console.log('✅ [ROUTES] Usuários encontrados:', users.length);
       res.json(users);
