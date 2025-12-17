@@ -43,6 +43,8 @@ export interface IConLicitacaoStorage {
     customCategory?: string;
     notes?: string;
   }): Promise<void>;
+
+  pinBidding(bidding: Bidding): Promise<void>;
 }
 
 export class ConLicitacaoStorage implements IConLicitacaoStorage {
@@ -52,6 +54,7 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
   private currentUserId: number;
   private currentFavoriteId: number;
   private cachedBiddings: Map<number, Bidding & { cacheTimestamp: number, dataSource: 'api' | 'mock' }>; // Cache das licitações com metadata
+  private pinnedBiddings: Map<number, Bidding>; // Licitações favoritadas que devem persistir mesmo após limpeza de cache
   private lastCacheUpdate: number;
   private readonly CACHE_DURATION = 10 * 60 * 1000; // 10 minutos
   private boletimCache = new Map<number, { data: any, timestamp: number, dataSource: 'api' | 'mock' }>();
@@ -66,6 +69,7 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
     this.favorites = new Map();
     this.viewedBoletins = new Set();
     this.cachedBiddings = new Map();
+    this.pinnedBiddings = new Map();
     this.currentUserId = 1;
     this.currentFavoriteId = 1;
     this.lastCacheUpdate = 0;
@@ -3117,7 +3121,12 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
       await this.refreshRecentBoletins();
     }
     
-    let biddings = Array.from(this.cachedBiddings.values());
+    // Combinar cache recente com favoritos pinados para busca completa
+    const allBiddings = new Map<number, Bidding>();
+    this.cachedBiddings.forEach((b, id) => allBiddings.set(id, b));
+    this.pinnedBiddings.forEach((b, id) => allBiddings.set(id, b));
+    
+    let biddings = Array.from(allBiddings.values());
     
     // Aplicar filtros
     if (filters?.conlicitacao_id) {
@@ -3177,6 +3186,17 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
     return this.cachedBiddings.size;
   }
 
+  async getBidding(id: number): Promise<Bidding | undefined> {
+    return this.cachedBiddings.get(id) || this.pinnedBiddings.get(id);
+  }
+
+  // Método para manter uma licitação em memória (usado para favoritos)
+  async pinBidding(bidding: Bidding): Promise<void> {
+    if (bidding && bidding.id) {
+      this.pinnedBiddings.set(bidding.id, bidding);
+    }
+  }
+
   // Métodos de favoritos com timestamps precisos em memória
   async getFavorites(userId: number, date?: string, dateFrom?: string, dateTo?: string): Promise<Bidding[]> {
     let userFavorites = Array.from(this.favorites.values())
@@ -3210,7 +3230,7 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
     
     const favoriteBiddings: Bidding[] = [];
     for (const fav of userFavorites) {
-      const bidding = this.cachedBiddings.get(fav.biddingId);
+      const bidding = await this.getBidding(fav.biddingId);
       if (bidding) {
         // Incluir dados de categorização salvos no favorito
         const biddingWithCategorization = {

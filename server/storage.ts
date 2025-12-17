@@ -193,6 +193,11 @@ export class DatabaseStorage implements IStorage {
     for (const fav of favoritesList) {
       const bidding = await conLicitacaoStorage.getBidding(fav.biddingId);
       if (bidding) {
+        // Garantir que a licitação seja pinada na memória
+        try {
+          await conLicitacaoStorage.pinBidding(bidding);
+        } catch {}
+
         // Incluir dados de categorização no bidding
         const biddingWithCategorization = {
           ...bidding,
@@ -218,6 +223,17 @@ export class DatabaseStorage implements IStorage {
 
   async addFavorite(favorite: InsertFavorite): Promise<Favorite> {
     try {
+      // Tentar pinar a licitação na memória do ConLicitacaoStorage
+      try {
+        const { conLicitacaoStorage } = await import("./conlicitacao-storage");
+        const bidding = await conLicitacaoStorage.getBidding(favorite.biddingId);
+        if (bidding) {
+          await conLicitacaoStorage.pinBidding(bidding);
+        }
+      } catch (e) {
+        console.warn('⚠️ [DatabaseStorage] Erro ao pinar licitação:', e);
+      }
+
       console.log('💾 [DatabaseStorage] Inserindo favorito no MySQL:', {
         userId: favorite.userId,
         biddingId: favorite.biddingId,
@@ -528,6 +544,11 @@ export class MemStorage implements IStorage {
         } catch {}
       }
       if (bidding) {
+        // Garantir que a licitação seja pinada na memória para não sumir
+        try {
+          await conLicitacaoStorage.pinBidding(bidding);
+        } catch {}
+
         const biddingWithFavorite = {
           ...bidding,
           category: fav.category,
@@ -550,6 +571,15 @@ export class MemStorage implements IStorage {
   }
 
   async addFavorite(insertFavorite: InsertFavorite): Promise<Favorite> {
+    // Tentar pinar a licitação na memória
+    try {
+      const { conLicitacaoStorage } = await import("./conlicitacao-storage");
+      const bidding = await conLicitacaoStorage.getBidding(insertFavorite.biddingId);
+      if (bidding) {
+        await conLicitacaoStorage.pinBidding(bidding);
+      }
+    } catch {}
+
     const id = this.currentFavoriteId++;
     const favorite: Favorite = { 
       ...insertFavorite, 
