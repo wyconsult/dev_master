@@ -19,6 +19,7 @@ import bcrypt from "bcrypt";
 export interface IStorage {
   // Users
   getUser(id: number): Promise<User | undefined>;
+  getUsers(): Promise<User[]>;
   getUserByEmail(email: string): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
@@ -59,6 +60,36 @@ export interface IStorage {
 }
 
 export class DatabaseStorage implements IStorage {
+  constructor() {
+    this.seedDefaultUser();
+  }
+
+  private async seedDefaultUser() {
+    try {
+      const existingUser = await this.getUser(1);
+      if (!existingUser) {
+        console.log('🌱 [Seed] Criando usuário padrão (Admin)...');
+        const hashedPassword = await bcrypt.hash("admin123", 10);
+        await db.insert(users).values({
+          id: 1,
+          nomeEmpresa: "JLG Consultoria",
+          cnpj: "12345678000100",
+          nome: "Administrador",
+          email: "admin@jlg.com",
+          password: hashedPassword,
+          createdAt: new Date()
+        });
+        console.log('✅ [Seed] Usuário padrão criado com sucesso.');
+      }
+    } catch (error) {
+      console.error('❌ [Seed] Erro ao criar usuário padrão:', error);
+    }
+  }
+
+  async getUsers(): Promise<User[]> {
+    return await db.select().from(users);
+  }
+
   async getUser(id: number): Promise<User | undefined> {
     const [user] = await db.select().from(users).where(eq(users.id, id));
     return user || undefined;
