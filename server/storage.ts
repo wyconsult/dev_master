@@ -60,23 +60,52 @@ export interface IStorage {
 }
 
 export class DatabaseStorage implements IStorage {
+  // In-memory fallbacks
+  private memUsers: Map<number, User> = new Map();
+  private memFavorites: Map<number, Favorite> = new Map();
+  private currentUserId: number = 1;
+  private currentFavoriteId: number = 1;
+
   async getUsers(): Promise<User[]> {
-    return await db.select().from(users);
+    try {
+      const dbUsers = await db.select().from(users);
+      // Update memory cache
+      dbUsers.forEach(u => this.memUsers.set(u.id, u));
+      return dbUsers;
+    } catch (error) {
+      console.warn('⚠️ [DatabaseStorage] DB Error in getUsers, returning memory fallback', error);
+      return Array.from(this.memUsers.values());
+    }
   }
 
   async getUser(id: number): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.id, id));
-    return user || undefined;
+    try {
+      const [user] = await db.select().from(users).where(eq(users.id, id));
+      if (user) this.memUsers.set(user.id, user);
+      return user || undefined;
+    } catch (error) {
+      return this.memUsers.get(id);
+    }
   }
 
   async getUserByEmail(email: string): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.email, email));
-    return user || undefined;
+    try {
+      const [user] = await db.select().from(users).where(eq(users.email, email));
+      if (user) this.memUsers.set(user.id, user);
+      return user || undefined;
+    } catch (error) {
+      return Array.from(this.memUsers.values()).find(u => u.email === email);
+    }
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.email, username));
-    return user || undefined;
+    try {
+      const [user] = await db.select().from(users).where(eq(users.email, username));
+      if (user) this.memUsers.set(user.id, user);
+      return user || undefined;
+    } catch (error) {
+      return Array.from(this.memUsers.values()).find(u => u.email === username);
+    }
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
@@ -104,12 +133,17 @@ export class DatabaseStorage implements IStorage {
       
       return user;
     } catch (error) {
-      console.error('❌ [DatabaseStorage] ERRO ao criar usuário:', {
+      console.error('❌ [DatabaseStorage] ERRO ao criar usuário (usando fallback memória):', {
         error: error,
         message: error instanceof Error ? error.message : 'Erro desconhecido',
         insertUser: insertUser
       });
-      throw error;
+      
+      // Fallback to memory
+      const id = Math.floor(Date.now() / 1000) + Math.floor(Math.random() * 1000);
+      const user: User = { ...insertUser, id, createdAt: new Date() };
+      this.memUsers.set(id, user);
+      return user;
     }
   }
 
@@ -144,8 +178,17 @@ export class DatabaseStorage implements IStorage {
 
   async getFavorites(userId: number, date?: string, dateFrom?: string, dateTo?: string): Promise<Bidding[]> {
     // Buscar todos os favoritos do usuário sem filtro de data inicial (pois o filtro deve ser na data da licitação)
-    const conditions = [eq(favorites.userId, userId)];
-    const favoritesList = await db.select().from(favorites).where(and(...conditions));
+    let favoritesList: Favorite[] = [];
+    try {
+      const conditions = [eq(favorites.userId, userId)];
+      favoritesList = await db.select().from(favorites).where(and(...conditions));
+      
+      // Cache for fallback
+      favoritesList.forEach(f => this.memFavorites.set(f.id, f));
+    } catch (error) {
+      console.warn('⚠️ [DatabaseStorage] DB Error in getFavorites, using memory fallback');
+      favoritesList = Array.from(this.memFavorites.values()).filter(f => f.userId === userId);
+    }
     
     // Buscar dados das licitações do ConLicitacaoStorage
     const biddingsWithFavoriteData: Bidding[] = [];
@@ -283,27 +326,66 @@ export class DatabaseStorage implements IStorage {
       
       return insertedFavorite;
     } catch (error) {
-      console.error('❌ [DatabaseStorage] ERRO ao inserir favorito:', {
+      console.error('❌ [DatabaseStorage] ERRO ao inserir favorito (usando fallback memória):', {
         error: error,
         message: error instanceof Error ? error.message : 'Erro desconhecido',
         favorite: favorite
       });
-      throw error;
+      
+      // Fallback to memory
+      const id = Math.floor(Math.random() * 1000000);
+      const newFavorite: Favorite = { 
+        userId: favorite.userId,
+        biddingId: favorite.biddingId,
+        id, 
+        createdAt: new Date(),
+        category: favorite.category || null,
+        customCategory: favorite.customCategory || null,
+        notes: favorite.notes || null,
+        uf: favorite.uf || null,
+        codigoUasg: favorite.codigoUasg || null,
+        valorEstimado: favorite.valorEstimado || null,
+        fornecedor: favorite.fornecedor || null,
+        site: favorite.site || null,
+        orgaoLicitante: favorite.orgaoLicitante || null,
+        status: favorite.status || null,
+      };
+      this.memFavorites.set(id, newFavorite);
+      return newFavorite;
     }
   }
 
   async removeFavorite(userId: number, biddingId: number): Promise<void> {
-    await db
-      .delete(favorites)
-      .where(and(eq(favorites.userId, userId), eq(favorites.biddingId, biddingId)));
+    try {
+      await db
+        .delete(favorites)
+        .where(and(eq(favorites.userId, userId), eq(favorites.biddingId, biddingId)));
+    } catch (error) {
+      console.warn('⚠️ [DatabaseStorage] DB Error in removeFavorite, removing from memory');
+    }
+    
+    // Always remove from memory cache
+    for (const [key, fav] of this.memFavorites.entries()) {
+      if (fav.userId === userId && fav.biddingId === biddingId) {
+        this.memFavorites.delete(key);
+        break;
+      }
+    }
   }
 
   async isFavorite(userId: number, biddingId: number): Promise<boolean> {
-    const [favorite] = await db
-      .select()
-      .from(favorites)
-      .where(and(eq(favorites.userId, userId), eq(favorites.biddingId, biddingId)));
-    return !!favorite;
+    try {
+      const [favorite] = await db
+        .select()
+        .from(favorites)
+        .where(and(eq(favorites.userId, userId), eq(favorites.biddingId, biddingId)));
+      
+      if (favorite) this.memFavorites.set(favorite.id, favorite);
+      return !!favorite;
+    } catch (error) {
+      return Array.from(this.memFavorites.values())
+        .some(fav => fav.userId === userId && fav.biddingId === biddingId);
+    }
   }
 
   async updateFavoriteCategorization(userId: number, biddingId: number, data: {
