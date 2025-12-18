@@ -40,7 +40,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Users routes
   app.get("/api/users", async (req, res) => {
     try {
-      console.log('👥 [ROUTES] Buscando lista de usuários via MySQL Storage');
+      console.log('👥 [ROUTES] Buscando lista de usuários...');
       
       const allUsers = await storage.getUsers();
       

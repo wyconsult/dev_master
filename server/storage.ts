@@ -192,11 +192,20 @@ export class DatabaseStorage implements IStorage {
         }
 
         // Aplicar filtro de data se necessário
-        if (filterStart && biddingDate && biddingDate < filterStart) continue;
-        if (filterEnd && biddingDate && biddingDate > filterEnd) continue;
+        if (filterStart && biddingDate && biddingDate < filterStart) {
+          console.log(`[Filter] Skipping bidding ${bidding.id} - Date ${biddingDate.toISOString()} before start ${filterStart.toISOString()}`);
+          continue;
+        }
+        if (filterEnd && biddingDate && biddingDate > filterEnd) {
+          console.log(`[Filter] Skipping bidding ${bidding.id} - Date ${biddingDate.toISOString()} after end ${filterEnd.toISOString()}`);
+          continue;
+        }
         // Se tem filtro mas a licitação não tem data, decidimos se mostra ou não. 
         // Geralmente se filtra por data, espera-se que tenha data. Se não tiver, ignora.
-        if ((filterStart || filterEnd) && !biddingDate) continue;
+        if ((filterStart || filterEnd) && !biddingDate) {
+          console.log(`[Filter] Skipping bidding ${bidding.id} - No valid date found. Raw: ${bidding.datahora_abertura}`);
+          continue;
+        }
 
         // Garantir que a licitação seja pinada na memória
         try {
