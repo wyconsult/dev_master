@@ -93,7 +93,7 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
   private async syncBoletins() {
     if (this.periodicRefreshInProgress) return;
     this.periodicRefreshInProgress = true;
-    console.log('🔄 [Sync] Iniciando sincronização de boletins e licitações...');
+    console.log('🔄 [Sync] Iniciando sincronização COMPLETA de boletins e licitações...');
 
     try {
       const filtrosList = await this.getFiltros();
@@ -102,17 +102,52 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
 
       for (const filtro of targetFiltros) {
         console.log(`📥 [Sync] Buscando boletins para filtro ${filtro.id}...`);
-        // Increased limit to 50 to get more history
-        const { boletins: boletinsApi } = await conLicitacaoAPI.getBoletins(filtro.id, 1, 50);
         
-        console.log(`📥 [Sync] Encontrados ${boletinsApi.length} boletins na API para filtro ${filtro.id}`);
-        
-        let totalLicitacoes = 0;
-        for (const boletim of boletinsApi) {
-          const count = await this.processBoletim(boletim);
-          totalLicitacoes += count;
+        let page = 1;
+        const perPage = 50; // Increased chunk size
+        let hasMore = true;
+        let totalLicitacoesFiltro = 0;
+        let consecutiveEmptyPages = 0;
+
+        while (hasMore) {
+          console.log(`   📄 [Sync] Buscando página ${page} (Filtro ${filtro.id})...`);
+          
+          const response = await conLicitacaoAPI.getBoletins(filtro.id, page, perPage);
+          const boletinsApi = response.boletins || [];
+          
+          if (boletinsApi.length === 0) {
+            consecutiveEmptyPages++;
+            if (consecutiveEmptyPages >= 2) {
+               hasMore = false; // Stop if 2 consecutive pages are empty
+            }
+          } else {
+            consecutiveEmptyPages = 0;
+            console.log(`   📥 [Sync] Página ${page}: ${boletinsApi.length} boletins encontrados.`);
+            
+            for (const boletim of boletinsApi) {
+              const count = await this.processBoletim(boletim);
+              totalLicitacoesFiltro += count;
+            }
+            
+            // Se retornou menos que o solicitado, provavelmente é a última página
+            if (boletinsApi.length < perPage) {
+              hasMore = false;
+            } else {
+              page++;
+            }
+          }
+
+          // Safety break to prevent infinite loops (e.g. max 100 pages = 5000 boletins)
+          if (page > 100) {
+            console.log(`⚠️ [Sync] Limite de segurança de paginação atingido (100 páginas). Parando sincronização deste filtro.`);
+            hasMore = false;
+          }
+          
+          // Small delay to be nice to the API
+          await new Promise(r => setTimeout(r, 500));
         }
-        console.log(`📊 [Sync] Filtro ${filtro.id}: ${totalLicitacoes} licitações processadas.`);
+        
+        console.log(`📊 [Sync] Filtro ${filtro.id} CONCLUÍDO: ${totalLicitacoesFiltro} licitações processadas no total.`);
       }
       console.log('✅ [Sync] Sincronização concluída.');
     } catch (error) {
