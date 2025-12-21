@@ -32,7 +32,8 @@ export interface IConLicitacaoStorage {
   }, page?: number, limit?: number): Promise<{ biddings: Bidding[], total: number }>;
   getBiddingsCount(): Promise<number>;
   getBidding(id: number): Promise<Bidding | undefined>;
-  
+  getBiddingsByIds(ids: number[]): Promise<Bidding[]>;
+
   // Favorites (mantemos localmente)
   getFavorites(userId: number, date?: string, dateFrom?: string, dateTo?: string): Promise<Bidding[]>;
   addFavorite(favorite: InsertFavorite): Promise<Favorite>;
@@ -3184,6 +3185,18 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
 
   async getBidding(id: number): Promise<Bidding | undefined> {
     return this.cachedBiddings.get(id) || this.pinnedBiddings.get(id);
+  }
+
+  // Buscar múltiplas licitações por IDs (usado para favoritos - batch fetching)
+  async getBiddingsByIds(ids: number[]): Promise<Bidding[]> {
+    const biddings: Bidding[] = [];
+    for (const id of ids) {
+      const bidding = await this.getBidding(id);
+      if (bidding) {
+        biddings.push(bidding);
+      }
+    }
+    return biddings;
   }
 
   // Método para manter uma licitação em memória (usado para favoritos)
