@@ -54,6 +54,14 @@ export const favorites = mysqlTable("favorites", {
   site: varchar("site", { length: 255 }), // Site de origem da licitação
   orgaoLicitante: varchar("orgao_licitante", { length: 500 }), // Orgão licitante (editável)
   status: varchar("status", { length: 100 }), // Status editável da licitação
+  // Dados da licitação armazenados diretamente no favorito
+  conlicitacao_id: int("conlicitacao_id"), // ID da licitação na ConLicitação
+  objeto: varchar("objeto", { length: 1000 }), // Objeto da licitação
+  datahora_abertura: varchar("datahora_abertura", { length: 50 }), // Data/hora de abertura
+  orgao_cidade: varchar("orgao_cidade", { length: 255 }), // Cidade do órgão
+  edital: varchar("edital", { length: 255 }), // Número do edital
+  link_edital: varchar("link_edital", { length: 500 }), // Link do edital
+  situacao: varchar("situacao", { length: 100 }), // Situação da licitação
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 

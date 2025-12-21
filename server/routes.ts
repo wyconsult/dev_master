@@ -2,6 +2,8 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { conLicitacaoStorage } from "./conlicitacao-storage";
+import { databaseStorage } from "./database-storage";
+import { syncService } from "./sync-service";
 import { loginSchema, registerSchema, forgotPasswordSchema } from "@shared/schema";
 import bcrypt from "bcrypt";
 
@@ -487,6 +489,126 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(200).json({ message: "Boletim marcado como visualizado" });
     } catch (error) {
       res.status(500).json({ message: "Erro interno do servidor" });
+    }
+  });
+
+  // ==================== ROTAS DE SINCRONIZAÇÃO ====================
+
+  // Status da sincronização
+  app.get("/api/sync/status", async (req, res) => {
+    try {
+      const status = syncService.getStatus();
+      res.json(status);
+    } catch (error) {
+      console.error('Erro ao buscar status de sincronização:', error);
+      res.status(500).json({ message: "Erro interno do servidor" });
+    }
+  });
+
+  // Sincronização manual completa
+  app.post("/api/sync/full", async (req, res) => {
+    try {
+      console.log('🔄 [ROUTES] Iniciando sincronização completa manual...');
+      const result = await syncService.fullSync();
+      res.json(result);
+    } catch (error) {
+      console.error('Erro na sincronização completa:', error);
+      res.status(500).json({
+        success: false,
+        message: error instanceof Error ? error.message : "Erro interno do servidor"
+      });
+    }
+  });
+
+  // Sincronização incremental
+  app.post("/api/sync/incremental", async (req, res) => {
+    try {
+      console.log('🔄 [ROUTES] Iniciando sincronização incremental...');
+      const result = await syncService.incrementalSync();
+      res.json(result);
+    } catch (error) {
+      console.error('Erro na sincronização incremental:', error);
+      res.status(500).json({
+        success: false,
+        message: error instanceof Error ? error.message : "Erro interno do servidor"
+      });
+    }
+  });
+
+  // Sincronizar apenas filtros
+  app.post("/api/sync/filtros", async (req, res) => {
+    try {
+      console.log('🔄 [ROUTES] Sincronizando filtros...');
+      const count = await syncService.syncFiltros();
+      res.json({ success: true, filtrosSynced: count });
+    } catch (error) {
+      console.error('Erro ao sincronizar filtros:', error);
+      res.status(500).json({
+        success: false,
+        message: error instanceof Error ? error.message : "Erro interno do servidor"
+      });
+    }
+  });
+
+  // Sincronizar boletins de um filtro específico
+  app.post("/api/sync/boletins/:filtroId", async (req, res) => {
+    try {
+      const filtroId = parseInt(req.params.filtroId);
+      const limit = parseInt(req.query.limit as string) || 50;
+      console.log(`🔄 [ROUTES] Sincronizando boletins do filtro ${filtroId}...`);
+      const count = await syncService.syncBoletins(filtroId, limit);
+      res.json({ success: true, boletinsSynced: count });
+    } catch (error) {
+      console.error('Erro ao sincronizar boletins:', error);
+      res.status(500).json({
+        success: false,
+        message: error instanceof Error ? error.message : "Erro interno do servidor"
+      });
+    }
+  });
+
+  // Sincronizar licitações de um boletim específico
+  app.post("/api/sync/licitacoes/:boletimId", async (req, res) => {
+    try {
+      const boletimId = parseInt(req.params.boletimId);
+      console.log(`🔄 [ROUTES] Sincronizando licitações do boletim ${boletimId}...`);
+      const result = await syncService.syncLicitacoesFromBoletim(boletimId);
+      res.json({ success: true, ...result });
+    } catch (error) {
+      console.error('Erro ao sincronizar licitações:', error);
+      res.status(500).json({
+        success: false,
+        message: error instanceof Error ? error.message : "Erro interno do servidor"
+      });
+    }
+  });
+
+  // Iniciar auto-sync
+  app.post("/api/sync/start-auto", async (req, res) => {
+    try {
+      const intervalMs = parseInt(req.query.interval as string) || 5 * 60 * 1000; // 5 minutos padrão
+      syncService.startAutoSync(intervalMs);
+      res.json({ success: true, message: `Auto-sync iniciado com intervalo de ${intervalMs}ms` });
+    } catch (error) {
+      console.error('Erro ao iniciar auto-sync:', error);
+      res.status(500).json({
+        success: false,
+        message: error instanceof Error ? error.message : "Erro interno do servidor"
+      });
+    }
+  });
+
+  // Parar auto-sync
+  app.post("/api/sync/stop-auto", async (req, res) => {
+    try {
+      syncService.stopAutoSync();
+      res.json({ success: true, message: "Auto-sync parado" });
+    } catch (error) {
+      console.error('Erro ao parar auto-sync:', error);
+      res.status(500).json({
+        success: false,
+        message: error instanceof Error ? error.message : "Erro interno do servidor"
+      });
     }
   });
 
