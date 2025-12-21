@@ -1,6 +1,11 @@
 import express, { type Request, Response, NextFunction } from "express";
+import dns from "dns";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
+
+// Forçar IPv4 globalmente para evitar problemas com a API ConLicitação
+// A API só aceita o IPv4 do servidor (31.97.26.138), não o IPv6
+dns.setDefaultResultOrder('ipv4first');
 
 const app = express();
 app.use(express.json());

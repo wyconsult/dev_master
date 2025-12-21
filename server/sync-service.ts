@@ -248,13 +248,13 @@ export class SyncService {
       // 2. Buscar todos os filtros do banco
       const allFiltros = await db.select().from(filtros);
 
-      // 3. Para cada filtro, sincronizar boletins (últimos 50)
+      // 3. Para cada filtro, sincronizar TODOS os boletins (sem limite prático)
       for (const filtro of allFiltros) {
-        const boletinsSynced = await this.syncBoletins(filtro.id, 50);
+        const boletinsSynced = await this.syncBoletins(filtro.id, 1000); // Sem limite prático
         result.boletinsSynced += boletinsSynced;
 
         // Pequena pausa para não sobrecarregar a API
-        await new Promise(resolve => setTimeout(resolve, 300));
+        await new Promise(resolve => setTimeout(resolve, 200));
       }
 
       // 4. Buscar TODOS os boletins e sincronizar licitações de cada um
