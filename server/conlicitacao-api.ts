@@ -1,19 +1,28 @@
 import fetch from 'node-fetch';
+import https from 'https';
+import dns from 'dns';
 import { logCurrentIP } from './ip-detector.js';
 
 const CONLICITACAO_BASE_URL = 'https://consultaonline.conlicitacao.com.br/api';
 const AUTH_TOKEN = '27a24a9a-44ce-4de8-a8ac-82cc58ca9f6e';
 
+// Forçar uso de IPv4 para evitar problemas com autorização de IP na API ConLicitação
+const ipv4Agent = new https.Agent({
+  family: 4, // Força IPv4
+  keepAlive: true,
+  timeout: 30000,
+});
+
 export class ConLicitacaoAPI {
   private async makeRequest(endpoint: string, retries: number = 2, timeout: number = 15000): Promise<any> {
     const url = `${CONLICITACAO_BASE_URL}${endpoint}`;
-    
+
     for (let attempt = 1; attempt <= retries + 1; attempt++) {
       try {
         // Controller para timeout
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), timeout);
-        
+
         const response = await fetch(url, {
           method: 'GET',
           headers: {
@@ -23,6 +32,7 @@ export class ConLicitacaoAPI {
             'Connection': 'keep-alive',
           },
           signal: controller.signal,
+          agent: ipv4Agent, // Usar agente IPv4
         });
         
         clearTimeout(timeoutId);

@@ -248,25 +248,26 @@ export class SyncService {
       // 2. Buscar todos os filtros do banco
       const allFiltros = await db.select().from(filtros);
 
-      // 3. Para cada filtro, sincronizar boletins
+      // 3. Para cada filtro, sincronizar boletins (últimos 50)
       for (const filtro of allFiltros) {
-        const boletinsSynced = await this.syncBoletins(filtro.id, 20);
+        const boletinsSynced = await this.syncBoletins(filtro.id, 50);
         result.boletinsSynced += boletinsSynced;
 
         // Pequena pausa para não sobrecarregar a API
-        await new Promise(resolve => setTimeout(resolve, 500));
+        await new Promise(resolve => setTimeout(resolve, 300));
       }
 
-      // 4. Buscar boletins recentes e sincronizar licitações
-      const recentBoletins = await db.select().from(boletins).orderBy(desc(boletins.id)).limit(10);
+      // 4. Buscar TODOS os boletins e sincronizar licitações de cada um
+      const allBoletins = await db.select().from(boletins).orderBy(desc(boletins.id));
+      console.log(`📊 [SyncService] Sincronizando licitações de ${allBoletins.length} boletins...`);
 
-      for (const boletim of recentBoletins) {
+      for (const boletim of allBoletins) {
         const { licitacoes, acompanhamentos } = await this.syncLicitacoesFromBoletim(boletim.id);
         result.biddingsSynced += licitacoes;
         result.acompanhamentosSynced += acompanhamentos;
 
-        // Pequena pausa para não sobrecarregar a API
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        // Pequena pausa para não sobrecarregar a API (reduzido para acelerar sync)
+        await new Promise(resolve => setTimeout(resolve, 500));
       }
 
       result.success = true;
