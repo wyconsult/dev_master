@@ -83,6 +83,12 @@ export default function Biddings() {
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, [page]);
+
+  // Resetar página quando filtros mudarem
+  useEffect(() => {
+    setPage(1);
+  }, [cidade, numeroControlePesquisado, selectedOrgaos, selectedUFs]);
+
   const buildFilters = () => {
     const filters: any = {};
     if (numeroControlePesquisado) filters.numero_controle = numeroControlePesquisado;
@@ -98,10 +104,11 @@ export default function Biddings() {
 
   // Query com paginação
   const { data: biddingsResp, isLoading, error, isFetching, refetch } = useQuery<{ biddings: Bidding[]; total: number; page: number; per_page: number; }>({
-    queryKey: ["/api/biddings", numeroControlePesquisado, selectedOrgaos, selectedUFs, page, perPage],
+    queryKey: ["/api/biddings", numeroControlePesquisado, selectedOrgaos, selectedUFs, cidade, page, perPage],
     queryFn: async () => {
       const params = new URLSearchParams();
       if (numeroControlePesquisado) params.append('numero_controle', numeroControlePesquisado);
+      if (cidade) params.append('cidade', cidade);
       if (selectedOrgaos.length) selectedOrgaos.forEach(orgao => params.append('orgao', orgao));
       if (selectedUFs.length) selectedUFs.forEach(uf => params.append('uf', uf));
       params.append('page', String(page));
@@ -165,57 +172,8 @@ export default function Biddings() {
     return true;
   };
 
-  // Filtro dinâmico em tempo real - SIMPLIFICADO (principais filtros já tratados no servidor)
-  const filteredBiddings = allBiddings.filter((bidding) => {
-    // Filtros adicionais (locais) que não são tratados no servidor
-
-    // Filtro por cidade
-    if (
-      cidade &&
-      !bidding.orgao_cidade?.toLowerCase().includes(cidade.toLowerCase())
-    ) {
-      return false;
-    }
-
-    // Filtro por objeto - busca inteligente (permite palavra parcial)
-    if (objeto && objeto.trim().length >= 3) {
-      if (!bidding.objeto?.toLowerCase().includes(objeto.toLowerCase())) {
-        return false;
-      }
-    }
-
-    // Filtro por valores
-    if (valorMinimo || valorMaximo) {
-      const valorBidding = parseValor(bidding.valor_estimado?.toString() || "");
-
-      if (valorMinimo && valorBidding < parseFloat(valorMinimo)) {
-        return false;
-      }
-
-      if (valorMaximo && valorBidding > parseFloat(valorMaximo)) {
-        return false;
-      }
-    }
-
-    // Filtro para mostrar apenas sem valor
-    if (mostrarSemValor) {
-      const valor = parseValor(bidding.valor_estimado?.toString() || "");
-      if (valor > 0) return false;
-    }
-
-    // Filtro por data
-    if (dataInicio || dataFim) {
-      const campoData =
-        tipoData === "abertura"
-          ? bidding.datahora_abertura
-          : bidding.datahora_documento;
-      if (!isDateInRange(campoData || "", dataInicio, dataFim)) {
-        return false;
-      }
-    }
-
-    return true;
-  });
+  // Filtro dinâmico em tempo real - SIMPLIFICADO (todos filtros tratados no servidor)
+  const filteredBiddings = allBiddings;
 
   const toggleOrgao = (orgao: string) => {
     setSelectedOrgaos(prev => 

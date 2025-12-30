@@ -21,7 +21,6 @@ export class SyncService {
   private lastSyncTime: Date | null = null;
 
   constructor() {
-    console.log('🔄 [SyncService] Inicializado');
   }
 
   // Retorna o status atual da sincronização
@@ -67,7 +66,6 @@ export class SyncService {
 
   // Sincronizar filtros da API para o banco
   async syncFiltros(): Promise<number> {
-    console.log('📥 [SyncService] Sincronizando filtros...');
     try {
       const response = await conLicitacaoAPI.getFiltros();
       const filtrosData = response.filtros || [];
@@ -93,7 +91,6 @@ export class SyncService {
         synced++;
       }
 
-      console.log(`✅ [SyncService] ${synced} filtros sincronizados`);
       return synced;
     } catch (error: any) {
       console.error('❌ [SyncService] Erro ao sincronizar filtros:', error.message);
@@ -103,7 +100,6 @@ export class SyncService {
 
   // Sincronizar boletins de um filtro
   async syncBoletins(filtroId: number, limit: number = 50): Promise<number> {
-    console.log(`📥 [SyncService] Sincronizando boletins do filtro ${filtroId}...`);
     try {
       const response = await conLicitacaoAPI.getBoletins(filtroId, 1, limit, 'desc');
       const boletinsData = response.boletins || [];
@@ -127,7 +123,6 @@ export class SyncService {
         synced++;
       }
 
-      console.log(`✅ [SyncService] ${synced} boletins sincronizados para filtro ${filtroId}`);
       return synced;
     } catch (error: any) {
       console.error(`❌ [SyncService] Erro ao sincronizar boletins do filtro ${filtroId}:`, error.message);
@@ -137,7 +132,6 @@ export class SyncService {
 
   // Sincronizar licitações de um boletim
   async syncLicitacoesFromBoletim(boletimId: number): Promise<{ licitacoes: number; acompanhamentos: number }> {
-    console.log(`📥 [SyncService] Sincronizando licitações do boletim ${boletimId}...`);
     try {
       const { licitacoes, acompanhamentos: acompanhamentosData } = await conLicitacaoAPI.getLicitacoesFromBoletim(boletimId);
 
@@ -201,7 +195,6 @@ export class SyncService {
         acompanhamentosSynced++;
       }
 
-      console.log(`✅ [SyncService] Boletim ${boletimId}: ${licitacoesSynced} licitações, ${acompanhamentosSynced} acompanhamentos`);
       return { licitacoes: licitacoesSynced, acompanhamentos: acompanhamentosSynced };
     } catch (error: any) {
       console.error(`❌ [SyncService] Erro ao sincronizar boletim ${boletimId}:`, error.message);
@@ -212,7 +205,6 @@ export class SyncService {
   // Sincronização completa
   async fullSync(): Promise<SyncResult> {
     if (this.isSyncing) {
-      console.log('⏳ [SyncService] Sincronização já em andamento, ignorando...');
       return {
         success: false,
         syncType: 'full',
@@ -240,8 +232,6 @@ export class SyncService {
     };
 
     try {
-      console.log('🚀 [SyncService] Iniciando sincronização completa...');
-
       // 1. Sincronizar filtros
       result.filtrosSynced = await this.syncFiltros();
 
@@ -259,7 +249,6 @@ export class SyncService {
 
       // 4. Buscar TODOS os boletins e sincronizar licitações de cada um
       const allBoletins = await db.select().from(boletins).orderBy(desc(boletins.id));
-      console.log(`📊 [SyncService] Sincronizando licitações de ${allBoletins.length} boletins...`);
 
       for (const boletim of allBoletins) {
         const { licitacoes, acompanhamentos } = await this.syncLicitacoesFromBoletim(boletim.id);
@@ -274,8 +263,6 @@ export class SyncService {
       result.duration = Date.now() - startTime;
 
       await this.updateSyncLog(logId, 'success', result.biddingsSynced + result.boletinsSynced);
-      console.log(`✅ [SyncService] Sincronização completa finalizada em ${result.duration}ms`);
-      console.log(`   📊 Resultados: ${result.filtrosSynced} filtros, ${result.boletinsSynced} boletins, ${result.biddingsSynced} licitações, ${result.acompanhamentosSynced} acompanhamentos`);
 
     } catch (error: any) {
       result.error = error.message;
@@ -321,14 +308,11 @@ export class SyncService {
     };
 
     try {
-      console.log('🔄 [SyncService] Iniciando sincronização incremental...');
-
       // Buscar filtros existentes
       const allFiltros = await db.select().from(filtros);
 
       if (allFiltros.length === 0) {
         // Se não tem filtros, fazer sync full
-        console.log('⚠️ [SyncService] Nenhum filtro encontrado, executando fullSync...');
         this.isSyncing = false;
         return this.fullSync();
       }
@@ -354,7 +338,6 @@ export class SyncService {
       result.duration = Date.now() - startTime;
 
       await this.updateSyncLog(logId, 'success', result.biddingsSynced);
-      console.log(`✅ [SyncService] Sincronização incremental finalizada em ${result.duration}ms`);
 
     } catch (error: any) {
       result.error = error.message;
@@ -376,11 +359,8 @@ export class SyncService {
       clearInterval(this.autoSyncTimer);
     }
 
-    console.log(`⏰ [SyncService] Auto-sync configurado para cada ${intervalMs / 1000 / 60} minutos`);
-
     // Executar sync inicial após 10 segundos
     setTimeout(() => {
-      console.log('🚀 [SyncService] Executando sincronização inicial...');
       this.fullSync().catch(err => console.error('Erro no sync inicial:', err));
     }, 10000);
 
@@ -395,7 +375,6 @@ export class SyncService {
     if (this.autoSyncTimer) {
       clearInterval(this.autoSyncTimer);
       this.autoSyncTimer = null;
-      console.log('⏹️ [SyncService] Auto-sync parado');
     }
   }
 }

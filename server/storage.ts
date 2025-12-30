@@ -68,7 +68,6 @@ export class DatabaseStorage implements IStorage {
     try {
       const existingUser = await this.getUser(1);
       if (!existingUser) {
-        console.log('🌱 [Seed] Criando usuário padrão (Admin)...');
         const hashedPassword = await bcrypt.hash("admin123", 10);
         await db.insert(users).values({
           id: 1,
@@ -79,7 +78,6 @@ export class DatabaseStorage implements IStorage {
           password: hashedPassword,
           createdAt: new Date()
         });
-        console.log('✅ [Seed] Usuário padrão criado com sucesso.');
       }
     } catch (error) {
       console.error('❌ [Seed] Erro ao criar usuário padrão:', error);
@@ -107,13 +105,6 @@ export class DatabaseStorage implements IStorage {
 
   async createUser(insertUser: InsertUser): Promise<User> {
     try {
-      console.log('🗺️ [DatabaseStorage] Tentando inserir usuário:', {
-        nomeEmpresa: insertUser.nomeEmpresa,
-        cnpj: insertUser.cnpj,
-        nome: insertUser.nome,
-        email: insertUser.email
-      });
-      
       // Importar o pool do MySQL2 diretamente
       const mysql = await import('mysql2/promise');
       const pool = mysql.createPool({
@@ -134,11 +125,8 @@ export class DatabaseStorage implements IStorage {
         insertUser.password
       ]);
       
-      console.log('✅ [DatabaseStorage] Insert realizado, resultado:', connection[0]);
-      
       // Para MySQL2, o insertId está em connection[0].insertId
       const insertId = (connection[0] as any).insertId as number;
-      console.log('🆔 [DatabaseStorage] ID gerado:', insertId);
       
       await pool.end(); // Fechar pool temporário
       
@@ -148,7 +136,6 @@ export class DatabaseStorage implements IStorage {
       
       // Buscar o usuário inserido para retornar com dados completos
       const user = await this.getUser(Number(insertId));
-      console.log('✅ [DatabaseStorage] Usuário criado:', user?.id);
       
       if (!user) {
         throw new Error('Usuário inserido mas não encontrado');
@@ -315,11 +302,7 @@ export class DatabaseStorage implements IStorage {
         console.warn('⚠️ [DatabaseStorage] Erro ao pinar licitação:', e);
       }
 
-      console.log('💾 [DatabaseStorage] Inserindo favorito no MySQL:', {
-        userId: favorite.userId,
-        biddingId: favorite.biddingId,
-        category: favorite.category
-      });
+
       
       // Usar MySQL2 diretamente para garantir insertId
       const mysql = await import('mysql2/promise');
@@ -346,10 +329,7 @@ export class DatabaseStorage implements IStorage {
         favorite.site || null
       ]);
       
-      console.log('✅ [DatabaseStorage] Favorito inserido, resultado:', connection[0]);
-      
       const insertId = (connection[0] as any).insertId as number;
-      console.log('🆔 [DatabaseStorage] ID do favorito:', insertId);
       
       await pool.end();
       
@@ -754,13 +734,6 @@ const isReplit = process.env.REPLIT === '1' || process.env.NODE_ENV === 'develop
 const isProductionServer = !isReplit && process.env.NODE_ENV !== 'development';
 const forceMySQL = isProductionServer; // Usar MySQL apenas no servidor de produção
 
-console.log('🔧 [STORAGE] Configurando storage:', {
-  NODE_ENV: process.env.NODE_ENV,
-  REPLIT: process.env.REPLIT,
-  isReplit,
-  isProductionServer,
-  forceMySQL,
-  storageType: forceMySQL ? 'MySQL (DatabaseStorage)' : 'Memory (MemStorage)'
-});
+
 
 export const storage = forceMySQL ? new DatabaseStorage() : new MemStorage();

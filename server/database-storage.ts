@@ -57,7 +57,7 @@ export class DatabaseStorage implements IDatabaseStorage {
   private viewedBoletins: Set<number> = new Set();
 
   constructor() {
-    console.log('💾 [DatabaseStorage] Inicializado - usando banco de dados MySQL');
+
   }
 
   // ==================== USERS ====================

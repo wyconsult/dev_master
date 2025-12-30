@@ -110,7 +110,7 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
   private async refreshRecentBoletins(): Promise<void> {
     if (this.periodicRefreshInProgress) return;
     this.periodicRefreshInProgress = true;
-    console.log('🔄 Iniciando atualização de boletins recentes...');
+    
     try {
       const newCache = new Map<number, Bidding & { cacheTimestamp: number, dataSource: 'api' | 'mock' }>();
       const filtros = await this.getFiltros();
@@ -123,14 +123,11 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
       
       for (const filtro of targetFiltros) {
         try {
-          console.log(`📥 Iniciando busca de ${TARGET_TOTAL} boletins para filtro ${filtro.id}...`);
-          
           let allBoletins: any[] = [];
           let page = 1;
           let keepFetching = true;
 
           while (keepFetching && allBoletins.length < TARGET_TOTAL) {
-            console.log(`📄 Buscando página ${page} (tamanho ${PAGE_SIZE})...`);
             const response = await this.getBoletins(filtro.id, page, PAGE_SIZE);
             const pageBoletins = response.boletins || [];
             
@@ -150,8 +147,6 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
             allBoletins = allBoletins.slice(0, TARGET_TOTAL);
           }
           
-          console.log(`📊 Total recuperado: ${allBoletins.length} boletins. Processando em paralelo...`);
-
           // Processar em paralelo com controle de concorrência (chunks) para agilizar
           const chunkSize = 5; // 5 requisições simultâneas
           
@@ -170,11 +165,6 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
                 // Erro pontual em boletim ignora
               }
             }));
-            
-            // Log de progresso a cada 20 boletins
-            if ((i + chunkSize) % 20 === 0) {
-              console.log(`⏳ Progresso: ${Math.min(i + chunkSize, allBoletins.length)}/${allBoletins.length} boletins processados...`);
-            }
           }
         } catch (err) {
           console.error(`Erro ao processar filtro ${filtro.id}:`, err);
@@ -184,10 +174,14 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
       if (newCache.size > 0) {
         this.cachedBiddings = newCache;
         this.lastCacheUpdate = Date.now();
-        console.log(`✅ Cache atualizado com sucesso: ${this.cachedBiddings.size} licitações carregadas.`);
+      } else {
+        await this.loadInitialBiddings();
       }
     } catch (err) {
       console.error('Erro geral na atualização de boletins:', err);
+      if (this.cachedBiddings.size === 0) {
+        await this.loadInitialBiddings();
+      }
     }
     this.periodicRefreshInProgress = false;
   }
@@ -244,12 +238,7 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
 
       return filtros;
     } catch (error: any) {
-      if (error.message === 'IP_NOT_AUTHORIZED') {
-        console.log('🚫 [MOBILE DEBUG] API ConLicitação: IP não autorizado.');
-        console.log('💡 Para acesso aos dados reais, execute em ambiente com IP autorizado:');
-        console.log('   - Desenvolvimento (Replit): 35.227.80.200');
-        console.log('   - Produção: 31.97.26.138');
-      } else {
+      if (error.message !== 'IP_NOT_AUTHORIZED') {
         console.error('❌ [MOBILE DEBUG] Erro ao buscar filtros da API:', error);
       }
       
@@ -276,7 +265,6 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
 
       // Lógica de paginação virtual para contornar limite da API
       if (perPage > API_LIMIT) {
-        console.log(`📥 Solicitado ${perPage} boletins (maior que limite ${API_LIMIT}). Buscando múltiplas páginas...`);
         
         const startIndex = (page - 1) * perPage;
         const endIndex = startIndex + perPage;
@@ -284,10 +272,8 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
         const startApiPage = Math.floor(startIndex / API_LIMIT) + 1;
         const endApiPage = Math.ceil(endIndex / API_LIMIT);
         
-        console.log(`📄 Mapeando requisição App (P${page}, ${perPage} itens) -> API (P${startApiPage} até P${endApiPage})`);
         
         for (let p = startApiPage; p <= endApiPage; p++) {
-          console.log(`📡 Buscando página API ${p}...`);
           const response = await conLicitacaoAPI.getBoletins(filtroId, p, API_LIMIT);
           const pageBoletins = response.boletins || [];
           
@@ -328,7 +314,6 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
       if (totalItems === 0) totalItems = apiBoletins.length;
 
       // CORREÇÃO: A API básica não retorna quantidades, precisamos buscar de forma híbrida
-      console.log(`📡 Buscando quantidades para ${apiBoletins.length} boletins...`);
       
       // Buscar contagens em paralelo usando cache para performance
       const boletinsWithCounts = await Promise.all(
@@ -363,7 +348,7 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
               visualizado: this.viewedBoletins.has(boletim.id),
             };
           } catch (error) {
-            console.warn(`⚠️ Erro ao buscar contagem do boletim ${boletim.id}, usando valores padrão`);
+            // Erro ao buscar contagem, usando valores padrão
             return {
               id: boletim.id,
               numero_edicao: boletim.numero_edicao,
@@ -377,19 +362,13 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
         })
       );
       
-      console.log(`✅ Carregados ${boletinsWithCounts.length} boletins com contagens corretas!`);
 
       return {
         boletins: boletinsWithCounts,
         total: totalItems
       };
     } catch (error: any) {
-      if (error.message === 'IP_NOT_AUTHORIZED') {
-        console.log('🚫 API ConLicitação: IP não autorizado.');
-        console.log('💡 Para acesso aos dados reais, execute em ambiente com IP autorizado:');
-        console.log('   - Desenvolvimento (Replit): 35.227.80.200');
-        console.log('   - Produção: 31.97.26.138');
-      } else {
+      if (error.message !== 'IP_NOT_AUTHORIZED') {
         console.error('Erro ao buscar boletins da API:', error);
       }
       
@@ -443,22 +422,17 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
     // Verificar cache primeiro
     const cached = this.boletimCache.get(id);
     if (cached && (Date.now() - cached.timestamp < this.CACHE_TTL)) {
-      console.log(`🎯 Cache hit para boletim ${id} (fonte: ${cached.dataSource})`);
       return cached.data;
     }
     
-    console.log(`📡 Buscando dados frescos para boletim ${id}`);
     try {
       const data = await conLicitacaoAPI.getBoletimData(id);
       this.boletimCache.set(id, { data, timestamp: Date.now(), dataSource: 'api' });
-      console.log(`✅ Dados do boletim ${id} obtidos da API real`);
       return data;
     } catch (error: any) {
       if (error.message === 'IP_NOT_AUTHORIZED') {
-        console.log(`⚠️ IP não autorizado para boletim ${id}, usando dados mock se disponíveis`);
         // Se temos dados em cache (mesmo expirados), usar eles
         if (cached) {
-          console.log(`🔄 Usando cache expirado para boletim ${id} (fonte: ${cached.dataSource})`);
           return cached.data;
         }
       }
@@ -512,12 +486,7 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
 
       return { boletim, licitacoes, acompanhamentos };
     } catch (error: any) {
-      if (error.message === 'IP_NOT_AUTHORIZED') {
-        console.log('🚫 API ConLicitação: IP não autorizado.');
-        console.log('💡 Para acesso aos dados reais, execute em ambiente com IP autorizado:');
-        console.log('   - Desenvolvimento (Replit): 35.227.80.200');
-        console.log('   - Produção: 31.97.26.138');
-      } else {
+      if (error.message !== 'IP_NOT_AUTHORIZED') {
         console.error('Erro ao buscar boletim da API:', error);
       }
       
@@ -1353,7 +1322,7 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
     
     // Log de debug para rastrear transformações de status
     if (situacaoOriginal !== situacaoExpandida) {
-      console.log(`🔄 Status expandido: "${situacaoOriginal}" → "${situacaoExpandida}" (ID: ${licitacao.id})`);
+      // Status expandido
     }
 
     const normalizedId = Number(licitacao.id);
@@ -2198,14 +2167,12 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
       for (const filtro of filtros) {
         try {
           // Buscar TODOS os boletins do filtro para garantir cobertura completa
-          console.log(`🔍 Carregando todos os boletins do filtro ${filtro.id}...`);
           let page = 1;
           let totalLoaded = 0;
           let hasMoreBoletins = true;
           
           while (hasMoreBoletins) {
             const boletinsResponse = await this.getBoletins(filtro.id, page, 50);
-            console.log(`📄 Página ${page}: ${boletinsResponse.boletins.length} boletins encontrados`);
             
             if (boletinsResponse.boletins.length === 0) {
               hasMoreBoletins = false;
@@ -2215,7 +2182,6 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
             for (const boletim of boletinsResponse.boletins) {
               try {
                 // Buscar licitações de cada boletim e adicionar ao cache
-                console.log(`📥 Carregando licitações do boletim ${boletim.id}...`);
                 const boletimData = await conLicitacaoAPI.getBoletimData(boletim.id);
                 
                 if (boletimData.licitacoes) {
@@ -2225,7 +2191,7 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
                   });
                 }
               } catch (error) {
-                console.log(`⚠️ Erro ao carregar boletim ${boletim.id}, continuando...`);
+                // Erro ao carregar boletim
               }
             }
             
@@ -2239,24 +2205,21 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
             
             // Limite de segurança para evitar carregar dados excessivos
             if (totalLoaded >= 500) {
-              console.log(`⚠️ Limite de ${totalLoaded} boletins atingido para filtro ${filtro.id}`);
               hasMoreBoletins = false;
             }
           }
           
-          console.log(`✅ Carregados ${totalLoaded} boletins do filtro ${filtro.id}`);
         } catch (error) {
-          console.log(`⚠️ Erro ao processar filtro ${filtro.id}, continuando...`);
+          // Erro ao processar filtro
         }
       }
 
       
       this.lastCacheUpdate = Date.now();
       this.cachedBiddings = newCache;
-      console.log(`✅ Pré-carregamento concluído: ${this.cachedBiddings.size} licitações disponíveis para busca`);
       
     } catch (error: any) {
-      console.log('🚫 Usando dados de teste - IP não autorizado para API real');
+      // Usando dados de teste - IP não autorizado para API real
       this.cachedBiddings = newCache;
     }
     
@@ -3018,7 +2981,6 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
       
       for (const filtro of filtros) {
         try {
-          console.log(`⚡ Carregamento rápido: primeiros boletins do filtro ${filtro.id}`);
           const boletinsResponse = await this.getBoletins(filtro.id, 1, 3);
           
           for (const boletim of boletinsResponse.boletins) {
@@ -3032,18 +2994,16 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
                 });
               }
             } catch (error) {
-              console.log(`⚠️ Erro ao carregar boletim ${boletim.id} (carregamento rápido)`);
+              // Erro ao carregar boletim
             }
           }
         } catch (error) {
-          console.log(`⚠️ Erro no carregamento rápido do filtro ${filtro.id}`);
+          // Erro no carregamento rápido
         }
       }
       
-      console.log(`⚡ Carregamento inicial concluído: ${this.cachedBiddings.size} licitações carregadas`);
-      
     } catch (error) {
-      console.log('⚡ Usando dados de teste para carregamento inicial');
+      // Usando dados de teste
     }
     
     this.lastCacheUpdate = Date.now();
@@ -3056,14 +3016,12 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
     }
     
     this.backgroundLoadingInProgress = true;
-    console.log('🔄 Iniciando carregamento completo em background...');
     
     try {
       await this.refreshBiddingsCache();
       this.fullLoadCompleted = true;
-      console.log('✅ Carregamento completo em background finalizado');
     } catch (error) {
-      console.log('⚠️ Erro no carregamento em background:', error);
+      // Erro no carregamento em background
     } finally {
       this.backgroundLoadingInProgress = false;
     }
@@ -3071,8 +3029,6 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
 
   // Nova função específica para busca por número de controle
   private async searchByControlNumber(numeroControle: string): Promise<Bidding[]> {
-    console.log(`🎯 [DEBUG] Iniciando busca por número de controle: ${numeroControle}`);
-    console.log(`📊 [DEBUG] Cache atual contém ${this.cachedBiddings.size} licitações`);
     
     // Primeiro verificar no cache
     let biddings = Array.from(this.cachedBiddings.values()).filter(b => 
@@ -3083,17 +3039,9 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
     );
     
     if (biddings.length > 0) {
-      console.log(`✅ [DEBUG] Encontrado no cache: ${biddings.length} licitações`);
-      // Log das fontes dos dados encontrados
-      const sourcesFound = biddings.reduce((acc, b) => {
-        acc[b.dataSource] = (acc[b.dataSource] || 0) + 1;
-        return acc;
-      }, {} as Record<string, number>);
-      console.log(`📈 [DEBUG] Fontes dos dados encontrados:`, sourcesFound);
       return biddings;
     }
     
-    console.log(`🔍 [DEBUG] Não encontrado no cache, iniciando busca específica...`);
     // Se não encontrou no cache, fazer busca específica
     await this.searchSpecificBidding(numeroControle);
     
@@ -3105,21 +3053,12 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
       b.edital?.toLowerCase().includes(numeroControle.toLowerCase())
     );
     
-    console.log(`✅ [DEBUG] Busca específica finalizada: ${biddings.length} licitações encontradas`);
-    if (biddings.length > 0) {
-      const sourcesFound = biddings.reduce((acc, b) => {
-        acc[b.dataSource] = (acc[b.dataSource] || 0) + 1;
-        return acc;
-      }, {} as Record<string, number>);
-      console.log(`📈 [DEBUG] Fontes dos dados encontrados após busca:`, sourcesFound);
-    }
     return biddings;
   }
 
   // Busca específica COMPLETA para número de controle não encontrado
   private async searchSpecificBidding(numeroControle: string): Promise<void> {
     try {
-      console.log(`🔍 Busca específica COMPLETA para: ${numeroControle}`);
       const filtros = await this.getFiltros();
       let totalBuscados = 0;
       let encontrou = false;
@@ -3129,7 +3068,6 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
         try {
           // Pegar informação total de boletins
           const boletinsResponse = await this.getBoletins(filtro.id, 1, 100);
-          console.log(`📊 Filtro ${filtro.id}: ${boletinsResponse.total} boletins disponíveis`);
           
           // Buscar em lotes de 20 boletins
           const batchSize = 20;
@@ -3157,32 +3095,30 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
                       this.cachedBiddings.set(transformedLicitacao.id, transformedLicitacao);
                     });
                     if (matching.length > 0) {
-                      console.log(`🎯 ENCONTRADO em boletim ${boletim.id}!`);
                       return true;
                     }
                   }
                 } catch (error) {
-                  console.log(`⚠️ Erro em boletim ${boletim.id}, continuando...`);
+                  // Erro em boletim
                 }
                 return false;
               }));
               if (results.some(r => r)) {
-                console.log(`✅ Busca específica finalizada - SUCESSO! Total boletins verificados: ${totalBuscados}`);
                 return;
               }
             }
           }
         } catch (error) {
-          console.log(`⚠️ Erro no filtro ${filtro.id}, continuando para próximo...`);
+          // Erro no filtro
         }
       }
       
       if (!encontrou) {
-        console.log(`❌ Número de controle ${numeroControle} não encontrado após buscar ${totalBuscados} boletins`);
+        // Número de controle não encontrado após busca
       }
       
     } catch (error) {
-      console.log('⚠️ Erro crítico na busca específica:', error);
+      // Erro crítico na busca específica
     }
   }
 
@@ -3215,6 +3151,14 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
     orgao?: string[]; 
     uf?: string[];
     numero_controle?: string;
+    cidade?: string;
+    objeto?: string;
+    valor_min?: number;
+    valor_max?: number;
+    mostrar_sem_valor?: boolean;
+    data_inicio?: string;
+    data_fim?: string;
+    tipo_data?: 'abertura' | 'documento';
   }, page: number = 1, limit: number = 50): Promise<{ biddings: Bidding[], total: number }> {
     if (this.cachedBiddings.size === 0 || Date.now() - this.lastCacheUpdate > this.CACHE_DURATION) {
       await this.refreshRecentBoletins();
@@ -3244,7 +3188,6 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
       
       // Se não encontrou resultado, tentar busca específica
       if (biddings.length === 0) {
-        console.log(`🔍 Busca específica paginada para: ${filters.numero_controle}`);
         await this.searchSpecificBidding(filters.numero_controle);
         biddings = Array.from(this.cachedBiddings.values()).filter(b => 
           b.conlicitacao_id?.toString().includes(filters.numero_controle!) ||
@@ -3267,6 +3210,79 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
       biddings = biddings.filter(b => 
         filters.uf!.includes(b.orgao_uf || '')
       );
+    }
+
+    if (filters?.cidade) {
+      biddings = biddings.filter(b => 
+        b.orgao_cidade?.toLowerCase().includes(filters.cidade!.toLowerCase())
+      );
+    }
+
+    if (filters?.objeto) {
+      biddings = biddings.filter(b => 
+        b.objeto?.toLowerCase().includes(filters.objeto!.toLowerCase())
+      );
+    }
+
+    if (filters?.valor_min !== undefined || filters?.valor_max !== undefined || filters?.mostrar_sem_valor) {
+      biddings = biddings.filter(b => {
+        // Converter valor para número
+        let valor = 0;
+        if (typeof b.valor_estimado === 'string') {
+          // Remove caracteres não numéricos exceto vírgulas e pontos
+          const cleanValue = (b.valor_estimado as string).replace(/[^\d,.-]/g, "").replace(",", ".");
+          valor = parseFloat(cleanValue) || 0;
+        } else if (typeof b.valor_estimado === 'number') {
+          valor = b.valor_estimado;
+        }
+
+        // Filtro para mostrar apenas sem valor
+        if (filters.mostrar_sem_valor) {
+          if (valor > 0) return false;
+        }
+
+        if (filters.valor_min !== undefined && valor < filters.valor_min) {
+          return false;
+        }
+
+        if (filters.valor_max !== undefined && valor > filters.valor_max) {
+          return false;
+        }
+
+        return true;
+      });
+    }
+
+    if (filters?.data_inicio || filters?.data_fim) {
+      biddings = biddings.filter(b => {
+        const campoData = filters.tipo_data === 'documento' 
+          ? b.datahora_documento 
+          : b.datahora_abertura;
+          
+        if (!campoData) return false; // Se não tem data, não passa no filtro de data
+
+        const dataBidding = new Date(campoData);
+        
+        if (filters.data_inicio) {
+          const inicio = new Date(filters.data_inicio);
+          // Resetar horas para comparação justa de datas
+          inicio.setHours(0, 0, 0, 0);
+          const dataBiddingCompare = new Date(dataBidding);
+          dataBiddingCompare.setHours(0, 0, 0, 0);
+          
+          if (dataBiddingCompare < inicio) return false;
+        }
+
+        if (filters.data_fim) {
+          const fim = new Date(filters.data_fim);
+          // Ajustar fim para o final do dia
+          fim.setHours(23, 59, 59, 999);
+          
+          if (dataBidding > fim) return false;
+        }
+
+        return true;
+      });
     }
     
     const total = biddings.length;
@@ -3466,7 +3482,6 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
 
   // Método de debug para validar fonte dos dados
   async getDataSourcesDebugInfo() {
-    console.log('🔍 [DEBUG] Coletando informações de fonte dos dados...');
     
     const now = Date.now();
     const cacheStats = {
@@ -3539,16 +3554,14 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
     let apiError = null;
     
     try {
-      console.log('🔍 [DEBUG] Testando conectividade com API ConLicitação...');
       const testResponse = await conLicitacaoAPI.getFiltros();
       apiStatus = Array.isArray(testResponse) && testResponse.length > 0 ? 'connected' : 'empty_response';
     } catch (error) {
       apiStatus = 'error';
       apiError = error instanceof Error ? error.message : 'Unknown error';
-      console.log('❌ [DEBUG] Erro na conectividade com API:', apiError);
     }
 
-    const debugInfo = {
+    const debugInfo: any = {
       timestamp: new Date().toISOString(),
       environment: process.env.NODE_ENV || 'development',
       apiStatus,
@@ -3559,7 +3572,7 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
         realApiData: cacheStats.biddings.byDataSource['api'] || 0,
         unknownSource: cacheStats.biddings.byDataSource['unknown'] || 0
       },
-      recommendations: []
+      recommendations: [] as string[]
     };
 
     // Adicionar recomendações baseadas na análise
@@ -3579,7 +3592,6 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
       debugInfo.recommendations.push(`${debugInfo.dataQuality.unknownSource} registros têm fonte desconhecida - verificar integridade`);
     }
 
-    console.log('✅ [DEBUG] Informações de debug coletadas:', debugInfo);
     return debugInfo;
   }
 }

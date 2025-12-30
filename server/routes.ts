@@ -39,40 +39,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // Users routes
+  // Listar usuários
   app.get("/api/users", async (req, res) => {
     try {
-      console.log('👥 [ROUTES] Buscando lista de usuários via MySQL Storage');
-      // Para simplificar, vamos buscar usuários que já têm favoritos
-      const favorites = await storage.getFavorites(1); // Buscar alguns favoritos
-      const allFavorites = await storage.getFavorites(2); // E de outros usuários
-      const moreResults = await storage.getFavorites(5);
-
-      // Buscar dados dos usuários pelos IDs encontrados nos favoritos + IDs conhecidos
-      const userIds = new Set([1, 2, 5]); // IDs conhecidos: admin, Wilson, Moacir
-
-      const users = [];
-      for (const userId of Array.from(userIds)) {
-        try {
-          const user = await storage.getUser(userId);
-          if (user) {
-            users.push({
-              id: user.id,
-              nome: user.nome,
-              email: user.email,
-              nomeEmpresa: user.nomeEmpresa
-            });
-          }
-        } catch (error) {
-          console.log(`Usuário ${userId} não encontrado`);
-        }
-      }
-      
-      console.log('✅ [ROUTES] Usuários encontrados:', users.length);
+      const users = await storage.getUsers();
       res.json(users);
     } catch (error) {
-      console.error('❌ Erro ao buscar usuários:', error);
-      res.status(500).json({ message: "Erro interno do servidor" });
+      res.status(500).json({ message: "Erro ao buscar usuários" });
+    }
+  });
+
+  // Obter usuário por ID
+  app.get("/api/users/:id", async (req, res) => {
+    try {
+      const userId = parseInt(req.params.id);
+      if (isNaN(userId)) {
+        return res.status(400).json({ message: "ID inválido" });
+      }
+
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ message: "Usuário não encontrado" });
+      }
+
+      res.json(user);
+    } catch (error) {
+      res.status(500).json({ message: "Erro ao buscar usuário" });
     }
   });
 
@@ -101,31 +93,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Registro de usuários
   app.post("/api/auth/register", async (req, res) => {
     try {
-      console.log('📝 Tentativa de registro:', { 
-        body: req.body,
-        env: process.env.NODE_ENV,
-        isProduction: process.env.NODE_ENV === 'production'
-      });
-      
       const { nomeEmpresa, cnpj, nome, email, password, confirmPassword } = registerSchema.parse(req.body);
       
-      console.log('✅ Dados validados com sucesso');
-      
       // Verificar se usuário já existe
-      console.log('🔍 Verificando se usuário existe:', email);
       const existingUser = await storage.getUserByEmail(email);
       if (existingUser) {
-        console.log('❌ E-mail já existe:', email);
         return res.status(400).json({ message: "E-mail já cadastrado" });
       }
-      
-      console.log('👤 E-mail disponível, criando usuário...');
       
       // Hash da senha
       const saltRounds = 10;
       const hashedPassword = await bcrypt.hash(password, saltRounds);
-      
-      console.log('🔐 Senha hasheada, inserindo no banco...');
       
       // Criar usuário
       const user = await storage.createUser({
@@ -135,8 +113,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         email,
         password: hashedPassword
       });
-      
-      console.log('✅ Usuário criado com sucesso:', user.id);
       
       res.status(201).json({ 
         message: "Usuário criado com sucesso",
@@ -198,11 +174,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Biddings routes
   app.get("/api/biddings", async (req, res) => {
     try {
-      const { numero_controle, orgao, uf, conlicitacao_id, page, per_page } = req.query as any;
+      const { 
+        numero_controle, orgao, uf, conlicitacao_id, page, per_page, cidade,
+        objeto, valor_min, valor_max, mostrar_sem_valor, data_inicio, data_fim, tipo_data
+      } = req.query as any;
       const filters: any = {};
       
       if (conlicitacao_id) filters.conlicitacao_id = conlicitacao_id as string;
       if (numero_controle) filters.numero_controle = numero_controle as string;
+      if (cidade) filters.cidade = cidade as string;
+      if (objeto) filters.objeto = objeto as string;
+      
+      if (valor_min) filters.valor_min = parseFloat(valor_min as string);
+      if (valor_max) filters.valor_max = parseFloat(valor_max as string);
+      if (mostrar_sem_valor === 'true') filters.mostrar_sem_valor = true;
+      
+      if (data_inicio) filters.data_inicio = data_inicio as string;
+      if (data_fim) filters.data_fim = data_fim as string;
+      if (tipo_data) filters.tipo_data = tipo_data as any;
+
       if (orgao) {
         filters.orgao = Array.isArray(orgao) ? orgao : [orgao];
       }
@@ -508,7 +498,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Sincronização manual completa
   app.post("/api/sync/full", async (req, res) => {
     try {
-      console.log('🔄 [ROUTES] Iniciando sincronização completa manual...');
       const result = await syncService.fullSync();
       res.json(result);
     } catch (error) {
@@ -523,7 +512,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Sincronização incremental
   app.post("/api/sync/incremental", async (req, res) => {
     try {
-      console.log('🔄 [ROUTES] Iniciando sincronização incremental...');
       const result = await syncService.incrementalSync();
       res.json(result);
     } catch (error) {
@@ -538,7 +526,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Sincronizar apenas filtros
   app.post("/api/sync/filtros", async (req, res) => {
     try {
-      console.log('🔄 [ROUTES] Sincronizando filtros...');
       const count = await syncService.syncFiltros();
       res.json({ success: true, filtrosSynced: count });
     } catch (error) {
@@ -555,7 +542,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const filtroId = parseInt(req.params.filtroId);
       const limit = parseInt(req.query.limit as string) || 50;
-      console.log(`🔄 [ROUTES] Sincronizando boletins do filtro ${filtroId}...`);
       const count = await syncService.syncBoletins(filtroId, limit);
       res.json({ success: true, boletinsSynced: count });
     } catch (error) {
@@ -571,7 +557,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/sync/licitacoes/:boletimId", async (req, res) => {
     try {
       const boletimId = parseInt(req.params.boletimId);
-      console.log(`🔄 [ROUTES] Sincronizando licitações do boletim ${boletimId}...`);
       const result = await syncService.syncLicitacoesFromBoletim(boletimId);
       res.json({ success: true, ...result });
     } catch (error) {
