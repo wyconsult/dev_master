@@ -270,14 +270,69 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
 
   async getBoletins(filtroId: number, page: number = 1, perPage: number = 100): Promise<{ boletins: Boletim[], total: number }> {
     try {
-      const response = await conLicitacaoAPI.getBoletins(filtroId, page, perPage);
-      
+      let apiBoletins: any[] = [];
+      let totalItems = 0;
+      const API_LIMIT = 100;
+
+      // Lógica de paginação virtual para contornar limite da API
+      if (perPage > API_LIMIT) {
+        console.log(`📥 Solicitado ${perPage} boletins (maior que limite ${API_LIMIT}). Buscando múltiplas páginas...`);
+        
+        const startIndex = (page - 1) * perPage;
+        const endIndex = startIndex + perPage;
+        
+        const startApiPage = Math.floor(startIndex / API_LIMIT) + 1;
+        const endApiPage = Math.ceil(endIndex / API_LIMIT);
+        
+        console.log(`📄 Mapeando requisição App (P${page}, ${perPage} itens) -> API (P${startApiPage} até P${endApiPage})`);
+        
+        for (let p = startApiPage; p <= endApiPage; p++) {
+          console.log(`📡 Buscando página API ${p}...`);
+          const response = await conLicitacaoAPI.getBoletins(filtroId, p, API_LIMIT);
+          const pageBoletins = response.boletins || [];
+          
+          if (pageBoletins.length === 0) break;
+          
+          apiBoletins = [...apiBoletins, ...pageBoletins];
+          
+          // Tentar extrair o total da primeira resposta válida
+          if (totalItems === 0) {
+             const r: any = response as any;
+             const candidates = [r?.total, r?.filtro?.total_boletins, r?.total_boletins, r?.pagination?.total];
+             const found = candidates.find((v: any) => typeof v === 'number');
+             if (typeof found === 'number') totalItems = found;
+          }
+        }
+        
+        // Ajustar o slice para retornar a página correta relativa ao pedido original
+        const apiStartIndexGlobal = (startApiPage - 1) * API_LIMIT;
+        const sliceStart = startIndex - apiStartIndexGlobal;
+        const sliceEnd = sliceStart + perPage;
+        
+        if (apiBoletins.length > sliceStart) {
+          apiBoletins = apiBoletins.slice(sliceStart, Math.min(apiBoletins.length, sliceEnd));
+        } else {
+          apiBoletins = [];
+        }
+        
+      } else {
+        // Fluxo padrão (<= 100)
+        const response = await conLicitacaoAPI.getBoletins(filtroId, page, perPage);
+        apiBoletins = response.boletins || [];
+        const r: any = response as any;
+        const candidates = [r?.total, r?.filtro?.total_boletins, r?.total_boletins, r?.pagination?.total];
+        const found = candidates.find((v: any) => typeof v === 'number');
+        if (typeof found === 'number') totalItems = found;
+      }
+
+      if (totalItems === 0) totalItems = apiBoletins.length;
+
       // CORREÇÃO: A API básica não retorna quantidades, precisamos buscar de forma híbrida
-      console.log(`📡 Buscando quantidades para ${response.boletins.length} boletins...`);
+      console.log(`📡 Buscando quantidades para ${apiBoletins.length} boletins...`);
       
       // Buscar contagens em paralelo usando cache para performance
       const boletinsWithCounts = await Promise.all(
-        response.boletins.map(async (boletim: any) => {
+        apiBoletins.map(async (boletim: any) => {
           try {
             // Verificar cache primeiro
             const cached = this.boletimCache.get(boletim.id);
@@ -288,7 +343,6 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
               // Usar cache válido
               quantidade_licitacoes = cached.data.licitacoes?.length || 0;
               quantidade_acompanhamentos = cached.data.acompanhamentos?.length || 0;
-              console.log(`🎯 Cache hit para contagem do boletim ${boletim.id}: ${quantidade_licitacoes} licitações, ${quantidade_acompanhamentos} acompanhamentos`);
             } else {
               // Buscar dados frescos
               const data = await conLicitacaoAPI.getBoletimData(boletim.id);
@@ -297,7 +351,6 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
               
               // Cachear para próximas requisições
               this.boletimCache.set(boletim.id, { data, timestamp: Date.now() });
-              console.log(`📊 Boletim ${boletim.id}: ${quantidade_licitacoes} licitações, ${quantidade_acompanhamentos} acompanhamentos`);
             }
             
             return {
@@ -328,14 +381,7 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
 
       return {
         boletins: boletinsWithCounts,
-        total: (() => {
-          const r: any = response as any;
-          const candidates = [r?.total, r?.filtro?.total_boletins, r?.total_boletins, r?.pagination?.total];
-          const found = candidates.find((v: any) => typeof v === 'number');
-          return typeof found === 'number'
-            ? found
-            : (Array.isArray(r?.boletins) ? r.boletins.length : 0);
-        })()
+        total: totalItems
       };
     } catch (error: any) {
       if (error.message === 'IP_NOT_AUTHORIZED') {

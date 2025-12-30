@@ -24,7 +24,9 @@ export default function Boletins() {
 
   // Paginação
   const [page, setPage] = useState(1);
-  const [perPage, setPerPage] = useState(50);
+  // AUMENTADO: 300 itens por página para garantir que o calendário carregue histórico suficiente (ex: Novembro)
+  // O backend agora suporta paginação virtual para contornar o limite de 100 da API
+  const [perPage, setPerPage] = useState(300);
 
   // Ao mudar de página da lista de boletins, rola para o topo
   useEffect(() => {
