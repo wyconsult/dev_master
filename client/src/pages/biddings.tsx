@@ -75,12 +75,12 @@ export default function Biddings() {
   const [filtrosAvancadosExpandidos, setFiltrosAvancadosExpandidos] = useState(false);
 
   // Debounced values
-  const debouncedCidade = useDebounce(cidade, 500);
-  const debouncedObjeto = useDebounce(objeto, 500);
-  const debouncedValorMinimo = useDebounce(valorMinimo, 500);
-  const debouncedValorMaximo = useDebounce(valorMaximo, 500);
-  const debouncedDataInicio = useDebounce(dataInicio, 500);
-  const debouncedDataFim = useDebounce(dataFim, 500);
+  const debouncedCidade = useDebounce(cidade, 1000);
+  const debouncedObjeto = useDebounce(objeto, 1000);
+  const debouncedValorMinimo = useDebounce(valorMinimo, 1000);
+  const debouncedValorMaximo = useDebounce(valorMaximo, 1000);
+  const debouncedDataInicio = useDebounce(dataInicio, 1000);
+  const debouncedDataFim = useDebounce(dataFim, 1000);
 
   // Paginação
   const [page, setPage] = useState(1);
