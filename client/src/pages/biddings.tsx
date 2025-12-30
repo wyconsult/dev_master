@@ -13,6 +13,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from "@/components/ui/command";
 import { type Bidding } from "@shared/schema";
+import { useDebounce } from "@/hooks/use-debounce";
 
 
 
@@ -87,7 +88,7 @@ export default function Biddings() {
   // Resetar página quando filtros mudarem
   useEffect(() => {
     setPage(1);
-  }, [cidade, numeroControlePesquisado, selectedOrgaos, selectedUFs]);
+  }, [debouncedCidade, numeroControlePesquisado, selectedOrgaos, selectedUFs, debouncedObjeto, debouncedValorMinimo, debouncedValorMaximo, mostrarSemValor, debouncedDataInicio, debouncedDataFim, tipoData]);
 
   const buildFilters = () => {
     const filters: any = {};
@@ -104,11 +105,23 @@ export default function Biddings() {
 
   // Query com paginação
   const { data: biddingsResp, isLoading, error, isFetching, refetch } = useQuery<{ biddings: Bidding[]; total: number; page: number; per_page: number; }>({
-    queryKey: ["/api/biddings", numeroControlePesquisado, selectedOrgaos, selectedUFs, cidade, page, perPage],
+    queryKey: ["/api/biddings", numeroControlePesquisado, selectedOrgaos, selectedUFs, debouncedCidade, debouncedObjeto, debouncedValorMinimo, debouncedValorMaximo, mostrarSemValor, debouncedDataInicio, debouncedDataFim, tipoData, page, perPage],
     queryFn: async () => {
       const params = new URLSearchParams();
       if (numeroControlePesquisado) params.append('numero_controle', numeroControlePesquisado);
-      if (cidade) params.append('cidade', cidade);
+      if (debouncedCidade) params.append('cidade', debouncedCidade);
+      
+      // Enviar objeto apenas se tiver 3 ou mais caracteres (mantendo lógica anterior) ou se o usuário explicitamente buscar
+      if (debouncedObjeto && debouncedObjeto.trim().length >= 3) params.append('objeto', debouncedObjeto);
+      
+      if (debouncedValorMinimo) params.append('valor_min', debouncedValorMinimo);
+      if (debouncedValorMaximo) params.append('valor_max', debouncedValorMaximo);
+      if (mostrarSemValor) params.append('mostrar_sem_valor', 'true');
+      
+      if (debouncedDataInicio) params.append('data_inicio', debouncedDataInicio);
+      if (debouncedDataFim) params.append('data_fim', debouncedDataFim);
+      if (tipoData) params.append('tipo_data', tipoData);
+
       if (selectedOrgaos.length) selectedOrgaos.forEach(orgao => params.append('orgao', orgao));
       if (selectedUFs.length) selectedUFs.forEach(uf => params.append('uf', uf));
       params.append('page', String(page));
