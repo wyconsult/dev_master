@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import * as React from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient, keepPreviousData } from "@tanstack/react-query";
 import { Navbar } from "@/components/navbar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -100,38 +100,6 @@ export default function Biddings() {
   // Filtro dinâmico em tempo real - SIMPLIFICADO (todos filtros tratados no servidor)
   const filteredBiddings = allBiddings;
 
-  if (isLoading && !allBiddings.length) {
-    return (
-      <div className="min-h-screen bg-gray-50">
-        <Navbar />
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="text-center py-8">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-            <p className="text-gray-600">Carregando licitações...</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="min-h-screen bg-gray-50">
-        <Navbar />
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="text-center py-12">
-            <div className="text-red-500 text-lg mb-4">
-              Erro ao carregar licitações
-            </div>
-            <p className="text-gray-600">
-              Tente recarregar a página ou entre em contato com o suporte.
-            </p>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
       <Navbar />
@@ -161,7 +129,21 @@ export default function Biddings() {
 
         {/* Results */}
         <div className="space-y-3 md:space-y-4 px-4">
-          {filteredBiddings.length === 0 ? (
+          {error ? (
+            <div className="text-center py-12">
+              <div className="text-red-500 text-lg mb-4">
+                Erro ao carregar licitações
+              </div>
+              <p className="text-gray-600">
+                Tente recarregar a página ou entre em contato com o suporte.
+              </p>
+            </div>
+          ) : (isLoading && !allBiddings.length) ? (
+            <div className="text-center py-8">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+              <p className="text-gray-600">Carregando licitações...</p>
+            </div>
+          ) : filteredBiddings.length === 0 ? (
             <Card>
               <CardContent className="p-6 md:p-12 text-center">
                 <Search className="h-8 w-8 md:h-12 md:w-12 text-gray-400 mx-auto mb-3 md:mb-4" />
