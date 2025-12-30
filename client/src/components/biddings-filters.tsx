@@ -88,12 +88,12 @@ export function BiddingsFilters({
   const [filtrosAvancadosExpandidos, setFiltrosAvancadosExpandidos] = useState(false);
 
   // Debounce apenas para campos de texto livre
-  const debouncedCidade = useDebounce(cidade, 500);
-  const debouncedObjeto = useDebounce(objeto, 500);
-  const debouncedValorMinimo = useDebounce(valorMinimo, 500);
-  const debouncedValorMaximo = useDebounce(valorMaximo, 500);
-  const debouncedDataInicio = useDebounce(dataInicio, 500);
-  const debouncedDataFim = useDebounce(dataFim, 500);
+  const debouncedCidade = useDebounce(cidade, 2000);
+  const debouncedObjeto = useDebounce(objeto, 2000);
+  const debouncedValorMinimo = useDebounce(valorMinimo, 2000);
+  const debouncedValorMaximo = useDebounce(valorMaximo, 2000);
+  const debouncedDataInicio = useDebounce(dataInicio, 2000);
+  const debouncedDataFim = useDebounce(dataFim, 2000);
 
   // Estado para controlar quando disparar a busca por número de controle
   const [numeroControlePesquisado, setNumeroControlePesquisado] = useState("");
