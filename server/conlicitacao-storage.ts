@@ -110,29 +110,61 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
   private async refreshRecentBoletins(): Promise<void> {
     if (this.periodicRefreshInProgress) return;
     this.periodicRefreshInProgress = true;
+    console.log('🔄 Iniciando atualização de boletins recentes...');
     try {
       const newCache = new Map<number, Bidding & { cacheTimestamp: number, dataSource: 'api' | 'mock' }>();
       const filtros = await this.getFiltros();
       const targetFiltros = filtros.slice(0, 1);
+      
+      // AUMENTADO: Carregar últimos 180 boletins (~6 meses) conforme solicitado
+      // Anteriormente era 10. Isso pode levar ~30s para carregar.
+      const LOAD_LIMIT = 180; 
+      
       for (const filtro of targetFiltros) {
         try {
-          const boletinsResponse = await this.getBoletins(filtro.id, 1, 10);
-          for (const boletim of boletinsResponse.boletins) {
-            try {
-              const boletimData = await this.getCachedBoletimData(boletim.id);
-              if (boletimData?.licitacoes) {
-                boletimData.licitacoes.forEach((licitacao: any) => {
-                  const transformed = this.transformLicitacaoFromAPI(licitacao, boletim.id, 'api');
-                  newCache.set(transformed.id, transformed);
-                });
+          console.log(`📥 Buscando ${LOAD_LIMIT} boletins para filtro ${filtro.id}...`);
+          const boletinsResponse = await this.getBoletins(filtro.id, 1, LOAD_LIMIT);
+          
+          const boletins = boletinsResponse.boletins || [];
+          console.log(`📊 Processando ${boletins.length} boletins em paralelo...`);
+
+          // Processar em paralelo com controle de concorrência (chunks) para agilizar
+          const chunkSize = 5; // 5 requisições simultâneas
+          
+          for (let i = 0; i < boletins.length; i += chunkSize) {
+            const chunk = boletins.slice(i, i + chunkSize);
+            await Promise.all(chunk.map(async (boletim: any) => {
+              try {
+                const boletimData = await this.getCachedBoletimData(boletim.id);
+                if (boletimData?.licitacoes) {
+                  boletimData.licitacoes.forEach((licitacao: any) => {
+                    const transformed = this.transformLicitacaoFromAPI(licitacao, boletim.id, 'api');
+                    newCache.set(transformed.id, transformed);
+                  });
+                }
+              } catch (e) {
+                // Erro pontual em boletim ignora
               }
-            } catch {}
+            }));
+            
+            // Log de progresso a cada 20 boletins
+            if ((i + chunkSize) % 20 === 0) {
+              console.log(`⏳ Progresso: ${Math.min(i + chunkSize, boletins.length)}/${boletins.length} boletins processados...`);
+            }
           }
-        } catch {}
+        } catch (err) {
+          console.error(`Erro ao processar filtro ${filtro.id}:`, err);
+        }
       }
-      this.cachedBiddings = newCache;
-      this.lastCacheUpdate = Date.now();
-    } catch {}
+      
+      if (newCache.size > 0) {
+        this.cachedBiddings = newCache;
+        this.lastCacheUpdate = Date.now();
+        console.log(`✅ Cache atualizado com sucesso: ${this.cachedBiddings.size} licitações carregadas.`);
+      }
+    } catch (err) {
+      console.error('Erro geral na atualização de boletins:', err);
+    }
     this.periodicRefreshInProgress = false;
   }
 
