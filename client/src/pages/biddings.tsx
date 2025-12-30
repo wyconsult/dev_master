@@ -74,6 +74,14 @@ export default function Biddings() {
   // Estado para controlar expansão dos filtros avançados
   const [filtrosAvancadosExpandidos, setFiltrosAvancadosExpandidos] = useState(false);
 
+  // Debounced values
+  const debouncedCidade = useDebounce(cidade, 500);
+  const debouncedObjeto = useDebounce(objeto, 500);
+  const debouncedValorMinimo = useDebounce(valorMinimo, 500);
+  const debouncedValorMaximo = useDebounce(valorMaximo, 500);
+  const debouncedDataInicio = useDebounce(dataInicio, 500);
+  const debouncedDataFim = useDebounce(dataFim, 500);
+
   // Paginação
   const [page, setPage] = useState(1);
   const [perPage, setPerPage] = useState(50);
