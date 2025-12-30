@@ -117,22 +117,46 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
       const targetFiltros = filtros.slice(0, 1);
       
       // AUMENTADO: Carregar últimos 180 boletins (~6 meses) conforme solicitado
-      // Anteriormente era 10. Isso pode levar ~30s para carregar.
-      const LOAD_LIMIT = 180; 
+      // Implementação com paginação para garantir que a API não limite a quantidade
+      const TARGET_TOTAL = 180;
+      const PAGE_SIZE = 50;
       
       for (const filtro of targetFiltros) {
         try {
-          console.log(`📥 Buscando ${LOAD_LIMIT} boletins para filtro ${filtro.id}...`);
-          const boletinsResponse = await this.getBoletins(filtro.id, 1, LOAD_LIMIT);
+          console.log(`📥 Iniciando busca de ${TARGET_TOTAL} boletins para filtro ${filtro.id}...`);
           
-          const boletins = boletinsResponse.boletins || [];
-          console.log(`📊 Processando ${boletins.length} boletins em paralelo...`);
+          let allBoletins: any[] = [];
+          let page = 1;
+          let keepFetching = true;
+
+          while (keepFetching && allBoletins.length < TARGET_TOTAL) {
+            console.log(`📄 Buscando página ${page} (tamanho ${PAGE_SIZE})...`);
+            const response = await this.getBoletins(filtro.id, page, PAGE_SIZE);
+            const pageBoletins = response.boletins || [];
+            
+            if (pageBoletins.length === 0) {
+              keepFetching = false;
+            } else {
+              allBoletins = [...allBoletins, ...pageBoletins];
+              page++;
+            }
+            
+            // Proteção contra loop infinito se a API falhar
+            if (page > 10) keepFetching = false;
+          }
+
+          // Limitar ao target se passou
+          if (allBoletins.length > TARGET_TOTAL) {
+            allBoletins = allBoletins.slice(0, TARGET_TOTAL);
+          }
+          
+          console.log(`📊 Total recuperado: ${allBoletins.length} boletins. Processando em paralelo...`);
 
           // Processar em paralelo com controle de concorrência (chunks) para agilizar
           const chunkSize = 5; // 5 requisições simultâneas
           
-          for (let i = 0; i < boletins.length; i += chunkSize) {
-            const chunk = boletins.slice(i, i + chunkSize);
+          for (let i = 0; i < allBoletins.length; i += chunkSize) {
+            const chunk = allBoletins.slice(i, i + chunkSize);
             await Promise.all(chunk.map(async (boletim: any) => {
               try {
                 const boletimData = await this.getCachedBoletimData(boletim.id);
@@ -149,7 +173,7 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
             
             // Log de progresso a cada 20 boletins
             if ((i + chunkSize) % 20 === 0) {
-              console.log(`⏳ Progresso: ${Math.min(i + chunkSize, boletins.length)}/${boletins.length} boletins processados...`);
+              console.log(`⏳ Progresso: ${Math.min(i + chunkSize, allBoletins.length)}/${allBoletins.length} boletins processados...`);
             }
           }
         } catch (err) {
