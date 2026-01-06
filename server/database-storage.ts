@@ -230,6 +230,7 @@ export class DatabaseStorage implements IDatabaseStorage {
   async getBiddingByConlicitacaoId(conlicitacaoId: number): Promise<Bidding | undefined> {
     const result = await db.select().from(biddings)
       .where(eq(biddings.conlicitacao_id, conlicitacaoId))
+      .orderBy(desc(biddings.id))
       .limit(1);
     return result[0];
   }

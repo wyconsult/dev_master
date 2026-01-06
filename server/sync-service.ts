@@ -137,38 +137,76 @@ export class SyncService {
 
       let licitacoesSynced = 0;
       for (const lic of licitacoes) {
-        await db.insert(biddings).values({
-          conlicitacao_id: lic.id,
-          orgao_nome: lic.orgao?.nome || 'Não informado',
-          orgao_codigo: lic.orgao?.codigo || null,
-          orgao_cidade: lic.orgao?.cidade || 'Não informado',
-          orgao_uf: lic.orgao?.uf || 'XX',
-          orgao_endereco: lic.orgao?.endereco || null,
-          orgao_telefone: lic.orgao?.telefone || null,
-          orgao_site: lic.orgao?.site || null,
-          objeto: (lic.objeto || 'Não informado').substring(0, 1000),
-          situacao: lic.situacao || 'N/A',
-          datahora_abertura: lic.datahora_abertura || null,
-          datahora_documento: lic.datahora_documento || null,
-          datahora_retirada: lic.datahora_retirada || null,
-          datahora_visita: lic.datahora_visita || null,
-          datahora_prazo: lic.datahora_prazo || null,
-          edital: lic.edital || null,
-          link_edital: lic.link_edital || null,
-          documento_url: lic.documento_url || null,
-          processo: lic.processo || null,
-          observacao: lic.observacao?.substring(0, 1000) || null,
-          item: lic.item?.substring(0, 500) || null,
-          preco_edital: lic.preco_edital || null,
-          valor_estimado: lic.valor_estimado || null,
-          boletim_id: boletimId,
-        }).onDuplicateKeyUpdate({
-          set: {
+        // Verificar se já existe (para evitar duplicatas pois não temos unique key no conlicitacao_id)
+        const existing = await db.select().from(biddings).where(eq(biddings.conlicitacao_id, lic.id));
+        
+        if (existing.length > 0) {
+          // Se houver duplicatas, manter a primeira e remover as outras
+          const targetId = existing[0].id;
+          
+          // Remover duplicatas extras se existirem
+          if (existing.length > 1) {
+            const idsToRemove = existing.slice(1).map(e => e.id);
+            await db.delete(biddings).where(sql`id IN ${idsToRemove}`);
+            console.log(`[SyncService] Removidas ${idsToRemove.length} duplicatas para licitação ${lic.id}`);
+          }
+          
+          // Atualizar o registro existente
+          await db.update(biddings).set({
+            orgao_nome: lic.orgao?.nome || 'Não informado',
+            orgao_codigo: lic.orgao?.codigo || null,
+            orgao_cidade: lic.orgao?.cidade || 'Não informado',
+            orgao_uf: lic.orgao?.uf || 'XX',
+            orgao_endereco: lic.orgao?.endereco || null,
+            orgao_telefone: lic.orgao?.telefone || null,
+            orgao_site: lic.orgao?.site || null,
+            objeto: (lic.objeto || 'Não informado').substring(0, 1000),
             situacao: lic.situacao || 'N/A',
             datahora_abertura: lic.datahora_abertura || null,
+            datahora_documento: lic.datahora_documento || null,
+            datahora_retirada: lic.datahora_retirada || null,
+            datahora_visita: lic.datahora_visita || null,
+            datahora_prazo: lic.datahora_prazo || null,
+            edital: lic.edital || null,
+            link_edital: lic.link_edital || null,
+            documento_url: lic.documento_url || null,
+            processo: lic.processo || null,
             observacao: lic.observacao?.substring(0, 1000) || null,
-          }
-        });
+            item: lic.item?.substring(0, 500) || null,
+            preco_edital: lic.preco_edital || null,
+            valor_estimado: lic.valor_estimado || null,
+            boletim_id: boletimId,
+          }).where(eq(biddings.id, targetId));
+          
+        } else {
+          // Inserir novo
+          await db.insert(biddings).values({
+            conlicitacao_id: lic.id,
+            orgao_nome: lic.orgao?.nome || 'Não informado',
+            orgao_codigo: lic.orgao?.codigo || null,
+            orgao_cidade: lic.orgao?.cidade || 'Não informado',
+            orgao_uf: lic.orgao?.uf || 'XX',
+            orgao_endereco: lic.orgao?.endereco || null,
+            orgao_telefone: lic.orgao?.telefone || null,
+            orgao_site: lic.orgao?.site || null,
+            objeto: (lic.objeto || 'Não informado').substring(0, 1000),
+            situacao: lic.situacao || 'N/A',
+            datahora_abertura: lic.datahora_abertura || null,
+            datahora_documento: lic.datahora_documento || null,
+            datahora_retirada: lic.datahora_retirada || null,
+            datahora_visita: lic.datahora_visita || null,
+            datahora_prazo: lic.datahora_prazo || null,
+            edital: lic.edital || null,
+            link_edital: lic.link_edital || null,
+            documento_url: lic.documento_url || null,
+            processo: lic.processo || null,
+            observacao: lic.observacao?.substring(0, 1000) || null,
+            item: lic.item?.substring(0, 500) || null,
+            preco_edital: lic.preco_edital || null,
+            valor_estimado: lic.valor_estimado || null,
+            boletim_id: boletimId,
+          });
+        }
         licitacoesSynced++;
       }
 

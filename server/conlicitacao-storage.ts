@@ -3132,9 +3132,17 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
     }
     
     // Combinar cache recente com favoritos pinados para busca completa
-    const allBiddings = new Map<number, Bidding>();
-    this.cachedBiddings.forEach((b, id) => allBiddings.set(id, b));
-    this.pinnedBiddings.forEach((b, id) => allBiddings.set(id, b));
+          const allBiddings = new Map<number, Bidding>();
+          // Primeiro carregar pinados
+          this.pinnedBiddings.forEach((b, id) => allBiddings.set(id, b));
+          // Depois sobrepor com cache recente (prioridade para dados frescos)
+          this.cachedBiddings.forEach((b, id) => {
+            allBiddings.set(id, b);
+            // Se este item também estiver pinado, atualizar o pinado com dados frescos
+            if (this.pinnedBiddings.has(id)) {
+              this.pinnedBiddings.set(id, b as Bidding);
+            }
+          });
     
     let biddings = Array.from(allBiddings.values());
     

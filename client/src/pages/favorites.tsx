@@ -1045,26 +1045,40 @@ export default function Favorites() {
               </CardContent>
             </Card>
           ) : (
-            filteredFavorites.map((bidding) => (
-              <BiddingCard 
-                key={bidding.id} 
-                bidding={bidding} 
-                showFavoriteIcon={true}
-                showCategorization={true}
-                favoriteData={{
-                  category: (bidding as any).category,
-                  customCategory: (bidding as any).customCategory,
-                  notes: (bidding as any).notes,
-                  uf: (bidding as any).uf,
-                  codigoUasg: (bidding as any).codigoUasg,
-                  valorEstimado: (bidding as any).valorEstimado,
-                  fornecedor: (bidding as any).fornecedor,
-                  site: (bidding as any).site,
-                  orgaoLicitante: (bidding as any).orgaoLicitante,
-                  status: (bidding as any).status
-                }}
-              />
-            ))
+            filteredFavorites.map((fav: any) => {
+              // Combinar dados do snapshot (favorito) com dados atualizados (bidding)
+              // Priorizar dados atualizados da tabela de biddings se disponível
+              const liveBidding = fav.bidding || {};
+              const displayBidding = {
+                ...fav,
+                ...liveBidding,
+                // Garantir que o ID seja o do bidding para as ações funcionarem
+                id: liveBidding.id || fav.biddingId,
+                // Manter campos específicos do favorito que não existem em bidding ou devem ser preservados
+                conlicitacao_id: liveBidding.conlicitacao_id || fav.conlicitacao_id,
+              };
+
+              return (
+                <BiddingCard 
+                  key={fav.id} 
+                  bidding={displayBidding} 
+                  showFavoriteIcon={true}
+                  showCategorization={true}
+                  favoriteData={{
+                    category: fav.category,
+                    customCategory: fav.customCategory,
+                    notes: fav.notes,
+                    uf: fav.uf,
+                    codigoUasg: fav.codigoUasg,
+                    valorEstimado: fav.valorEstimado,
+                    fornecedor: fav.fornecedor,
+                    site: fav.site,
+                    orgaoLicitante: fav.orgaoLicitante,
+                    status: fav.status
+                  }}
+                />
+              );
+            })
           )}
 
           {/* Pagination controls - moved to bottom */}
