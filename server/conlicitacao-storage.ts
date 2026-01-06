@@ -316,51 +316,18 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
       // CORREÇÃO: A API básica não retorna quantidades, precisamos buscar de forma híbrida
       
       // Buscar contagens em paralelo usando cache para performance
-      const boletinsWithCounts = await Promise.all(
-        apiBoletins.map(async (boletim: any) => {
-          try {
-            // Verificar cache primeiro
-            const cached = this.boletimCache.get(boletim.id);
-            let quantidade_licitacoes = 0;
-            let quantidade_acompanhamentos = 0;
-            
-            if (cached && (Date.now() - cached.timestamp < this.CACHE_TTL)) {
-              // Usar cache válido
-              quantidade_licitacoes = cached.data.licitacoes?.length || 0;
-              quantidade_acompanhamentos = cached.data.acompanhamentos?.length || 0;
-            } else {
-              // Buscar dados frescos
-              const data = await conLicitacaoAPI.getBoletimData(boletim.id);
-              quantidade_licitacoes = data.licitacoes?.length || 0;
-              quantidade_acompanhamentos = data.acompanhamentos?.length || 0;
-              
-              // Cachear para próximas requisições
-              this.boletimCache.set(boletim.id, { data, timestamp: Date.now() });
-            }
-            
-            return {
-              id: boletim.id,
-              numero_edicao: boletim.numero_edicao,
-              datahora_fechamento: boletim.datahora_fechamento,
-              filtro_id: boletim.filtro_id,
-              quantidade_licitacoes,
-              quantidade_acompanhamentos,
-              visualizado: this.viewedBoletins.has(boletim.id),
-            };
-          } catch (error) {
-            // Erro ao buscar contagem, usando valores padrão
-            return {
-              id: boletim.id,
-              numero_edicao: boletim.numero_edicao,
-              datahora_fechamento: boletim.datahora_fechamento,
-              filtro_id: boletim.filtro_id,
-              quantidade_licitacoes: 0,
-              quantidade_acompanhamentos: 0,
-              visualizado: this.viewedBoletins.has(boletim.id),
-            };
-          }
-        })
-      );
+      const boletinsWithCounts = apiBoletins.map((boletim: any) => {
+        return {
+          id: boletim.id,
+          numero_edicao: boletim.numero_edicao,
+          datahora_fechamento: boletim.datahora_fechamento,
+          filtro_id: boletim.filtro_id,
+          // Quantidades não disponíveis na listagem rápida
+          quantidade_licitacoes: boletim.quantidade_licitacoes || 0,
+          quantidade_acompanhamentos: boletim.quantidade_acompanhamentos || 0,
+          visualizado: this.viewedBoletins.has(boletim.id),
+        };
+      });
       
 
       return {
@@ -3308,12 +3275,62 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
   // Buscar múltiplas licitações por IDs (usado para favoritos - batch fetching)
   async getBiddingsByIds(ids: number[]): Promise<Bidding[]> {
     const biddings: Bidding[] = [];
+    
+    // Identificar IDs que precisam de refresh (não estão no cache ou estão expirados)
+    const idsToRefresh: number[] = [];
+    
     for (const id of ids) {
-      const bidding = await this.getBidding(id);
-      if (bidding) {
-        biddings.push(bidding);
+      const cached = this.cachedBiddings.get(id);
+      if (!cached) {
+        // Não está no cache, precisa buscar (mesmo que esteja pinado, pode estar velho)
+        idsToRefresh.push(id);
+      } else {
+        // Está no cache, verificar validade
+        const isStale = (Date.now() - cached.cacheTimestamp) > this.CACHE_DURATION;
+        if (isStale) {
+          idsToRefresh.push(id);
+        }
       }
     }
+    
+    // Tentar atualizar dados obsoletos em paralelo
+    if (idsToRefresh.length > 0) {
+      // Processar em lotes pequenos para evitar sobrecarga na busca específica
+      // A busca específica é cara, então limitamos a concorrência
+      const chunkSize = 3;
+      for (let i = 0; i < idsToRefresh.length; i += chunkSize) {
+        const chunk = idsToRefresh.slice(i, i + chunkSize);
+        await Promise.all(chunk.map(async (id) => {
+          try {
+            // Tentar buscar especificamente por número de controle
+            // Isso aciona searchSpecificBidding se necessário e atualiza o cache
+            // Usamos numero_controle pois é o ID principal de busca na API
+            await this.getBiddingsPaginated({ numero_controle: String(id) }, 1, 1);
+          } catch (e) {
+            console.warn(`Falha ao atualizar licitação ${id} para favoritos:`, e);
+          }
+        }));
+      }
+    }
+
+    // Montar resposta final preferindo dados frescos do cache
+    for (const id of ids) {
+      // Tentar pegar do cache atualizado primeiro
+      // Precisamos fazer cast pois cachedBiddings tem tipos extras
+      let bidding = this.cachedBiddings.get(id) as unknown as Bidding;
+      
+      // Se não tiver no cache (falha na busca), pegar do pinned (dados antigos/salvos)
+      if (!bidding) {
+        bidding = this.pinnedBiddings.get(id) as Bidding;
+      }
+      
+      if (bidding) {
+        // Remover metadados de cache se existirem para retornar Bidding puro
+        const { cacheTimestamp, dataSource, ...biddingData } = bidding as any;
+        biddings.push(biddingData);
+      }
+    }
+    
     return biddings;
   }
 
