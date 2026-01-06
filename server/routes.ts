@@ -2,6 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { conLicitacaoStorage } from "./conlicitacao-storage";
+import { databaseStorage } from "./database-storage";
 import { syncService } from "./sync-service";
 import { loginSchema, registerSchema, forgotPasswordSchema } from "@shared/schema";
 import bcrypt from "bcrypt";
