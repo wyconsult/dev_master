@@ -8,6 +8,7 @@ import { BiddingCard } from "@/components/bidding-card";
 import { Filter, Search } from "lucide-react";
 import { type Bidding } from "@shared/schema";
 import { BiddingsFilters, type FiltersState } from "@/components/biddings-filters";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
 
 export default function Biddings() {
   // Estado centralizado dos filtros
@@ -139,10 +140,7 @@ export default function Biddings() {
               </p>
             </div>
           ) : (isLoading && !allBiddings.length) ? (
-            <div className="text-center py-8">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-              <p className="text-gray-600">Carregando licitações...</p>
-            </div>
+            <LoadingSpinner message="Carregando licitações..." size="lg" />
           ) : filteredBiddings.length === 0 ? (
             <Card>
               <CardContent className="p-6 md:p-12 text-center">

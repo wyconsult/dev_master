@@ -12,6 +12,7 @@ import { cn } from "@/lib/utils";
 import { apiRequest } from "@/lib/queryClient";
 import { BiddingCard } from "@/components/bidding-card";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import type { Boletim, Bidding, Acompanhamento } from "@shared/schema";
 
 export default function Boletins() {
@@ -180,10 +181,7 @@ export default function Boletins() {
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
         <Navbar />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="animate-pulse">
-            <div className="h-8 bg-gray-200 rounded w-1/4 mb-4"></div>
-            <div className="h-96 bg-gray-200 rounded"></div>
-          </div>
+          <LoadingSpinner message="Carregando boletins..." size="xl" />
         </div>
       </div>
     );
@@ -247,9 +245,7 @@ export default function Boletins() {
 
           {/* Loading state */}
           {isLoadingBoletimData && (
-            <div className="flex justify-center py-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
-            </div>
+            <LoadingSpinner message="Carregando detalhes do boletim..." size="lg" />
           )}
 
           {/* Conteúdo baseado na aba ativa */}
