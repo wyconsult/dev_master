@@ -135,7 +135,42 @@ export class SyncService {
     try {
       const { licitacoes, acompanhamentos: acompanhamentosData } = await conLicitacaoAPI.getLicitacoesFromBoletim(boletimId);
 
-      let licitacoesSynced = 0;
+      const licitacoesSynced = await this.syncLicitacoesData(licitacoes, boletimId);
+
+      // Sincronizar acompanhamentos
+      let acompanhamentosSynced = 0;
+      for (const acomp of acompanhamentosData) {
+        await db.insert(acompanhamentos).values({
+          conlicitacao_id: acomp.id,
+          licitacao_id: acomp.licitacao_id || null,
+          orgao_nome: acomp.orgao?.nome || 'Não informado',
+          orgao_cidade: acomp.orgao?.cidade || null,
+          orgao_uf: acomp.orgao?.uf || null,
+          objeto: (acomp.objeto || 'Não informado').substring(0, 1000),
+          sintese: acomp.sintese?.substring(0, 1000) || null,
+          data_fonte: acomp.data_fonte || null,
+          edital: acomp.edital || null,
+          processo: acomp.processo || null,
+          boletim_id: boletimId,
+        }).onDuplicateKeyUpdate({
+          set: {
+            sintese: acomp.sintese?.substring(0, 1000) || null,
+          }
+        });
+        acompanhamentosSynced++;
+      }
+
+      return { licitacoes: licitacoesSynced, acompanhamentos: acompanhamentosSynced };
+    } catch (error: any) {
+      console.error(`❌ [SyncService] Erro ao sincronizar boletim ${boletimId}:`, error.message);
+      throw error;
+    }
+  }
+
+  // Nova função para sincronizar dados já obtidos (evita dupla requisição)
+  async syncLicitacoesData(licitacoes: any[], boletimId: number): Promise<number> {
+    let licitacoesSynced = 0;
+    try {
       for (const lic of licitacoes) {
         // Verificar se já existe (para evitar duplicatas pois não temos unique key no conlicitacao_id)
         const existing = await db.select().from(biddings).where(eq(biddings.conlicitacao_id, lic.id));
@@ -176,6 +211,7 @@ export class SyncService {
             preco_edital: lic.preco_edital || null,
             valor_estimado: lic.valor_estimado || null,
             boletim_id: boletimId,
+            updated_at: new Date(), // Garantir atualização do timestamp
           }).where(eq(biddings.id, targetId));
           
         } else {
@@ -209,33 +245,9 @@ export class SyncService {
         }
         licitacoesSynced++;
       }
-
-      // Sincronizar acompanhamentos
-      let acompanhamentosSynced = 0;
-      for (const acomp of acompanhamentosData) {
-        await db.insert(acompanhamentos).values({
-          conlicitacao_id: acomp.id,
-          licitacao_id: acomp.licitacao_id || null,
-          orgao_nome: acomp.orgao?.nome || 'Não informado',
-          orgao_cidade: acomp.orgao?.cidade || null,
-          orgao_uf: acomp.orgao?.uf || null,
-          objeto: (acomp.objeto || 'Não informado').substring(0, 1000),
-          sintese: acomp.sintese?.substring(0, 1000) || null,
-          data_fonte: acomp.data_fonte || null,
-          edital: acomp.edital || null,
-          processo: acomp.processo || null,
-          boletim_id: boletimId,
-        }).onDuplicateKeyUpdate({
-          set: {
-            sintese: acomp.sintese?.substring(0, 1000) || null,
-          }
-        });
-        acompanhamentosSynced++;
-      }
-
-      return { licitacoes: licitacoesSynced, acompanhamentos: acompanhamentosSynced };
+      return licitacoesSynced;
     } catch (error: any) {
-      console.error(`❌ [SyncService] Erro ao sincronizar boletim ${boletimId}:`, error.message);
+      console.error(`❌ [SyncService] Erro ao sincronizar dados de licitações:`, error.message);
       throw error;
     }
   }

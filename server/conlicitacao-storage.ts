@@ -107,7 +107,7 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
     }, 2000);
   }
 
-  private async refreshRecentBoletins(): Promise<void> {
+  private async refreshRecentBoletins(forceRefresh: boolean = false): Promise<void> {
     if (this.periodicRefreshInProgress) return;
     this.periodicRefreshInProgress = true;
     
@@ -154,7 +154,7 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
             const chunk = allBoletins.slice(i, i + chunkSize);
             await Promise.all(chunk.map(async (boletim: any) => {
               try {
-                const boletimData = await this.getCachedBoletimData(boletim.id);
+                const boletimData = await this.getCachedBoletimData(boletim.id, forceRefresh);
                 if (boletimData?.licitacoes) {
                   boletimData.licitacoes.forEach((licitacao: any) => {
                     const transformed = this.transformLicitacaoFromAPI(licitacao, boletim.id, 'api');
@@ -187,7 +187,7 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
   }
 
   public async manualRefreshBoletins(): Promise<{ updated: number; lastUpdate: number }> {
-    await this.refreshRecentBoletins();
+    await this.refreshRecentBoletins(true);
     return { updated: this.cachedBiddings.size, lastUpdate: this.lastCacheUpdate };
   }
 
@@ -385,15 +385,25 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
   }
 
   // Método otimizado para obter dados de boletim com cache
-  private async getCachedBoletimData(id: number): Promise<any> {
+  private async getCachedBoletimData(id: number, forceRefresh: boolean = false): Promise<any> {
     // Verificar cache primeiro
     const cached = this.boletimCache.get(id);
-    if (cached && (Date.now() - cached.timestamp < this.CACHE_TTL)) {
+    if (!forceRefresh && cached && (Date.now() - cached.timestamp < this.CACHE_TTL)) {
       return cached.data;
     }
     
     try {
       const data = await conLicitacaoAPI.getBoletimData(id);
+      
+      // Sincronizar com o banco de dados sempre que buscar da API
+      // Isso garante que os dados do banco estejam sempre atualizados
+      try {
+        const syncService = new SyncService();
+        await syncService.syncLicitacoesData(data.licitacoes || [], id);
+      } catch (syncError) {
+        console.error(`[AutoSync] Erro ao sincronizar boletim ${id}:`, syncError);
+      }
+
       this.boletimCache.set(id, { data, timestamp: Date.now(), dataSource: 'api' });
       return data;
     } catch (error: any) {
@@ -3089,6 +3099,59 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
     }
   }
 
+  // Garante que as licitações fornecidas estejam atualizadas (freshness check)
+  private async ensureBiddingsFreshness(biddings: Bidding[]): Promise<void> {
+    const now = Date.now();
+    // Considerar obsoleto se mais velho que 5 minutos
+    const STALE_THRESHOLD = 5 * 60 * 1000; 
+    
+    const boletinsToRefresh = new Set<number>();
+    
+    for (const bidding of biddings) {
+      if (!bidding.boletim_id) continue;
+      
+      const cachedBoletim = this.boletimCache.get(bidding.boletim_id);
+      // Se não tem cache do boletim ou está vencido, precisa atualizar
+      if (!cachedBoletim || (now - cachedBoletim.timestamp > STALE_THRESHOLD)) {
+        boletinsToRefresh.add(bidding.boletim_id);
+      }
+    }
+    
+    if (boletinsToRefresh.size > 0) {
+       const ids = Array.from(boletinsToRefresh);
+       // Limitar concorrência para não sobrecarregar
+       const chunkSize = 3;
+       
+       for (let i = 0; i < ids.length; i += chunkSize) {
+         const chunk = ids.slice(i, i + chunkSize);
+         await Promise.all(chunk.map(async (id) => {
+           try {
+             // getCachedBoletimData fará o fetch da API e o sync com DB
+             const data = await this.getCachedBoletimData(id);
+             
+             // Atualizar os objetos de licitação na lista fornecida e no cache principal
+             if (data.licitacoes) {
+                data.licitacoes.forEach((freshLic: any) => {
+                   const fresh = this.transformLicitacaoFromAPI(freshLic, id, 'api');
+                   
+                   // Atualizar no cache principal
+                   this.cachedBiddings.set(fresh.id, fresh);
+                   
+                   // Atualizar na lista atual (in-place update)
+                   const targets = biddings.filter(b => b.conlicitacao_id === fresh.conlicitacao_id);
+                   targets.forEach(target => {
+                     Object.assign(target, fresh);
+                   });
+                });
+             }
+           } catch (e) {
+             console.error(`[Freshness] Falha ao atualizar boletim ${id}:`, e);
+           }
+         }));
+       }
+    }
+  }
+
   // Atualiza dados de uma licitação via boletim associado
   public async refreshBoletimForBidding(biddingId: number): Promise<void> {
     const existing = this.cachedBiddings.get(biddingId);
@@ -3264,6 +3327,9 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
     const startIndex = (page - 1) * limit;
     const paginatedBiddings = biddings.slice(startIndex, startIndex + limit);
     
+    // Garantir que os itens exibidos estejam atualizados (Freshness on Read)
+    await this.ensureBiddingsFreshness(paginatedBiddings);
+
     if (Date.now() - this.lastCacheUpdate > this.CACHE_DURATION) {
       this.refreshRecentBoletins().catch(() => {});
     }
@@ -3277,7 +3343,11 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
   }
 
   async getBidding(id: number): Promise<Bidding | undefined> {
-    return this.cachedBiddings.get(id) || this.pinnedBiddings.get(id);
+    const bidding = this.cachedBiddings.get(id) || this.pinnedBiddings.get(id);
+    if (bidding) {
+      await this.ensureBiddingsFreshness([bidding]);
+    }
+    return bidding;
   }
 
   // Buscar múltiplas licitações por IDs (usado para favoritos - batch fetching)
