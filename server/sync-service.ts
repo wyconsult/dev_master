@@ -172,8 +172,29 @@ export class SyncService {
     let licitacoesSynced = 0;
     try {
       for (const lic of licitacoes) {
+        const normalizedId = Number(lic.id);
+
+        // Processar link do edital (mesma lógica do storage)
+        const documentoItem = lic.documento?.[0];
+        let documentoUrl = '';
+        if (documentoItem) {
+          const baseUrl = 'https://consultaonline.conlicitacao.com.br';
+          if (typeof documentoItem === 'string') {
+            documentoUrl = documentoItem.startsWith('http') ? documentoItem : baseUrl + documentoItem;
+          } else if (documentoItem.url) {
+            documentoUrl = documentoItem.url.startsWith('http') ? documentoItem.url : baseUrl + documentoItem.url;
+          }
+        }
+        // Fallback para link_edital ou documento_url se vierem direto
+        const finalLinkEdital = documentoUrl || lic.link_edital || lic.documento_url || null;
+
+        // Processar telefones
+        const telefones = lic.orgao?.telefone?.map((tel: any) => 
+          `${tel.ddd ? '(' + tel.ddd + ')' : ''} ${tel.numero}${tel.ramal ? ' ramal ' + tel.ramal : ''}`
+        ).join(', ') || lic.orgao_telefone || null;
+
         // Verificar se já existe (para evitar duplicatas pois não temos unique key no conlicitacao_id)
-        const existing = await db.select().from(biddings).where(eq(biddings.conlicitacao_id, lic.id));
+        const existing = await db.select().from(biddings).where(eq(biddings.conlicitacao_id, normalizedId));
         
         if (existing.length > 0) {
           // Se houver duplicatas, manter a primeira e remover as outras
@@ -183,7 +204,7 @@ export class SyncService {
           if (existing.length > 1) {
             const idsToRemove = existing.slice(1).map(e => e.id);
             await db.delete(biddings).where(sql`id IN ${idsToRemove}`);
-            console.log(`[SyncService] Removidas ${idsToRemove.length} duplicatas para licitação ${lic.id}`);
+            console.log(`[SyncService] Removidas ${idsToRemove.length} duplicatas para licitação ${normalizedId}`);
           }
           
           // Atualizar o registro existente
@@ -193,7 +214,7 @@ export class SyncService {
             orgao_cidade: lic.orgao?.cidade || 'Não informado',
             orgao_uf: lic.orgao?.uf || 'XX',
             orgao_endereco: lic.orgao?.endereco || null,
-            orgao_telefone: lic.orgao?.telefone || null,
+            orgao_telefone: telefones,
             orgao_site: lic.orgao?.site || null,
             objeto: (lic.objeto || 'Não informado').substring(0, 1000),
             situacao: lic.situacao || 'N/A',
@@ -203,8 +224,8 @@ export class SyncService {
             datahora_visita: lic.datahora_visita || null,
             datahora_prazo: lic.datahora_prazo || null,
             edital: lic.edital || null,
-            link_edital: lic.link_edital || null,
-            documento_url: lic.documento_url || null,
+            link_edital: finalLinkEdital,
+            documento_url: finalLinkEdital,
             processo: lic.processo || null,
             observacao: lic.observacao?.substring(0, 1000) || null,
             item: lic.item?.substring(0, 500) || null,
@@ -212,18 +233,19 @@ export class SyncService {
             valor_estimado: lic.valor_estimado || null,
             boletim_id: boletimId,
             updated_at: new Date(), // Garantir atualização do timestamp
+            synced_at: new Date(),
           }).where(eq(biddings.id, targetId));
           
         } else {
           // Inserir novo
           await db.insert(biddings).values({
-            conlicitacao_id: lic.id,
+            conlicitacao_id: normalizedId,
             orgao_nome: lic.orgao?.nome || 'Não informado',
             orgao_codigo: lic.orgao?.codigo || null,
             orgao_cidade: lic.orgao?.cidade || 'Não informado',
             orgao_uf: lic.orgao?.uf || 'XX',
             orgao_endereco: lic.orgao?.endereco || null,
-            orgao_telefone: lic.orgao?.telefone || null,
+            orgao_telefone: telefones,
             orgao_site: lic.orgao?.site || null,
             objeto: (lic.objeto || 'Não informado').substring(0, 1000),
             situacao: lic.situacao || 'N/A',
@@ -233,14 +255,16 @@ export class SyncService {
             datahora_visita: lic.datahora_visita || null,
             datahora_prazo: lic.datahora_prazo || null,
             edital: lic.edital || null,
-            link_edital: lic.link_edital || null,
-            documento_url: lic.documento_url || null,
+            link_edital: finalLinkEdital,
+            documento_url: finalLinkEdital,
             processo: lic.processo || null,
             observacao: lic.observacao?.substring(0, 1000) || null,
             item: lic.item?.substring(0, 500) || null,
             preco_edital: lic.preco_edital || null,
             valor_estimado: lic.valor_estimado || null,
             boletim_id: boletimId,
+            synced_at: new Date(),
+            updated_at: new Date(),
           });
         }
         licitacoesSynced++;

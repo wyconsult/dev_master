@@ -38,6 +38,8 @@ export const biddings = mysqlTable("biddings", {
   preco_edital: decimal("preco_edital", { precision: 15, scale: 2 }),
   valor_estimado: decimal("valor_estimado", { precision: 15, scale: 2 }),
   boletim_id: int("boletim_id"), // ID do boletim que contém esta licitação
+  synced_at: timestamp("synced_at").defaultNow(),
+  updated_at: timestamp("updated_at").defaultNow().onUpdateNow(),
 });
 
 export const favorites = mysqlTable("favorites", {
