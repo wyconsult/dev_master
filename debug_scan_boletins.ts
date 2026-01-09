@@ -19,8 +19,8 @@ async function scanBoletins(conlicitacaoId: number) {
     for (const filtro of filtrosData.filtros) {
         console.log(`\n📂 Filtro: ${filtro.descricao} (ID: ${filtro.id})`);
         
-        // Pegar últimos 5 boletins de cada filtro
-        const boletinsResp = await conLicitacaoAPI.getBoletins(filtro.id, 1, 5);
+        // Pegar últimos 50 boletins de cada filtro (Aumentado para achar atualizações perdidas)
+        const boletinsResp = await conLicitacaoAPI.getBoletins(filtro.id, 1, 50);
         
         if (!boletinsResp.boletins) continue;
 
