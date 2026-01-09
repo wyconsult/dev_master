@@ -13,72 +13,64 @@ async function debugBidding(conlicitacaoId: number) {
   
   if (dbResult.length === 0) {
     console.log('❌ Licitação NÃO encontrada no banco de dados local.');
-    process.exit(0);
-  }
+  } else {
+    const dbBidding = dbResult[0];
+    console.log('✅ Encontrada no banco!');
+    console.log('ID Interno:', dbBidding.id);
+    console.log('Boletim ID:', dbBidding.boletim_id);
+    console.log('Objeto:', dbBidding.objeto);
+    console.log('Orgão:', dbBidding.orgao_nome);
+    console.log('Data Abertura:', dbBidding.datahora_abertura);
+    console.log('Situação (DB):', dbBidding.situacao);
+    console.log('Link Edital:', dbBidding.link_edital);
+    console.log('Synced At:', dbBidding.synced_at);
 
-  const dbBidding = dbResult[0];
-  console.log('✅ Encontrada no banco!');
-  console.log('ID Interno:', dbBidding.id);
-  console.log('Boletim ID:', dbBidding.boletim_id);
-  console.log('Objeto:', dbBidding.objeto);
-  console.log('Orgão:', dbBidding.orgao_nome);
-  console.log('Data Abertura:', dbBidding.datahora_abertura);
-  console.log('Situação:', dbBidding.situacao);
-  console.log('Link Edital:', dbBidding.link_edital);
-  console.log('Synced At:', dbBidding.synced_at);
+    // 2. Buscar na API (usando o boletim_id do banco)
+    if (dbBidding.boletim_id) {
+        console.log(`\n--- ☁️ API (Usando Boletim ID do Banco: ${dbBidding.boletim_id}) ---`);
+        try {
+            const boletimData = await conLicitacaoAPI.getBoletimData(dbBidding.boletim_id);
+            const apiBiddings = boletimData.licitacoes || [];
+            
+            const apiBidding = apiBiddings.find((b: any) => Number(b.id) === conlicitacaoId);
 
-  // 2. Buscar na API (usando o boletim_id do banco)
-  if (!dbBidding.boletim_id) {
-    console.log('\n⚠️ Sem Boletim ID no banco, não é possível buscar na API.');
-    process.exit(0);
-  }
+            if (!apiBidding) {
+              console.log(`❌ Licitação ${conlicitacaoId} NÃO encontrada dentro do Boletim ${dbBidding.boletim_id} na API.`);
+            } else {
+              console.log('✅ Encontrada na API!');
+              console.log('ID:', apiBidding.id);
+              console.log('Objeto:', apiBidding.objeto);
+              console.log('Orgão:', apiBidding.orgao?.nome);
+              console.log('Data Abertura:', apiBidding.datahora_abertura);
+              console.log('Situação RAW (API):', apiBidding.situacao);
+              
+              // Verificar se expansão de status altera algo
+              // Simulação da lógica do frontend/backend
+              const expandStatus = (s: string) => {
+                 const map: any = { "ALTERA": "ALTERADA", "PRORROG": "PRORROGADA" }; 
+                 // ... (simplificado)
+                 if (map[s]) return map[s];
+                 return s;
+              };
+              // console.log('Situação Expandida (Simulada):', expandStatus(apiBidding.situacao));
 
-  console.log(`\n--- ☁️ API (Boletim ${dbBidding.boletim_id}) ---`);
-  try {
-    const boletimData = await conLicitacaoAPI.getBoletimData(dbBidding.boletim_id);
-    const apiBiddings = boletimData.licitacoes || [];
-    
-    // Encontrar a licitação específica na lista do boletim
-    // Nota: A API pode retornar o ID como string ou número
-    const apiBidding = apiBiddings.find((b: any) => Number(b.id) === conlicitacaoId);
+              // 3. Comparação
+              console.log('\n--- ⚖️ COMPARAÇÃO (DB vs API) ---');
+              const compare = (label: string, dbVal: any, apiVal: any) => {
+                const match = String(dbVal || '').trim() === String(apiVal || '').trim();
+                console.log(`${label}: ${match ? '✅ Igual' : '❌ DIFERENTE'} (DB: "${dbVal}", API: "${apiVal}")`);
+              };
 
-    if (!apiBidding) {
-      console.log(`❌ Licitação ${conlicitacaoId} NÃO encontrada dentro do Boletim ${dbBidding.boletim_id} na API.`);
-      console.log('IDs disponíveis no boletim:', apiBiddings.map((b: any) => b.id).slice(0, 10), '...');
-    } else {
-      console.log('✅ Encontrada na API!');
-      console.log('ID:', apiBidding.id);
-      console.log('Objeto:', apiBidding.objeto);
-      console.log('Orgão:', apiBidding.orgao?.nome);
-      console.log('Data Abertura:', apiBidding.datahora_abertura);
-      console.log('Situação:', apiBidding.situacao);
-      //console.log('Raw API Data:', JSON.stringify(apiBidding, null, 2));
-
-      // 3. Comparação
-      console.log('\n--- ⚖️ COMPARAÇÃO (DB vs API) ---');
-      const compare = (label: string, dbVal: any, apiVal: any) => {
-        const match = String(dbVal || '').trim() === String(apiVal || '').trim();
-        console.log(`${label}: ${match ? '✅ Igual' : '❌ DIFERENTE'}`);
-        if (!match) {
-            console.log(`   DB : "${dbVal}"`);
-            console.log(`   API: "${apiVal}"`);
+              compare('Situação', dbBidding.situacao, apiBidding.situacao);
+            }
+        } catch (error) {
+            console.error('Erro ao buscar na API:', error);
         }
-      };
-
-      compare('Objeto', dbBidding.objeto, apiBidding.objeto);
-      compare('Orgão', dbBidding.orgao_nome, apiBidding.orgao?.nome);
-      compare('Situação', dbBidding.situacao, apiBidding.situacao);
-      compare('Data Abertura', dbBidding.datahora_abertura, apiBidding.datahora_abertura);
     }
-
-  } catch (error) {
-    console.error('Erro ao buscar na API:', error);
   }
-
   process.exit(0);
 }
 
-// Executar
 const id = parseInt(process.argv[2]);
 if (!id) {
   console.log('Uso: npx tsx debug_bidding.ts <ID_LICITACAO>');
