@@ -385,7 +385,7 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
   private expandTruncatedStatus(status: string): string {
     if (!status) return "NOVA";
     
-    const truncatedMappings: { [key: string]: string } = {
+    const truncatedMappings: Record<string, string> = {
       "URGEN": "URGENTE",
       "RET": "RETIFICAÇÃO", 
       "ADIA": "ADIADA",
@@ -400,6 +400,7 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
       "EM_ANAL": "EM ANÁLISE",
       "PRORROG": "PRORROGADA",
       "ALTERA": "ALTERADA",
+      "ALTER": "ALTERADA", // Adicionado mapeamento para ALTER
       "FINALI": "FINALIZADA",
       "SUSP": "SUSPENSA",
       "CANCEL": "CANCELADA",
