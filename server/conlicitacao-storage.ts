@@ -1,7 +1,8 @@
 import { conLicitacaoAPI } from './conlicitacao-api';
-import { Bidding, Boletim, Filtro, Acompanhamento, User, InsertUser, Favorite, InsertFavorite, favorites } from '../shared/schema';
+import { Bidding, Boletim, Filtro, Acompanhamento, User, InsertUser, Favorite, InsertFavorite, favorites, biddings, boletins, acompanhamentos } from '../shared/schema';
 import { db } from "./db";
-import { eq, and } from "drizzle-orm";
+import { eq, and, like, desc, or, gte, lte, inArray, sql } from "drizzle-orm";
+import { syncService } from "./sync-service";
 
 export interface IConLicitacaoStorage {
   // Users (mantemos localmente)
@@ -50,30 +51,11 @@ export interface IConLicitacaoStorage {
 
 export class ConLicitacaoStorage implements IConLicitacaoStorage {
   private users: Map<number, User>;
-  private favorites: Map<number, Favorite>;
-  private viewedBoletins: Set<number>; // Armazena IDs dos boletins visualizados
   private currentUserId: number;
-  private currentFavoriteId: number;
-  private cachedBiddings: Map<number, Bidding & { cacheTimestamp: number, dataSource: 'api' | 'mock' }>; // Cache das licitações com metadata
-  private pinnedBiddings: Map<number, Bidding>; // Licitações favoritadas que devem persistir mesmo após limpeza de cache
-  private lastCacheUpdate: number;
-  private readonly CACHE_DURATION = 10 * 60 * 1000; // 10 minutos
-  private boletimCache = new Map<number, { data: any, timestamp: number, dataSource: 'api' | 'mock' }>();
-  private readonly CACHE_TTL = 5 * 60 * 1000; // 5 minutos
-  private fullLoadCompleted: boolean = false;
-  private backgroundLoadingInProgress: boolean = false;
-  private periodicRefreshInProgress: boolean = false;
-  private autoRefreshTimer?: NodeJS.Timeout;
 
   constructor() {
     this.users = new Map();
-    this.favorites = new Map();
-    this.viewedBoletins = new Set();
-    this.cachedBiddings = new Map();
-    this.pinnedBiddings = new Map();
     this.currentUserId = 1;
-    this.currentFavoriteId = 1;
-    this.lastCacheUpdate = 0;
     
     this.initializeMockData();
     this.startAutoRefresh();
@@ -98,97 +80,26 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
   }
 
   private startAutoRefresh() {
-    if (this.autoRefreshTimer) return;
-    this.autoRefreshTimer = setInterval(() => {
-      this.refreshRecentBoletins().catch(() => {});
-    }, this.CACHE_DURATION);
-    setTimeout(() => {
-      this.refreshRecentBoletins().catch(() => {});
-    }, 2000);
+    // Iniciar serviço de sincronização real com o banco de dados
+    syncService.startAutoSync(10 * 60 * 1000); // 10 minutos
   }
 
   private async refreshRecentBoletins(forceRefresh: boolean = false): Promise<void> {
-    if (this.periodicRefreshInProgress) return;
-    this.periodicRefreshInProgress = true;
-    
-    try {
-      const newCache = new Map<number, Bidding & { cacheTimestamp: number, dataSource: 'api' | 'mock' }>();
-      const filtros = await this.getFiltros();
-      const targetFiltros = filtros.slice(0, 1);
-      
-      // AUMENTADO: Carregar últimos 180 boletins (~6 meses) conforme solicitado
-      // Implementação com paginação para garantir que a API não limite a quantidade
-      const TARGET_TOTAL = 180;
-      const PAGE_SIZE = 50;
-      
-      for (const filtro of targetFiltros) {
-        try {
-          let allBoletins: any[] = [];
-          let page = 1;
-          let keepFetching = true;
-
-          while (keepFetching && allBoletins.length < TARGET_TOTAL) {
-            const response = await this.getBoletins(filtro.id, page, PAGE_SIZE);
-            const pageBoletins = response.boletins || [];
-            
-            if (pageBoletins.length === 0) {
-              keepFetching = false;
-            } else {
-              allBoletins = [...allBoletins, ...pageBoletins];
-              page++;
-            }
-            
-            // Proteção contra loop infinito se a API falhar
-            if (page > 10) keepFetching = false;
-          }
-
-          // Limitar ao target se passou
-          if (allBoletins.length > TARGET_TOTAL) {
-            allBoletins = allBoletins.slice(0, TARGET_TOTAL);
-          }
-          
-          // Processar em paralelo com controle de concorrência (chunks) para agilizar
-          const chunkSize = 5; // 5 requisições simultâneas
-          
-          for (let i = 0; i < allBoletins.length; i += chunkSize) {
-            const chunk = allBoletins.slice(i, i + chunkSize);
-            await Promise.all(chunk.map(async (boletim: any) => {
-              try {
-                const boletimData = await this.getCachedBoletimData(boletim.id, forceRefresh);
-                if (boletimData?.licitacoes) {
-                  boletimData.licitacoes.forEach((licitacao: any) => {
-                    const transformed = this.transformLicitacaoFromAPI(licitacao, boletim.id, 'api');
-                    newCache.set(transformed.id, transformed);
-                  });
-                }
-              } catch (e) {
-                // Erro pontual em boletim ignora
-              }
-            }));
-          }
-        } catch (err) {
-          console.error(`Erro ao processar filtro ${filtro.id}:`, err);
-        }
-      }
-      
-      if (newCache.size > 0) {
-        this.cachedBiddings = newCache;
-        this.lastCacheUpdate = Date.now();
-      } else {
-        await this.loadInitialBiddings();
-      }
-    } catch (err) {
-      console.error('Erro geral na atualização de boletins:', err);
-      if (this.cachedBiddings.size === 0) {
-        await this.loadInitialBiddings();
-      }
-    }
-    this.periodicRefreshInProgress = false;
+    // Mantido para compatibilidade, mas agora delega para o syncService se necessário
+    return;
   }
 
   public async manualRefreshBoletins(): Promise<{ updated: number; lastUpdate: number }> {
-    await this.refreshRecentBoletins(true);
-    return { updated: this.cachedBiddings.size, lastUpdate: this.lastCacheUpdate };
+    try {
+      const result = await syncService.incrementalSync();
+      return { 
+        updated: result.biddingsSynced, 
+        lastUpdate: Date.now() 
+      };
+    } catch (error) {
+      console.error('Erro no refresh manual:', error);
+      return { updated: 0, lastUpdate: Date.now() };
+    }
   }
 
   // Métodos de usuário (mantemos localmente)
@@ -313,8 +224,20 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
 
       if (totalItems === 0) totalItems = apiBoletins.length;
 
-      // CORREÇÃO: A API básica não retorna quantidades, precisamos buscar de forma híbrida
+      // Buscar status de visualização no banco para os boletins retornados
+      const boletimIds = apiBoletins.map((b: any) => b.id);
+      let viewedMap = new Set<number>();
       
+      if (boletimIds.length > 0) {
+        const viewedBoletinsList = await db.select({ id: boletins.id, visualizado: boletins.visualizado })
+          .from(boletins)
+          .where(inArray(boletins.id, boletimIds));
+        
+        viewedBoletinsList.forEach(b => {
+          if (b.visualizado) viewedMap.add(b.id);
+        });
+      }
+
       // Buscar contagens em paralelo usando cache para performance
       const boletinsWithCounts = apiBoletins.map((boletim: any) => {
         return {
@@ -325,7 +248,7 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
           // Quantidades não disponíveis na listagem rápida
           quantidade_licitacoes: boletim.quantidade_licitacoes || 0,
           quantidade_acompanhamentos: boletim.quantidade_acompanhamentos || 0,
-          visualizado: this.viewedBoletins.has(boletim.id),
+          visualizado: viewedMap.has(boletim.id),
         };
       });
       
@@ -335,84 +258,49 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
         total: totalItems
       };
     } catch (error: any) {
-      if (error.message !== 'IP_NOT_AUTHORIZED') {
-        console.error('Erro ao buscar boletins da API:', error);
+      console.error('Erro ao buscar boletins da API, tentando banco de dados:', error);
+      
+      // Fallback to database
+      try {
+        const dbBoletins = await db.select().from(boletins)
+          .orderBy(desc(boletins.data_envio))
+          .limit(perPage)
+          .offset((page - 1) * perPage);
+          
+        const total = await db.select({ count: sql<number>`count(*)` }).from(boletins).then(rows => rows[0].count);
+        
+        const mappedBoletins = dbBoletins.map(b => ({
+          id: b.id,
+          numero_edicao: b.numero_edicao,
+          datahora_fechamento: b.data_envio ? b.data_envio.toISOString() : new Date().toISOString(),
+          filtro_id: b.filtro_id,
+          quantidade_licitacoes: 0,
+          quantidade_acompanhamentos: 0,
+          visualizado: b.visualizado || false
+        }));
+
+        return { boletins: mappedBoletins, total };
+      } catch (dbError) {
+        console.error('Erro ao buscar do banco:', dbError);
+        return { boletins: [], total: 0 };
       }
-      
-      // Dados de teste para desenvolvimento enquanto IP não está autorizado
-      
-      // Mock com datas do dia atual (manhã, tarde, noite)
-      const hoje = new Date();
-      const baseData = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate());
-      const toISOAt = (h: number, m: number) => {
-        const d = new Date(baseData);
-        d.setHours(h, m, 0, 0);
-        return d.toISOString();
-      };
-
-      const boletinsTeste: Boletim[] = [
-        {
-          id: 1,
-          numero_edicao: 1000 + hoje.getDate(),
-          datahora_fechamento: toISOAt(17, 0), // NOITE
-          filtro_id: filtroId,
-          quantidade_licitacoes: 25,
-          quantidade_acompanhamentos: 8,
-          visualizado: this.viewedBoletins.has(1)
-        },
-        {
-          id: 2,
-          numero_edicao: 999 + hoje.getDate(),
-          datahora_fechamento: toISOAt(12, 30), // TARDE
-          filtro_id: filtroId,
-          quantidade_licitacoes: 32,
-          quantidade_acompanhamentos: 12,
-          visualizado: this.viewedBoletins.has(2)
-        },
-        {
-          id: 3,
-          numero_edicao: 998 + hoje.getDate(),
-          datahora_fechamento: toISOAt(9, 0), // MANHÃ
-          filtro_id: filtroId,
-          quantidade_licitacoes: 18,
-          quantidade_acompanhamentos: 5,
-          visualizado: this.viewedBoletins.has(3)
-        }
-      ];
-
-      return { boletins: boletinsTeste, total: boletinsTeste.length };
     }
   }
 
-  // Método otimizado para obter dados de boletim com cache
+  // Método para obter dados de boletim (direto da API com sync)
   private async getCachedBoletimData(id: number, forceRefresh: boolean = false): Promise<any> {
-    // Verificar cache primeiro
-    const cached = this.boletimCache.get(id);
-    if (!forceRefresh && cached && (Date.now() - cached.timestamp < this.CACHE_TTL)) {
-      return cached.data;
-    }
-    
     try {
       const data = await conLicitacaoAPI.getBoletimData(id);
       
       // Sincronizar com o banco de dados sempre que buscar da API
-      // Isso garante que os dados do banco estejam sempre atualizados
       try {
-        const syncService = new SyncService();
         await syncService.syncLicitacoesData(data.licitacoes || [], id);
       } catch (syncError) {
         console.error(`[AutoSync] Erro ao sincronizar boletim ${id}:`, syncError);
       }
 
-      this.boletimCache.set(id, { data, timestamp: Date.now(), dataSource: 'api' });
       return data;
     } catch (error: any) {
-      if (error.message === 'IP_NOT_AUTHORIZED') {
-        // Se temos dados em cache (mesmo expirados), usar eles
-        if (cached) {
-          return cached.data;
-        }
-      }
       throw error;
     }
   }
@@ -424,7 +312,7 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
       const response = await this.getCachedBoletimData(id);
       
       // Transformar licitações e acompanhamentos primeiro para contar corretamente
-      const dataSource = this.boletimCache.get(id)?.dataSource || 'api';
+      const dataSource = 'api';
       const licitacoes: Bidding[] = (response.licitacoes || []).map((licitacao: any) => this.transformLicitacaoFromAPI(licitacao, id, dataSource));
       const acompanhamentos: Acompanhamento[] = (response.acompanhamentos || []).map((acomp: any) => ({
         id: acomp.id,
@@ -441,6 +329,14 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
         boletim_id: id,
       }));
 
+      // Verificar status de visualizado no banco
+      const boletimDb = await db.select({ visualizado: boletins.visualizado })
+        .from(boletins)
+        .where(eq(boletins.id, id))
+        .limit(1);
+      
+      const visualizado = boletimDb[0]?.visualizado || false;
+
       const boletim: Boletim = {
         id: response.boletim.id,
         numero_edicao: response.boletim.numero_edicao,
@@ -448,783 +344,38 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
         filtro_id: response.boletim.cliente.filtro.id,
         quantidade_licitacoes: licitacoes.length, // Contar dados reais
         quantidade_acompanhamentos: acompanhamentos.length, // Contar dados reais
-        visualizado: this.viewedBoletins.has(id),
+        visualizado: visualizado,
       };
-
-
-
-      // Atualizar cache das licitações somente se não existir (evitar duplicação)
-      licitacoes.forEach(licitacao => {
-        if (!this.cachedBiddings.has(licitacao.id)) {
-          this.cachedBiddings.set(licitacao.id, licitacao);
-        }
-      });
-      this.lastCacheUpdate = Date.now();
 
       return { boletim, licitacoes, acompanhamentos };
     } catch (error: any) {
-      if (error.message !== 'IP_NOT_AUTHORIZED') {
-        console.error('Erro ao buscar boletim da API:', error);
+      console.error('Erro ao buscar boletim da API, tentando banco de dados:', error);
+      
+      try {
+        // Fallback to database
+        const boletimResult = await db.select().from(boletins).where(eq(boletins.id, id)).limit(1);
+        const boletimData = boletimResult[0];
+        
+        if (!boletimData) return undefined;
+        
+        const licitacoesData = await db.select().from(biddings).where(eq(biddings.boletim_id, id));
+        const acompanhamentosData = await db.select().from(acompanhamentos).where(eq(acompanhamentos.boletim_id, id));
+        
+        const boletim: Boletim = {
+          id: boletimData.id,
+          numero_edicao: boletimData.numero_edicao,
+          datahora_fechamento: boletimData.data_envio ? boletimData.data_envio.toISOString() : new Date().toISOString(),
+          filtro_id: boletimData.filtro_id,
+          quantidade_licitacoes: licitacoesData.length,
+          quantidade_acompanhamentos: acompanhamentosData.length,
+          visualizado: boletimData.visualizado || false
+        };
+
+        return { boletim, licitacoes: licitacoesData as any[], acompanhamentos: acompanhamentosData as any[] };
+      } catch (dbError) {
+         console.error('Erro ao buscar boletim do banco:', dbError);
+         return undefined;
       }
-      
-      const licitacoesTeste: Bidding[] = [
-        {
-          id: 1,
-          conlicitacao_id: 17942339,
-          orgao_nome: "Fundação de Apoio ao Ensino, Pesquisa, Extensão e Interiorização do IFAM- FAEPI",
-          orgao_codigo: "UASG123",
-          orgao_cidade: "Manaus",
-          orgao_uf: "AM",
-          orgao_endereco: "Endereço teste",
-          orgao_telefone: "(92) 1234-5678",
-          orgao_site: "www.teste.gov.br",
-          objeto: "Produto/Serviço Quant. Unidade Produto/Serviço: Serviço de apoio logístico para evento",
-          situacao: "URGENTE",
-          datahora_abertura: "2025-07-15 09:00:00",
-          datahora_documento: "2025-07-10 14:30:00",
-          datahora_retirada: "2025-07-12 16:00:00",
-          datahora_visita: null,
-          datahora_prazo: "2025-07-20 17:00:00",
-          edital: "SM/715/2025",
-          link_edital: "https://consultaonline.conlicitacao.com.br/boletim_web/public/api/download?auth=teste1",
-          documento_url: "https://consultaonline.conlicitacao.com.br/boletim_web/public/api/download?auth=teste1",
-          processo: "23456.789012/2025-01",
-          observacao: "Observação teste",
-          item: "Item teste",
-          preco_edital: 50000.00,
-          valor_estimado: 50000.00,
-          boletim_id: id,
-        },
-        {
-          id: 2,
-          conlicitacao_id: 17942355,
-          orgao_nome: "Fundação de Apoio ao Ensino, Pesquisa, Extensão e Interiorização do IFAM- FAEPI",
-          orgao_codigo: "UASG456",
-          orgao_cidade: "Manaus",
-          orgao_uf: "AM",
-          orgao_endereco: "Endereço teste 2",
-          orgao_telefone: "(92) 9876-5432",
-          orgao_site: "www.teste2.gov.br",
-          objeto: "Produto/Serviço Quant. Unidade Produto/Serviço: Iogurte zero açúcar",
-          situacao: "URGENTE",
-          datahora_abertura: "2025-07-17 07:59:00",
-          datahora_documento: null,
-          datahora_retirada: null,
-          datahora_visita: "2025-07-16 10:30:00",
-          datahora_prazo: "",
-          edital: "SM/711/2025",
-          link_edital: "https://consultaonline.conlicitacao.com.br/boletim_web/public/api/download?auth=teste2",
-          documento_url: "https://consultaonline.conlicitacao.com.br/boletim_web/public/api/download?auth=teste2",
-          processo: "98765.432109/2025-02",
-          observacao: "Observação teste 2",
-          item: "Item teste 2",
-          preco_edital: 25000.00,
-          valor_estimado: 25000.00,
-          boletim_id: id,
-        },
-        {
-          id: 3,
-          conlicitacao_id: 17942403,
-          orgao_nome: "Secretaria de Saúde de São Paulo",
-          orgao_codigo: "UASG1001",
-          orgao_cidade: "São Paulo",
-          orgao_uf: "SP",
-          orgao_endereco: "Av. Paulista, 1000",
-          orgao_telefone: "(11) 1111-1111",
-          orgao_site: "www.saude.sp.gov.br",
-          objeto: "Aquisição de material hospitalar",
-          situacao: "ABERTA",
-          datahora_abertura: "2025-08-01 10:00:00",
-          datahora_documento: "2025-07-28 09:00:00",
-          datahora_retirada: "2025-07-30 16:00:00",
-          datahora_visita: null,
-          datahora_prazo: "2025-08-05 17:00:00",
-          edital: "SS/801/2025",
-          link_edital: "https://consultaonline.conlicitacao.com.br/boletim_web/public/api/download?auth=mock3",
-          documento_url: "https://consultaonline.conlicitacao.com.br/boletim_web/public/api/download?auth=mock3",
-          processo: "10000.000001/2025-08",
-          observacao: "Mock teste",
-          item: "Item saúde",
-          preco_edital: 10000.00,
-          valor_estimado: 120000.00,
-          boletim_id: id,
-        },
-        {
-          id: 4,
-          conlicitacao_id: 17942404,
-          orgao_nome: "Prefeitura do Rio de Janeiro",
-          orgao_codigo: "UASG1002",
-          orgao_cidade: "Rio de Janeiro",
-          orgao_uf: "RJ",
-          orgao_endereco: "Rua das Laranjeiras, 50",
-          orgao_telefone: "(21) 2222-2222",
-          orgao_site: "www.rio.rj.gov.br",
-          objeto: "Serviços de manutenção de vias",
-          situacao: "ABERTA",
-          datahora_abertura: "2025-08-01 10:00:00",
-          datahora_documento: "2025-07-29 10:00:00",
-          datahora_retirada: null,
-          datahora_visita: null,
-          datahora_prazo: "2025-08-05 17:00:00",
-          edital: "PRJ/802/2025",
-          link_edital: "https://consultaonline.conlicitacao.com.br/boletim_web/public/api/download?auth=mock4",
-          documento_url: "https://consultaonline.conlicitacao.com.br/boletim_web/public/api/download?auth=mock4",
-          processo: "20000.000002/2025-08",
-          observacao: "Mock manutenção",
-          item: "Item manutenção",
-          preco_edital: 15000.00,
-          valor_estimado: 300000.00,
-          boletim_id: id,
-        },
-        {
-          id: 5,
-          conlicitacao_id: 17942405,
-          orgao_nome: "Secretaria de Educação de Minas Gerais",
-          orgao_codigo: "UASG1003",
-          orgao_cidade: "Belo Horizonte",
-          orgao_uf: "MG",
-          orgao_endereco: "Praça da Liberdade, 10",
-          orgao_telefone: "(31) 3333-3333",
-          orgao_site: "www.educacao.mg.gov.br",
-          objeto: "Compra de mobiliário escolar",
-          situacao: "ABERTA",
-          datahora_abertura: "2025-08-01 10:00:00",
-          datahora_documento: null,
-          datahora_retirada: "2025-07-31 15:00:00",
-          datahora_visita: null,
-          datahora_prazo: "2025-08-05 17:00:00",
-          edital: "SEMG/803/2025",
-          link_edital: "https://consultaonline.conlicitacao.com.br/boletim_web/public/api/download?auth=mock5",
-          documento_url: "https://consultaonline.conlicitacao.com.br/boletim_web/public/api/download?auth=mock5",
-          processo: "30000.000003/2025-08",
-          observacao: "Mock mobiliário",
-          item: "Item escolar",
-          preco_edital: 8000.00,
-          valor_estimado: 180000.00,
-          boletim_id: id,
-        },
-        {
-          id: 6,
-          conlicitacao_id: 17942406,
-          orgao_nome: "Secretaria de Administração da Bahia",
-          orgao_codigo: "UASG1004",
-          orgao_cidade: "Salvador",
-          orgao_uf: "BA",
-          orgao_endereco: "Av. Sete de Setembro, 700",
-          orgao_telefone: "(71) 4444-4444",
-          orgao_site: "www.adm.ba.gov.br",
-          objeto: "Contratação de serviços de limpeza",
-          situacao: "ABERTA",
-          datahora_abertura: "2025-08-01 10:00:00",
-          datahora_documento: "2025-07-28 08:00:00",
-          datahora_retirada: null,
-          datahora_visita: null,
-          datahora_prazo: "2025-08-05 17:00:00",
-          edital: "SAB/804/2025",
-          link_edital: "https://consultaonline.conlicitacao.com.br/boletim_web/public/api/download?auth=mock6",
-          documento_url: "https://consultaonline.conlicitacao.com.br/boletim_web/public/api/download?auth=mock6",
-          processo: "40000.000004/2025-08",
-          observacao: "Mock limpeza",
-          item: "Item limpeza",
-          preco_edital: 5000.00,
-          valor_estimado: 100000.00,
-          boletim_id: id,
-        },
-        {
-          id: 7,
-          conlicitacao_id: 17942407,
-          orgao_nome: "Secretaria de Obras do Rio Grande do Sul",
-          orgao_codigo: "UASG1005",
-          orgao_cidade: "Porto Alegre",
-          orgao_uf: "RS",
-          orgao_endereco: "Rua dos Andradas, 123",
-          orgao_telefone: "(51) 5555-5555",
-          orgao_site: "www.obras.rs.gov.br",
-          objeto: "Serviços de pavimentação",
-          situacao: "ABERTA",
-          datahora_abertura: "2025-08-01 10:00:00",
-          datahora_documento: null,
-          datahora_retirada: null,
-          datahora_visita: null,
-          datahora_prazo: "2025-08-05 17:00:00",
-          edital: "SORS/805/2025",
-          link_edital: "https://consultaonline.conlicitacao.com.br/boletim_web/public/api/download?auth=mock7",
-          documento_url: "https://consultaonline.conlicitacao.com.br/boletim_web/public/api/download?auth=mock7",
-          processo: "50000.000005/2025-08",
-          observacao: "Mock pavimentação",
-          item: "Item obras",
-          preco_edital: 20000.00,
-          valor_estimado: 500000.00,
-          boletim_id: id,
-        },
-        {
-          id: 8,
-          conlicitacao_id: 17942408,
-          orgao_nome: "Secretaria de Turismo do Paraná",
-          orgao_codigo: "UASG1006",
-          orgao_cidade: "Curitiba",
-          orgao_uf: "PR",
-          orgao_endereco: "Rua XV de Novembro, 200",
-          orgao_telefone: "(41) 6666-6666",
-          orgao_site: "www.turismo.pr.gov.br",
-          objeto: "Serviços de organização de eventos",
-          situacao: "ABERTA",
-          datahora_abertura: null,
-          datahora_documento: "2025-08-10 14:00:00",
-          datahora_retirada: null,
-          datahora_visita: null,
-          datahora_prazo: "2025-08-18 17:00:00",
-          edital: "STPR/806/2025",
-          link_edital: "https://consultaonline.conlicitacao.com.br/boletim_web/public/api/download?auth=mock8",
-          documento_url: "https://consultaonline.conlicitacao.com.br/boletim_web/public/api/download?auth=mock8",
-          processo: "60000.000006/2025-08",
-          observacao: "Mock eventos",
-          item: "Item turismo",
-          preco_edital: 7000.00,
-          valor_estimado: 160000.00,
-          boletim_id: id,
-        },
-        {
-          id: 9,
-          conlicitacao_id: 17942409,
-          orgao_nome: "Secretaria de Esportes de Santa Catarina",
-          orgao_codigo: "UASG1007",
-          orgao_cidade: "Florianópolis",
-          orgao_uf: "SC",
-          orgao_endereco: "Av. Beira-Mar, 400",
-          orgao_telefone: "(48) 7777-7777",
-          orgao_site: "www.esportes.sc.gov.br",
-          objeto: "Compra de equipamentos esportivos",
-          situacao: "ABERTA",
-          datahora_abertura: null,
-          datahora_documento: "2025-08-10 14:00:00",
-          datahora_retirada: "2025-08-12 16:00:00",
-          datahora_visita: null,
-          datahora_prazo: "2025-08-19 12:00:00",
-          edital: "SESC/807/2025",
-          link_edital: "https://consultaonline.conlicitacao.com.br/boletim_web/public/api/download?auth=mock9",
-          documento_url: "https://consultaonline.conlicitacao.com.br/boletim_web/public/api/download?auth=mock9",
-          processo: "70000.000007/2025-08",
-          observacao: "Mock esportes",
-          item: "Item esportivo",
-          preco_edital: 6000.00,
-          valor_estimado: 90000.00,
-          boletim_id: id,
-        },
-        {
-          id: 10,
-          conlicitacao_id: 17942410,
-          orgao_nome: "Governo de Pernambuco",
-          orgao_codigo: "UASG1008",
-          orgao_cidade: "Recife",
-          orgao_uf: "PE",
-          orgao_endereco: "Rua da Aurora, 123",
-          orgao_telefone: "(81) 8888-8888",
-          orgao_site: "www.pe.gov.br",
-          objeto: "Serviços de publicidade institucional",
-          situacao: "ABERTA",
-          datahora_abertura: "",
-          datahora_documento: "2025-08-10 14:00:00",
-          datahora_retirada: null,
-          datahora_visita: null,
-          datahora_prazo: "2025-08-25 17:00:00",
-          edital: "GPE/808/2025",
-          link_edital: "https://consultaonline.conlicitacao.com.br/boletim_web/public/api/download?auth=mock10",
-          documento_url: "https://consultaonline.conlicitacao.com.br/boletim_web/public/api/download?auth=mock10",
-          processo: "80000.000008/2025-08",
-          observacao: "Mock publicidade",
-          item: "Item publicidade",
-          preco_edital: 12000.00,
-          valor_estimado: 250000.00,
-          boletim_id: id,
-        },
-        {
-          id: 11,
-          conlicitacao_id: 17942411,
-          orgao_nome: "Prefeitura de Fortaleza",
-          orgao_codigo: "UASG1009",
-          orgao_cidade: "Fortaleza",
-          orgao_uf: "CE",
-          orgao_endereco: "Av. Dom Luís, 90",
-          orgao_telefone: "(85) 9999-9999",
-          orgao_site: "www.fortaleza.ce.gov.br",
-          objeto: "Fornecimento de alimentação escolar",
-          situacao: "ABERTA",
-          datahora_abertura: null,
-          datahora_documento: "2025-08-10 14:00:00",
-          datahora_retirada: null,
-          datahora_visita: "",
-          datahora_prazo: "2025-08-22 11:00:00",
-          edital: "PFF/809/2025",
-          link_edital: "https://consultaonline.conlicitacao.com.br/boletim_web/public/api/download?auth=mock11",
-          documento_url: "https://consultaonline.conlicitacao.com.br/boletim_web/public/api/download?auth=mock11",
-          processo: "90000.000009/2025-08",
-          observacao: "Mock alimentação",
-          item: "Item merenda",
-          preco_edital: 9000.00,
-          valor_estimado: 140000.00,
-          boletim_id: id,
-        },
-        {
-          id: 12,
-          conlicitacao_id: 17942412,
-          orgao_nome: "Governo do Distrito Federal",
-          orgao_codigo: "UASG1010",
-          orgao_cidade: "Brasília",
-          orgao_uf: "DF",
-          orgao_endereco: "Esplanada dos Ministérios",
-          orgao_telefone: "(61) 1010-1010",
-          orgao_site: "www.df.gov.br",
-          objeto: "Locação de veículos",
-          situacao: "ABERTA",
-          datahora_abertura: "",
-          datahora_documento: "2025-08-10 14:00:00",
-          datahora_retirada: "",
-          datahora_visita: null,
-          datahora_prazo: "2025-08-28 18:00:00",
-          edital: "GDF/810/2025",
-          link_edital: "https://consultaonline.conlicitacao.com.br/boletim_web/public/api/download?auth=mock12",
-          documento_url: "https://consultaonline.conlicitacao.com.br/boletim_web/public/api/download?auth=mock12",
-          processo: "100000.000010/2025-08",
-          observacao: "Mock locação",
-          item: "Item frota",
-          preco_edital: 11000.00,
-          valor_estimado: 320000.00,
-          boletim_id: id,
-        },
-        {
-          id: 13,
-          conlicitacao_id: 17942413,
-          orgao_nome: "Secretaria de Infraestrutura do Pará",
-          orgao_codigo: "UASG1011",
-          orgao_cidade: "Belém",
-          orgao_uf: "PA",
-          orgao_endereco: "Av. Nazaré, 50",
-          orgao_telefone: "(91) 1313-1313",
-          orgao_site: "www.infra.pa.gov.br",
-          objeto: "Construção de ponte",
-          situacao: "ABERTA",
-          datahora_abertura: null,
-          datahora_documento: null,
-          datahora_retirada: "2025-08-12 16:00:00",
-          datahora_visita: "2025-08-15 09:00:00",
-          datahora_prazo: "2025-08-30 17:00:00",
-          edital: "SIPA/811/2025",
-          link_edital: "https://consultaonline.conlicitacao.com.br/boletim_web/public/api/download?auth=mock13",
-          documento_url: "https://consultaonline.conlicitacao.com.br/boletim_web/public/api/download?auth=mock13",
-          processo: "110000.000011/2025-08",
-          observacao: "Mock ponte",
-          item: "Item obra",
-          preco_edital: 25000.00,
-          valor_estimado: 1000000.00,
-          boletim_id: id,
-        },
-        {
-          id: 14,
-          conlicitacao_id: 17942414,
-          orgao_nome: "Prefeitura de Goiânia",
-          orgao_codigo: "UASG1012",
-          orgao_cidade: "Goiânia",
-          orgao_uf: "GO",
-          orgao_endereco: "Av. T-63, 120",
-          orgao_telefone: "(62) 1414-1414",
-          orgao_site: "www.goiania.go.gov.br",
-          objeto: "Manutenção de praças",
-          situacao: "ABERTA",
-          datahora_abertura: null,
-          datahora_documento: null,
-          datahora_retirada: "2025-08-12 16:00:00",
-          datahora_visita: "2025-08-15 09:00:00",
-          datahora_prazo: "2025-08-27 09:00:00",
-          edital: "PGO/812/2025",
-          link_edital: "https://consultaonline.conlicitacao.com.br/boletim_web/public/api/download?auth=mock14",
-          documento_url: "https://consultaonline.conlicitacao.com.br/boletim_web/public/api/download?auth=mock14",
-          processo: "120000.000012/2025-08",
-          observacao: "Mock praças",
-          item: "Item urbano",
-          preco_edital: 4000.00,
-          valor_estimado: 85000.00,
-          boletim_id: id,
-        },
-        {
-          id: 15,
-          conlicitacao_id: 17942415,
-          orgao_nome: "Secretaria de Segurança do Espírito Santo",
-          orgao_codigo: "UASG1013",
-          orgao_cidade: "Vitória",
-          orgao_uf: "ES",
-          orgao_endereco: "Av. Vitória, 500",
-          orgao_telefone: "(27) 1515-1515",
-          orgao_site: "www.seguranca.es.gov.br",
-          objeto: "Compra de viaturas",
-          situacao: "ABERTA",
-          datahora_abertura: null,
-          datahora_documento: null,
-          datahora_retirada: "2025-08-12 16:00:00",
-          datahora_visita: "2025-08-15 09:00:00",
-          datahora_prazo: "2025-08-29 17:00:00",
-          edital: "SEES/813/2025",
-          link_edital: "https://consultaonline.conlicitacao.com.br/boletim_web/public/api/download?auth=mock15",
-          documento_url: "https://consultaonline.conlicitacao.com.br/boletim_web/public/api/download?auth=mock15",
-          processo: "130000.000013/2025-08",
-          observacao: "Mock viaturas",
-          item: "Item segurança",
-          preco_edital: 18000.00,
-          valor_estimado: 600000.00,
-          boletim_id: id,
-        },
-        {
-          id: 16,
-          conlicitacao_id: 17942416,
-          orgao_nome: "Secretaria de Agricultura do Mato Grosso",
-          orgao_codigo: "UASG1014",
-          orgao_cidade: "Cuiabá",
-          orgao_uf: "MT",
-          orgao_endereco: "Av. Getúlio Vargas, 320",
-          orgao_telefone: "(65) 1616-1616",
-          orgao_site: "www.agricultura.mt.gov.br",
-          objeto: "Aquisição de sementes",
-          situacao: "ABERTA",
-          datahora_abertura: null,
-          datahora_documento: null,
-          datahora_retirada: "2025-08-12 16:00:00",
-          datahora_visita: "2025-08-15 09:00:00",
-          datahora_prazo: "2025-09-02 10:00:00",
-          edital: "SAMT/814/2025",
-          link_edital: "https://consultaonline.conlicitacao.com.br/boletim_web/public/api/download?auth=mock16",
-          documento_url: "https://consultaonline.conlicitacao.com.br/boletim_web/public/api/download?auth=mock16",
-          processo: "140000.000014/2025-08",
-          observacao: "Mock sementes",
-          item: "Item agricultura",
-          preco_edital: 3000.00,
-          valor_estimado: 50000.00,
-          boletim_id: id,
-        },
-        {
-          id: 17,
-          conlicitacao_id: 17942417,
-          orgao_nome: "Secretaria de Meio Ambiente do Mato Grosso do Sul",
-          orgao_codigo: "UASG1015",
-          orgao_cidade: "Campo Grande",
-          orgao_uf: "MS",
-          orgao_endereco: "Rua 14 de Julho, 210",
-          orgao_telefone: "(67) 1717-1717",
-          orgao_site: "www.meioambiente.ms.gov.br",
-          objeto: "Serviços de reflorestamento",
-          situacao: "ABERTA",
-          datahora_abertura: null,
-          datahora_documento: null,
-          datahora_retirada: "2025-08-12 16:00:00",
-          datahora_visita: "2025-08-15 09:00:00",
-          datahora_prazo: "2025-09-03 15:30:00",
-          edital: "SMAMS/815/2025",
-          link_edital: "https://consultaonline.conlicitacao.com.br/boletim_web/public/api/download?auth=mock17",
-          documento_url: "https://consultaonline.conlicitacao.com.br/boletim_web/public/api/download?auth=mock17",
-          processo: "150000.000015/2025-08",
-          observacao: "Mock reflorestamento",
-          item: "Item ambiental",
-          preco_edital: 7000.00,
-          valor_estimado: 150000.00,
-          boletim_id: id,
-        },
-        {
-          id: 18,
-          conlicitacao_id: 17942418,
-          orgao_nome: "Secretaria de Educação do Ceará",
-          orgao_codigo: "UASG1016",
-          orgao_cidade: "Fortaleza",
-          orgao_uf: "CE",
-          orgao_endereco: "Av. Barão de Studart, 300",
-          orgao_telefone: "(85) 1818-1818",
-          orgao_site: "www.educacao.ce.gov.br",
-          objeto: "Aquisição de livros didáticos",
-          situacao: "ABERTA",
-          datahora_abertura: "2025-08-10 09:00:00",
-          datahora_documento: "2025-08-05 10:30:00",
-          datahora_retirada: "2025-08-07 15:00:00",
-          datahora_visita: null,
-          datahora_prazo: "2025-08-20 17:00:00",
-          edital: "SEC/816/2025",
-          link_edital: "https://consultaonline.conlicitacao.com.br/boletim_web/public/api/download?auth=mock18",
-          documento_url: "https://consultaonline.conlicitacao.com.br/boletim_web/public/api/download?auth=mock18",
-          processo: "160000.000016/2025-08",
-          observacao: "Mock educação",
-          item: "Item livros",
-          preco_edital: 8000.00,
-          valor_estimado: 200000.00,
-          boletim_id: id,
-        },
-        {
-          id: 19,
-          conlicitacao_id: 17942419,
-          orgao_nome: "Secretaria de Saúde do Rio de Janeiro",
-          orgao_codigo: "UASG1017",
-          orgao_cidade: "Rio de Janeiro",
-          orgao_uf: "RJ",
-          orgao_endereco: "Rua México, 180",
-          orgao_telefone: "(21) 1919-1919",
-          orgao_site: "www.saude.rj.gov.br",
-          objeto: "Aquisição de material hospitalar",
-          situacao: "ABERTA",
-          datahora_abertura: "2025-08-12 10:00:00",
-          datahora_documento: "2025-08-06 09:00:00",
-          datahora_retirada: "2025-08-08 16:00:00",
-          datahora_visita: null,
-          datahora_prazo: "2025-08-22 17:00:00",
-          edital: "SSRJ/817/2025",
-          link_edital: "https://consultaonline.conlicitacao.com.br/boletim_web/public/api/download?auth=mock19",
-          documento_url: "https://consultaonline.conlicitacao.com.br/boletim_web/public/api/download?auth=mock19",
-          processo: "170000.000017/2025-08",
-          observacao: "Mock hospitalar",
-          item: "Item saúde",
-          preco_edital: 10000.00,
-          valor_estimado: 250000.00,
-          boletim_id: id,
-        },
-        {
-          id: 20,
-          conlicitacao_id: 17942420,
-          orgao_nome: "Prefeitura de Belo Horizonte",
-          orgao_codigo: "UASG1018",
-          orgao_cidade: "Belo Horizonte",
-          orgao_uf: "MG",
-          orgao_endereco: "Av. Afonso Pena, 400",
-          orgao_telefone: "(31) 2020-2020",
-          orgao_site: "www.pbh.gov.br",
-          objeto: "Serviços de limpeza urbana",
-          situacao: "ABERTA",
-          datahora_abertura: null,
-          datahora_documento: "2025-08-14 11:00:00",
-          datahora_retirada: null,
-          datahora_visita: null,
-          datahora_prazo: "2025-08-26 17:00:00",
-          edital: "PBH/818/2025",
-          link_edital: "https://consultaonline.conlicitacao.com.br/boletim_web/public/api/download?auth=mock20",
-          documento_url: "https://consultaonline.conlicitacao.com.br/boletim_web/public/api/download?auth=mock20",
-          processo: "180000.000018/2025-08",
-          observacao: "Mock limpeza urbana",
-          item: "Item limpeza",
-          preco_edital: 6000.00,
-          valor_estimado: 130000.00,
-          boletim_id: id,
-        },
-        {
-          id: 21,
-          conlicitacao_id: 17942421,
-          orgao_nome: "Governo da Bahia",
-          orgao_codigo: "UASG1019",
-          orgao_cidade: "Salvador",
-          orgao_uf: "BA",
-          orgao_endereco: "Centro Administrativo da Bahia",
-          orgao_telefone: "(71) 2121-2121",
-          orgao_site: "www.ba.gov.br",
-          objeto: "Reforma de escolas estaduais",
-          situacao: "ABERTA",
-          datahora_abertura: "2025-08-18 09:30:00",
-          datahora_documento: "2025-08-12 08:45:00",
-          datahora_retirada: null,
-          datahora_visita: "2025-08-20 10:00:00",
-          datahora_prazo: "2025-08-31 17:00:00",
-          edital: "GBA/819/2025",
-          link_edital: "https://consultaonline.conlicitacao.com.br/boletim_web/public/api/download?auth=mock21",
-          documento_url: "https://consultaonline.conlicitacao.com.br/boletim_web/public/api/download?auth=mock21",
-          processo: "190000.000019/2025-08",
-          observacao: "Mock reformas",
-          item: "Item obras",
-          preco_edital: 15000.00,
-          valor_estimado: 700000.00,
-          boletim_id: id,
-        },
-        {
-          id: 22,
-          conlicitacao_id: 17942422,
-          orgao_nome: "Secretaria de Cultura do Maranhão",
-          orgao_codigo: "UASG1020",
-          orgao_cidade: "São Luís",
-          orgao_uf: "MA",
-          orgao_endereco: "Rua da Cultura, 50",
-          orgao_telefone: "(98) 2222-2222",
-          orgao_site: "www.cultura.ma.gov.br",
-          objeto: "Produção de eventos culturais",
-          situacao: "ABERTA",
-          datahora_abertura: null,
-          datahora_documento: "2025-08-15 13:00:00",
-          datahora_retirada: "2025-08-17 16:00:00",
-          datahora_visita: null,
-          datahora_prazo: "2025-09-01 18:00:00",
-          edital: "SCMA/820/2025",
-          link_edital: "https://consultaonline.conlicitacao.com.br/boletim_web/public/api/download?auth=mock22",
-          documento_url: "https://consultaonline.conlicitacao.com.br/boletim_web/public/api/download?auth=mock22",
-          processo: "200000.000020/2025-08",
-          observacao: "Mock cultura",
-          item: "Item evento",
-          preco_edital: 7000.00,
-          valor_estimado: 95000.00,
-          boletim_id: id,
-        },
-        {
-          id: 23,
-          conlicitacao_id: 17942423,
-          orgao_nome: "Companhia de Saneamento de Goiás",
-          orgao_codigo: "UASG1021",
-          orgao_cidade: "Goiânia",
-          orgao_uf: "GO",
-          orgao_endereco: "Av. Anhanguera, 1000",
-          orgao_telefone: "(62) 2323-2323",
-          orgao_site: "www.saneago.go.gov.br",
-          objeto: "Ampliação de rede de água",
-          situacao: "ABERTA",
-          datahora_abertura: null,
-          datahora_documento: "2025-08-16 10:00:00",
-          datahora_retirada: null,
-          datahora_visita: "2025-08-22 09:00:00",
-          datahora_prazo: "2025-09-03 17:00:00",
-          edital: "SANEGO/821/2025",
-          link_edital: "https://consultaonline.conlicitacao.com.br/boletim_web/public/api/download?auth=mock23",
-          documento_url: "https://consultaonline.conlicitacao.com.br/boletim_web/public/api/download?auth=mock23",
-          processo: "210000.000021/2025-08",
-          observacao: "Mock saneamento",
-          item: "Item rede",
-          preco_edital: 12000.00,
-          valor_estimado: 300000.00,
-          boletim_id: id,
-        },
-        {
-          id: 24,
-          conlicitacao_id: 17942424,
-          orgao_nome: "Universidade Federal de Minas Gerais",
-          orgao_codigo: "UASG1022",
-          orgao_cidade: "Belo Horizonte",
-          orgao_uf: "MG",
-          orgao_endereco: "Av. Antônio Carlos, 6627",
-          orgao_telefone: "(31) 2424-2424",
-          orgao_site: "www.ufmg.br",
-          objeto: "Fornecimento de equipamentos de laboratório",
-          situacao: "ABERTA",
-          datahora_abertura: "2025-08-25 09:00:00",
-          datahora_documento: "2025-08-18 14:00:00",
-          datahora_retirada: null,
-          datahora_visita: null,
-          datahora_prazo: "2025-09-05 17:00:00",
-          edital: "UFMG/822/2025",
-          link_edital: "https://consultaonline.conlicitacao.com.br/boletim_web/public/api/download?auth=mock24",
-          documento_url: "https://consultaonline.conlicitacao.com.br/boletim_web/public/api/download?auth=mock24",
-          processo: "220000.000022/2025-08",
-          observacao: "Mock laboratório",
-          item: "Item laboratório",
-          preco_edital: 15000.00,
-          valor_estimado: 400000.00,
-          boletim_id: id,
-        },
-        {
-          id: 25,
-          conlicitacao_id: 17942425,
-          orgao_nome: "Secretaria de Transportes do Amazonas",
-          orgao_codigo: "UASG1023",
-          orgao_cidade: "Manaus",
-          orgao_uf: "AM",
-          orgao_endereco: "Av. Djalma Batista, 1000",
-          orgao_telefone: "(92) 2525-2525",
-          orgao_site: "www.transportes.am.gov.br",
-          objeto: "Pavimentação de rodovias",
-          situacao: "ABERTA",
-          datahora_abertura: null,
-          datahora_documento: "2025-08-19 11:30:00",
-          datahora_retirada: "2025-08-21 16:00:00",
-          datahora_visita: "2025-08-23 08:30:00",
-          datahora_prazo: "2025-09-06 17:00:00",
-          edital: "STAM/823/2025",
-          link_edital: "https://consultaonline.conlicitacao.com.br/boletim_web/public/api/download?auth=mock25",
-          documento_url: "https://consultaonline.conlicitacao.com.br/boletim_web/public/api/download?auth=mock25",
-          processo: "230000.000023/2025-08",
-          observacao: "Mock rodovias",
-          item: "Item pavimentação",
-          preco_edital: 20000.00,
-          valor_estimado: 800000.00,
-          boletim_id: id,
-        },
-        {
-          id: 26,
-          conlicitacao_id: 17942426,
-          orgao_nome: "Tribunal de Justiça de São Paulo",
-          orgao_codigo: "UASG1024",
-          orgao_cidade: "São Paulo",
-          orgao_uf: "SP",
-          orgao_endereco: "Praça da Sé, 1",
-          orgao_telefone: "(11) 2626-2626",
-          orgao_site: "www.tjsp.jus.br",
-          objeto: "Serviços de TI e suporte",
-          situacao: "ABERTA",
-          datahora_abertura: "2025-08-27 10:00:00",
-          datahora_documento: "2025-08-20 09:00:00",
-          datahora_retirada: null,
-          datahora_visita: null,
-          datahora_prazo: "2025-09-08 18:00:00",
-          edital: "TJSP/824/2025",
-          link_edital: "https://consultaonline.conlicitacao.com.br/boletim_web/public/api/download?auth=mock26",
-          documento_url: "https://consultaonline.conlicitacao.com.br/boletim_web/public/api/download?auth=mock26",
-          processo: "240000.000024/2025-08",
-          observacao: "Mock TI",
-          item: "Item tecnologia",
-          preco_edital: 9000.00,
-          valor_estimado: 220000.00,
-          boletim_id: id,
-        },
-        {
-          id: 27,
-          conlicitacao_id: 17942427,
-          orgao_nome: "Prefeitura de Natal",
-          orgao_codigo: "UASG1025",
-          orgao_cidade: "Natal",
-          orgao_uf: "RN",
-          orgao_endereco: "Av. Senador Salgado Filho, 500",
-          orgao_telefone: "(84) 2727-2727",
-          orgao_site: "www.natal.rn.gov.br",
-          objeto: "Recuperação de vias públicas",
-          situacao: "ABERTA",
-          datahora_abertura: null,
-          datahora_documento: "2025-08-22 14:00:00",
-          datahora_retirada: null,
-          datahora_visita: null,
-          datahora_prazo: "2025-09-10 12:00:00",
-          edital: "PNAT/825/2025",
-          link_edital: "https://consultaonline.conlicitacao.com.br/boletim_web/public/api/download?auth=mock27",
-          documento_url: "https://consultaonline.conlicitacao.com.br/boletim_web/public/api/download?auth=mock27",
-          processo: "250000.000025/2025-08",
-          observacao: "Mock vias",
-          item: "Item recuperação",
-          preco_edital: 7000.00,
-          valor_estimado: 180000.00,
-          boletim_id: id,
-        }
-      ];
-
-      // Adicionar ao cache somente se não existir (evitar duplicação)
-      licitacoesTeste.forEach(licitacao => {
-        if (!this.cachedBiddings.has(licitacao.id)) {
-          this.cachedBiddings.set(licitacao.id, licitacao);
-        }
-      });
-      this.lastCacheUpdate = Date.now();
-
-      // Dados de teste para verificar badge URGENTE e links - calcular contagem correta
-      const acompanhamentosTeste: Acompanhamento[] = []; // Vazio para teste
-      
-      const boletimTeste: Boletim = {
-        id: id,
-        numero_edicao: 341,
-        datahora_fechamento: "2025-07-29T12:00:00.000Z", // Data fixa para hoje ser encontrada no calendário
-        filtro_id: 1,
-        quantidade_licitacoes: licitacoesTeste.length, // Contar dados reais de teste
-        quantidade_acompanhamentos: acompanhamentosTeste.length, // Contar dados reais de teste
-        visualizado: this.viewedBoletins.has(id)
-      };
-
-      return { 
-        boletim: boletimTeste, 
-        licitacoes: licitacoesTeste, 
-        acompanhamentos: acompanhamentosTeste 
-      };
     }
   }
 
@@ -1274,7 +425,7 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
   }
 
   // Transformar licitação conforme estrutura da documentação da API ConLicitação
-  private transformLicitacaoFromAPI(licitacao: any, boletimId: number, dataSource: 'api' | 'mock' = 'api'): Bidding & { cacheTimestamp: number, dataSource: 'api' | 'mock' } {
+  private transformLicitacaoFromAPI(licitacao: any, boletimId: number, dataSource: 'api' | 'mock' = 'api'): Bidding {
     // Processar telefones conforme estrutura da API: orgao.telefone[].ddd, numero, ramal
     const telefones = licitacao.orgao?.telefone?.map((tel: any) => 
       `${tel.ddd ? '(' + tel.ddd + ')' : ''} ${tel.numero}${tel.ramal ? ' ramal ' + tel.ramal : ''}`
@@ -1326,17 +477,18 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
       processo: licitacao.processo || '', // Processo
       observacao: licitacao.observacao || '', // Observações
       item: licitacao.item || '', // Itens
-      preco_edital: licitacao.preco_edital || 0, // Valor do edital
-      valor_estimado: licitacao.valor_estimado || 0, // Valor estimado
+      preco_edital: licitacao.preco_edital ? String(licitacao.preco_edital) : '0', // Valor do edital (convert to string for decimal)
+      valor_estimado: licitacao.valor_estimado ? String(licitacao.valor_estimado) : '0', // Valor estimado (convert to string for decimal)
       boletim_id: boletimId,
-      // Metadata de cache
-      cacheTimestamp: Date.now(),
-      dataSource: dataSource,
+      synced_at: new Date(),
+      updated_at: new Date()
     };
   }
 
   async markBoletimAsViewed(id: number): Promise<void> {
-    this.viewedBoletins.add(id);
+    await db.update(boletins)
+      .set({ visualizado: true })
+      .where(eq(boletins.id, id));
   }
 
   async getBiddings(filters?: { 
@@ -1345,1837 +497,41 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
     uf?: string[];
     numero_controle?: string;
   }): Promise<Bidding[]> {
-    // NOVO SISTEMA: SÓ carregar dados quando há filtros específicos
-
-    // Se não há filtros, retornar apenas dados de exemplo mínimos
-    if (!filters || (!filters.numero_controle && !filters.conlicitacao_id && 
-        (!filters.orgao || filters.orgao.length === 0) && 
-        (!filters.uf || filters.uf.length === 0))) {
-      await this.loadMinimalSampleData();
-      if (Date.now() - this.lastCacheUpdate > this.CACHE_DURATION) {
-        this.refreshRecentBoletins().catch(() => {});
-      }
-      const result = Array.from(this.cachedBiddings.values()).slice(0, 50);
-      return result;
-    }
-
-    // Se há busca por número de controle, fazer busca específica
-    if (filters.numero_controle) {
-      return await this.searchByControlNumber(filters.numero_controle);
-    }
-
-    // Para outros filtros, carregar dados limitados
-    if (this.cachedBiddings.size === 0) {
-      await this.loadMinimalSampleData();
-    }
-
-    let biddings = Array.from(this.cachedBiddings.values());
+    const conditions = [];
 
     if (filters?.conlicitacao_id) {
-      biddings = biddings.filter(b => 
-        b.conlicitacao_id.toString().includes(filters.conlicitacao_id!)
-      );
+      conditions.push(like(biddings.conlicitacao_id, `%${filters.conlicitacao_id}%`));
     }
-    
+
+    if (filters?.numero_controle) {
+      // Se há busca por número de controle, fazer busca específica primeiro
+      // Nota: Idealmente, a busca específica deveria ser feita separadamente ou integrada de outra forma
+      // Por enquanto, vamos buscar no banco
+      conditions.push(or(
+        like(biddings.conlicitacao_id, `%${filters.numero_controle}%`),
+        like(biddings.orgao_codigo, `%${filters.numero_controle}%`),
+        like(biddings.processo, `%${filters.numero_controle}%`),
+        like(biddings.edital, `%${filters.numero_controle}%`)
+      ));
+    }
+
     if (filters?.orgao && filters.orgao.length > 0) {
-      biddings = biddings.filter(b => 
-        filters.orgao!.some(orgao => 
-          b.orgao_nome?.toLowerCase().includes(orgao.toLowerCase())
-        )
-      );
+      conditions.push(inArray(biddings.orgao_nome, filters.orgao));
     }
 
     if (filters?.uf && filters.uf.length > 0) {
-      biddings = biddings.filter(b => 
-        filters.uf!.includes(b.orgao_uf)
-      );
+      conditions.push(inArray(biddings.orgao_uf, filters.uf));
     }
-    
-    if (Date.now() - this.lastCacheUpdate > this.CACHE_DURATION) {
-      this.refreshRecentBoletins().catch(() => {});
-    }
-    
-    return biddings;
+
+    const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+
+    return await db.select().from(biddings).where(whereClause).limit(100);
   }
 
-  private async refreshBiddingsCache(): Promise<void> {
-    const newCache = new Map<number, Bidding & { cacheTimestamp: number, dataSource: 'api' | 'mock' }>();
-    const licitacoesTeste: Bidding[] = [
-      {
-        id: 1,
-        conlicitacao_id: 17942339,
-        orgao_nome: "Fundação de Apoio ao Ensino, Pesquisa, Extensão e Interiorização do IFAM- FAEPI",
-        orgao_codigo: "UASG123",
-        orgao_cidade: "Manaus",
-        orgao_uf: "AM",
-        orgao_endereco: "Endereço teste",
-        orgao_telefone: "(92) 1234-5678",
-        orgao_site: "www.teste.gov.br",
-        objeto: "Produto/Serviço Quant. Unidade Produto/Serviço: Serviço de apoio logístico para evento",
-        situacao: "URGENTE",
-        datahora_abertura: "2025-07-15 09:00:00",
-        datahora_documento: "2025-07-10 14:30:00",
-        datahora_retirada: "2025-07-12 16:00:00",
-        datahora_visita: null,
-        datahora_prazo: "2025-07-20 17:00:00",
-        edital: "SM/715/2025",
-        link_edital: "https://consultaonline.conlicitacao.com.br/boletim_web/public/api/download?auth=teste1",
-        documento_url: "https://consultaonline.conlicitacao.com.br/boletim_web/public/api/download?auth=teste1",
-        processo: "23456.789012/2025-01",
-        observacao: "Observação teste",
-        item: "Item teste",
-        preco_edital: 50000.00,
-        valor_estimado: 50000.00,
-        boletim_id: 1,
-      },
-      {
-        id: 2,
-        conlicitacao_id: 17942355,
-        orgao_nome: "Fundação de Apoio ao Ensino, Pesquisa, Extensão e Interiorização do IFAM- FAEPI",
-        orgao_codigo: "UASG456",
-        orgao_cidade: "Manaus",
-        orgao_uf: "AM",
-        orgao_endereco: "Endereço teste 2",
-        orgao_telefone: "(92) 9876-5432",
-        orgao_site: "www.teste2.gov.br",
-        objeto: "Produto/Serviço Quant. Unidade Produto/Serviço: Iogurte zero açúcar",
-        situacao: "URGENTE",
-        datahora_abertura: "2025-07-17 07:59:00",
-        datahora_documento: null,
-        datahora_retirada: null,
-        datahora_visita: "2025-07-16 10:30:00",
-        datahora_prazo: "",
-        edital: "SM/711/2025",
-        link_edital: "https://consultaonline.conlicitacao.com.br/boletim_web/public/api/download?auth=teste2",
-        documento_url: "https://consultaonline.conlicitacao.com.br/boletim_web/public/api/download?auth=teste2",
-        processo: "98765.432109/2025-02",
-        observacao: "Observação teste 2",
-        item: "Item teste 2",
-        preco_edital: 25000.00,
-        valor_estimado: 25000.00,
-        boletim_id: 1,
-      },
-      {
-        id: 3,
-        conlicitacao_id: 17942403,
-        orgao_nome: "Secretaria de Saúde de São Paulo",
-        orgao_codigo: "UASG1001",
-        orgao_cidade: "São Paulo",
-        orgao_uf: "SP",
-        orgao_endereco: "Av. Paulista, 1000",
-        orgao_telefone: "(11) 1111-1111",
-        orgao_site: "www.saude.sp.gov.br",
-        objeto: "Aquisição de material hospitalar",
-        situacao: "ABERTA",
-        datahora_abertura: "2025-08-01 10:00:00",
-        datahora_documento: "2025-07-28 09:00:00",
-        datahora_retirada: "2025-07-30 16:00:00",
-        datahora_visita: null,
-        datahora_prazo: "2025-08-05 17:00:00",
-        edital: "SS/801/2025",
-        link_edital: "https://consultaonline.conlicitacao.com.br/boletim_web/public/api/download?auth=mock3",
-        documento_url: "https://consultaonline.conlicitacao.com.br/boletim_web/public/api/download?auth=mock3",
-        processo: "10000.000001/2025-08",
-        observacao: "Mock teste",
-        item: "Item saúde",
-        preco_edital: 10000.00,
-        valor_estimado: 120000.00,
-        boletim_id: 1,
-      },
-      {
-        id: 4,
-        conlicitacao_id: 17942404,
-        orgao_nome: "Prefeitura do Rio de Janeiro",
-        orgao_codigo: "UASG1002",
-        orgao_cidade: "Rio de Janeiro",
-        orgao_uf: "RJ",
-        orgao_endereco: "Rua das Laranjeiras, 50",
-        orgao_telefone: "(21) 2222-2222",
-        orgao_site: "www.rio.rj.gov.br",
-        objeto: "Serviços de manutenção de vias",
-        situacao: "ABERTA",
-        datahora_abertura: "2025-08-01 10:00:00",
-        datahora_documento: "2025-07-29 10:00:00",
-        datahora_retirada: null,
-        datahora_visita: null,
-        datahora_prazo: "2025-08-05 17:00:00",
-        edital: "PRJ/802/2025",
-        link_edital: "https://consultaonline.conlicitacao.com.br/boletim_web/public/api/download?auth=mock4",
-        documento_url: "https://consultaonline.conlicitacao.com.br/boletim_web/public/api/download?auth=mock4",
-        processo: "20000.000002/2025-08",
-        observacao: "Mock manutenção",
-        item: "Item manutenção",
-        preco_edital: 15000.00,
-        valor_estimado: 300000.00,
-        boletim_id: 1,
-      },
-      {
-        id: 5,
-        conlicitacao_id: 17942405,
-        orgao_nome: "Secretaria de Educação de Minas Gerais",
-        orgao_codigo: "UASG1003",
-        orgao_cidade: "Belo Horizonte",
-        orgao_uf: "MG",
-        orgao_endereco: "Praça da Liberdade, 10",
-        orgao_telefone: "(31) 3333-3333",
-        orgao_site: "www.educacao.mg.gov.br",
-        objeto: "Compra de mobiliário escolar",
-        situacao: "ABERTA",
-        datahora_abertura: "2025-08-01 10:00:00",
-        datahora_documento: null,
-        datahora_retirada: "2025-07-31 15:00:00",
-        datahora_visita: null,
-        datahora_prazo: "2025-08-05 17:00:00",
-        edital: "SEMG/803/2025",
-        link_edital: "https://consultaonline.conlicitacao.com.br/boletim_web/public/api/download?auth=mock5",
-        documento_url: "https://consultaonline.conlicitacao.com.br/boletim_web/public/api/download?auth=mock5",
-        processo: "30000.000003/2025-08",
-        observacao: "Mock mobiliário",
-        item: "Item escolar",
-        preco_edital: 8000.00,
-        valor_estimado: 180000.00,
-        boletim_id: 1,
-      },
-      {
-        id: 6,
-        conlicitacao_id: 17942406,
-        orgao_nome: "Secretaria de Administração da Bahia",
-        orgao_codigo: "UASG1004",
-        orgao_cidade: "Salvador",
-        orgao_uf: "BA",
-        orgao_endereco: "Av. Sete de Setembro, 700",
-        orgao_telefone: "(71) 4444-4444",
-        orgao_site: "www.adm.ba.gov.br",
-        objeto: "Contratação de serviços de limpeza",
-        situacao: "ABERTA",
-        datahora_abertura: "2025-08-01 10:00:00",
-        datahora_documento: "2025-07-28 08:00:00",
-        datahora_retirada: null,
-        datahora_visita: null,
-        datahora_prazo: "2025-08-05 17:00:00",
-        edital: "SAB/804/2025",
-        link_edital: "https://consultaonline.conlicitacao.com.br/boletim_web/public/api/download?auth=mock6",
-        documento_url: "https://consultaonline.conlicitacao.com.br/boletim_web/public/api/download?auth=mock6",
-        processo: "40000.000004/2025-08",
-        observacao: "Mock limpeza",
-        item: "Item limpeza",
-        preco_edital: 5000.00,
-        valor_estimado: 100000.00,
-        boletim_id: 1,
-      },
-      {
-        id: 7,
-        conlicitacao_id: 17942407,
-        orgao_nome: "Secretaria de Obras do Rio Grande do Sul",
-        orgao_codigo: "UASG1005",
-        orgao_cidade: "Porto Alegre",
-        orgao_uf: "RS",
-        orgao_endereco: "Rua dos Andradas, 123",
-        orgao_telefone: "(51) 5555-5555",
-        orgao_site: "www.obras.rs.gov.br",
-        objeto: "Serviços de pavimentação",
-        situacao: "ABERTA",
-        datahora_abertura: "2025-08-01 10:00:00",
-        datahora_documento: null,
-        datahora_retirada: null,
-        datahora_visita: null,
-        datahora_prazo: "2025-08-05 17:00:00",
-        edital: "SORS/805/2025",
-        link_edital: "https://consultaonline.conlicitacao.com.br/boletim_web/public/api/download?auth=mock7",
-        documento_url: "https://consultaonline.conlicitacao.com.br/boletim_web/public/api/download?auth=mock7",
-        processo: "50000.000005/2025-08",
-        observacao: "Mock pavimentação",
-        item: "Item obras",
-        preco_edital: 20000.00,
-        valor_estimado: 500000.00,
-        boletim_id: 1,
-      },
-      {
-        id: 8,
-        conlicitacao_id: 17942408,
-        orgao_nome: "Secretaria de Turismo do Paraná",
-        orgao_codigo: "UASG1006",
-        orgao_cidade: "Curitiba",
-        orgao_uf: "PR",
-        orgao_endereco: "Rua XV de Novembro, 200",
-        orgao_telefone: "(41) 6666-6666",
-        orgao_site: "www.turismo.pr.gov.br",
-        objeto: "Serviços de organização de eventos",
-        situacao: "ABERTA",
-        datahora_abertura: null,
-        datahora_documento: "2025-08-10 14:00:00",
-        datahora_retirada: null,
-        datahora_visita: null,
-        datahora_prazo: "2025-08-18 17:00:00",
-        edital: "STPR/806/2025",
-        link_edital: "https://consultaonline.conlicitacao.com.br/boletim_web/public/api/download?auth=mock8",
-        documento_url: "https://consultaonline.conlicitacao.com.br/boletim_web/public/api/download?auth=mock8",
-        processo: "60000.000006/2025-08",
-        observacao: "Mock eventos",
-        item: "Item turismo",
-        preco_edital: 7000.00,
-        valor_estimado: 160000.00,
-        boletim_id: 1,
-      },
-      {
-        id: 9,
-        conlicitacao_id: 17942409,
-        orgao_nome: "Secretaria de Esportes de Santa Catarina",
-        orgao_codigo: "UASG1007",
-        orgao_cidade: "Florianópolis",
-        orgao_uf: "SC",
-        orgao_endereco: "Av. Beira-Mar, 400",
-        orgao_telefone: "(48) 7777-7777",
-        orgao_site: "www.esportes.sc.gov.br",
-        objeto: "Compra de equipamentos esportivos",
-        situacao: "ABERTA",
-        datahora_abertura: null,
-        datahora_documento: "2025-08-10 14:00:00",
-        datahora_retirada: "2025-08-12 16:00:00",
-        datahora_visita: null,
-        datahora_prazo: "2025-08-19 12:00:00",
-        edital: "SESC/807/2025",
-        link_edital: "https://consultaonline.conlicitacao.com.br/boletim_web/public/api/download?auth=mock9",
-        documento_url: "https://consultaonline.conlicitacao.com.br/boletim_web/public/api/download?auth=mock9",
-        processo: "70000.000007/2025-08",
-        observacao: "Mock esportes",
-        item: "Item esportivo",
-        preco_edital: 6000.00,
-        valor_estimado: 90000.00,
-        boletim_id: 1,
-      },
-      {
-        id: 10,
-        conlicitacao_id: 17942410,
-        orgao_nome: "Governo de Pernambuco",
-        orgao_codigo: "UASG1008",
-        orgao_cidade: "Recife",
-        orgao_uf: "PE",
-        orgao_endereco: "Rua da Aurora, 123",
-        orgao_telefone: "(81) 8888-8888",
-        orgao_site: "www.pe.gov.br",
-        objeto: "Serviços de publicidade institucional",
-        situacao: "ABERTA",
-        datahora_abertura: "",
-        datahora_documento: "2025-08-10 14:00:00",
-        datahora_retirada: null,
-        datahora_visita: null,
-        datahora_prazo: "2025-08-25 17:00:00",
-        edital: "GPE/808/2025",
-        link_edital: "https://consultaonline.conlicitacao.com.br/boletim_web/public/api/download?auth=mock10",
-        documento_url: "https://consultaonline.conlicitacao.com.br/boletim_web/public/api/download?auth=mock10",
-        processo: "80000.000008/2025-08",
-        observacao: "Mock publicidade",
-        item: "Item publicidade",
-        preco_edital: 12000.00,
-        valor_estimado: 250000.00,
-        boletim_id: 1,
-      },
-      {
-        id: 11,
-        conlicitacao_id: 17942411,
-        orgao_nome: "Prefeitura de Fortaleza",
-        orgao_codigo: "UASG1009",
-        orgao_cidade: "Fortaleza",
-        orgao_uf: "CE",
-        orgao_endereco: "Av. Dom Luís, 90",
-        orgao_telefone: "(85) 9999-9999",
-        orgao_site: "www.fortaleza.ce.gov.br",
-        objeto: "Fornecimento de alimentação escolar",
-        situacao: "ABERTA",
-        datahora_abertura: null,
-        datahora_documento: "2025-08-10 14:00:00",
-        datahora_retirada: null,
-        datahora_visita: "",
-        datahora_prazo: "2025-08-22 11:00:00",
-        edital: "PFF/809/2025",
-        link_edital: "https://consultaonline.conlicitacao.com.br/boletim_web/public/api/download?auth=mock11",
-        documento_url: "https://consultaonline.conlicitacao.com.br/boletim_web/public/api/download?auth=mock11",
-        processo: "90000.000009/2025-08",
-        observacao: "Mock alimentação",
-        item: "Item merenda",
-        preco_edital: 9000.00,
-        valor_estimado: 140000.00,
-        boletim_id: 1,
-      },
-      {
-        id: 12,
-        conlicitacao_id: 17942412,
-        orgao_nome: "Governo do Distrito Federal",
-        orgao_codigo: "UASG1010",
-        orgao_cidade: "Brasília",
-        orgao_uf: "DF",
-        orgao_endereco: "Esplanada dos Ministérios",
-        orgao_telefone: "(61) 1010-1010",
-        orgao_site: "www.df.gov.br",
-        objeto: "Locação de veículos",
-        situacao: "ABERTA",
-        datahora_abertura: "",
-        datahora_documento: "2025-08-10 14:00:00",
-        datahora_retirada: "",
-        datahora_visita: null,
-        datahora_prazo: "2025-08-28 18:00:00",
-        edital: "GDF/810/2025",
-        link_edital: "https://consultaonline.conlicitacao.com.br/boletim_web/public/api/download?auth=mock12",
-        documento_url: "https://consultaonline.conlicitacao.com.br/boletim_web/public/api/download?auth=mock12",
-        processo: "100000.000010/2025-08",
-        observacao: "Mock locação",
-        item: "Item frota",
-        preco_edital: 11000.00,
-        valor_estimado: 320000.00,
-        boletim_id: 1,
-      },
-      {
-        id: 13,
-        conlicitacao_id: 17942413,
-        orgao_nome: "Secretaria de Infraestrutura do Pará",
-        orgao_codigo: "UASG1011",
-        orgao_cidade: "Belém",
-        orgao_uf: "PA",
-        orgao_endereco: "Av. Nazaré, 50",
-        orgao_telefone: "(91) 1313-1313",
-        orgao_site: "www.infra.pa.gov.br",
-        objeto: "Construção de ponte",
-        situacao: "ABERTA",
-        datahora_abertura: null,
-        datahora_documento: null,
-        datahora_retirada: "2025-08-12 16:00:00",
-        datahora_visita: "2025-08-15 09:00:00",
-        datahora_prazo: "2025-08-30 17:00:00",
-        edital: "SIPA/811/2025",
-        link_edital: "https://consultaonline.conlicitacao.com.br/boletim_web/public/api/download?auth=mock13",
-        documento_url: "https://consultaonline.conlicitacao.com.br/boletim_web/public/api/download?auth=mock13",
-        processo: "110000.000011/2025-08",
-        observacao: "Mock ponte",
-        item: "Item obra",
-        preco_edital: 25000.00,
-        valor_estimado: 1000000.00,
-        boletim_id: 1,
-      },
-      {
-        id: 14,
-        conlicitacao_id: 17942414,
-        orgao_nome: "Prefeitura de Goiânia",
-        orgao_codigo: "UASG1012",
-        orgao_cidade: "Goiânia",
-        orgao_uf: "GO",
-        orgao_endereco: "Av. T-63, 120",
-        orgao_telefone: "(62) 1414-1414",
-        orgao_site: "www.goiania.go.gov.br",
-        objeto: "Manutenção de praças",
-        situacao: "ABERTA",
-        datahora_abertura: null,
-        datahora_documento: null,
-        datahora_retirada: "2025-08-12 16:00:00",
-        datahora_visita: "2025-08-15 09:00:00",
-        datahora_prazo: "2025-08-27 09:00:00",
-        edital: "PGO/812/2025",
-        link_edital: "https://consultaonline.conlicitacao.com.br/boletim_web/public/api/download?auth=mock14",
-        documento_url: "https://consultaonline.conlicitacao.com.br/boletim_web/public/api/download?auth=mock14",
-        processo: "120000.000012/2025-08",
-        observacao: "Mock praças",
-        item: "Item urbano",
-        preco_edital: 4000.00,
-        valor_estimado: 85000.00,
-        boletim_id: 1,
-      },
-      {
-        id: 15,
-        conlicitacao_id: 17942415,
-        orgao_nome: "Secretaria de Segurança do Espírito Santo",
-        orgao_codigo: "UASG1013",
-        orgao_cidade: "Vitória",
-        orgao_uf: "ES",
-        orgao_endereco: "Av. Vitória, 500",
-        orgao_telefone: "(27) 1515-1515",
-        orgao_site: "www.seguranca.es.gov.br",
-        objeto: "Compra de viaturas",
-        situacao: "ABERTA",
-        datahora_abertura: null,
-        datahora_documento: null,
-        datahora_retirada: "2025-08-12 16:00:00",
-        datahora_visita: "2025-08-15 09:00:00",
-        datahora_prazo: "2025-08-29 17:00:00",
-        edital: "SEES/813/2025",
-        link_edital: "https://consultaonline.conlicitacao.com.br/boletim_web/public/api/download?auth=mock15",
-        documento_url: "https://consultaonline.conlicitacao.com.br/boletim_web/public/api/download?auth=mock15",
-        processo: "130000.000013/2025-08",
-        observacao: "Mock viaturas",
-        item: "Item segurança",
-        preco_edital: 18000.00,
-        valor_estimado: 600000.00,
-        boletim_id: 1,
-      },
-      {
-        id: 16,
-        conlicitacao_id: 17942416,
-        orgao_nome: "Secretaria de Agricultura do Mato Grosso",
-        orgao_codigo: "UASG1014",
-        orgao_cidade: "Cuiabá",
-        orgao_uf: "MT",
-        orgao_endereco: "Av. Getúlio Vargas, 320",
-        orgao_telefone: "(65) 1616-1616",
-        orgao_site: "www.agricultura.mt.gov.br",
-        objeto: "Aquisição de sementes",
-        situacao: "ABERTA",
-        datahora_abertura: null,
-        datahora_documento: null,
-        datahora_retirada: "2025-08-12 16:00:00",
-        datahora_visita: "2025-08-15 09:00:00",
-        datahora_prazo: "2025-09-02 10:00:00",
-        edital: "SAMT/814/2025",
-        link_edital: "https://consultaonline.conlicitacao.com.br/boletim_web/public/api/download?auth=mock16",
-        documento_url: "https://consultaonline.conlicitacao.com.br/boletim_web/public/api/download?auth=mock16",
-        processo: "140000.000014/2025-08",
-        observacao: "Mock sementes",
-        item: "Item agricultura",
-        preco_edital: 3000.00,
-        valor_estimado: 50000.00,
-        boletim_id: 1,
-      },
-      {
-        id: 17,
-        conlicitacao_id: 17942417,
-        orgao_nome: "Secretaria de Meio Ambiente do Mato Grosso do Sul",
-        orgao_codigo: "UASG1015",
-        orgao_cidade: "Campo Grande",
-        orgao_uf: "MS",
-        orgao_endereco: "Rua 14 de Julho, 210",
-        orgao_telefone: "(67) 1717-1717",
-        orgao_site: "www.meioambiente.ms.gov.br",
-        objeto: "Serviços de reflorestamento",
-        situacao: "ABERTA",
-        datahora_abertura: null,
-        datahora_documento: null,
-        datahora_retirada: "2025-08-12 16:00:00",
-        datahora_visita: "2025-08-15 09:00:00",
-        datahora_prazo: "2025-09-03 15:30:00",
-        edital: "SMAMS/815/2025",
-        link_edital: "https://consultaonline.conlicitacao.com.br/boletim_web/public/api/download?auth=mock17",
-        documento_url: "https://consultaonline.conlicitacao.com.br/boletim_web/public/api/download?auth=mock17",
-        processo: "150000.000015/2025-08",
-        observacao: "Mock reflorestamento",
-        item: "Item ambiental",
-        preco_edital: 7000.00,
-        valor_estimado: 150000.00,
-        boletim_id: 1,
-      }
-      ,
-      {
-        id: 18,
-        conlicitacao_id: 17942418,
-        orgao_nome: "Secretaria de Educação do Rio de Janeiro",
-        orgao_codigo: "UASG1016",
-        orgao_cidade: "Rio de Janeiro",
-        orgao_uf: "RJ",
-        orgao_endereco: "Rua das Laranjeiras, 200",
-        orgao_telefone: "(21) 1818-1818",
-        orgao_site: "www.educacao.rj.gov.br",
-        objeto: "Aquisição de material didático",
-        situacao: "ABERTA",
-        datahora_abertura: "2025-09-05 10:00:00",
-        datahora_documento: "2025-09-01 09:00:00",
-        datahora_retirada: "2025-09-03 16:00:00",
-        datahora_visita: null,
-        datahora_prazo: "2025-09-10 17:00:00",
-        edital: "SERJ/816/2025",
-        link_edital: "https://consultaonline.conlicitacao.com.br/boletim_web/public/api/download?auth=mock18",
-        documento_url: "https://consultaonline.conlicitacao.com.br/boletim_web/public/api/download?auth=mock18",
-        processo: "160000.000016/2025-09",
-        observacao: "Mock educação",
-        item: "Item didático",
-        preco_edital: 5000.00,
-        valor_estimado: 80000.00,
-        boletim_id: 1,
-      },
-      {
-        id: 19,
-        conlicitacao_id: 17942419,
-        orgao_nome: "Prefeitura de Salvador",
-        orgao_codigo: "UASG1017",
-        orgao_cidade: "Salvador",
-        orgao_uf: "BA",
-        orgao_endereco: "Av. Sete de Setembro, 150",
-        orgao_telefone: "(71) 1919-1919",
-        orgao_site: "www.salvador.ba.gov.br",
-        objeto: "Serviços de limpeza urbana",
-        situacao: "ABERTA",
-        datahora_abertura: null,
-        datahora_documento: "2025-09-01 11:00:00",
-        datahora_retirada: null,
-        datahora_visita: "2025-09-06 09:00:00",
-        datahora_prazo: "2025-09-12 12:00:00",
-        edital: "PSAL/817/2025",
-        link_edital: "https://consultaonline.conlicitacao.com.br/boletim_web/public/api/download?auth=mock19",
-        documento_url: "https://consultaonline.conlicitacao.com.br/boletim_web/public/api/download?auth=mock19",
-        processo: "170000.000017/2025-09",
-        observacao: "Mock limpeza",
-        item: "Item limpeza",
-        preco_edital: 7000.00,
-        valor_estimado: 120000.00,
-        boletim_id: 2,
-      },
-      {
-        id: 20,
-        conlicitacao_id: 17942420,
-        orgao_nome: "Secretaria de Ciência e Tecnologia de Minas Gerais",
-        orgao_codigo: "UASG1018",
-        orgao_cidade: "Belo Horizonte",
-        orgao_uf: "MG",
-        orgao_endereco: "Av. Afonso Pena, 1200",
-        orgao_telefone: "(31) 2020-2020",
-        orgao_site: "www.ciencia.mg.gov.br",
-        objeto: "Implementação de rede de fibra óptica",
-        situacao: "ABERTA",
-        datahora_abertura: "2025-09-07 09:00:00",
-        datahora_documento: "2025-09-02 14:00:00",
-        datahora_retirada: "2025-09-04 16:00:00",
-        datahora_visita: null,
-        datahora_prazo: "2025-09-15 18:00:00",
-        edital: "SECTMG/818/2025",
-        link_edital: "https://consultaonline.conlicitacao.com.br/boletim_web/public/api/download?auth=mock20",
-        documento_url: "https://consultaonline.conlicitacao.com.br/boletim_web/public/api/download?auth=mock20",
-        processo: "180000.000018/2025-09",
-        observacao: "Mock fibra",
-        item: "Item tecnologia",
-        preco_edital: 15000.00,
-        valor_estimado: 450000.00,
-        boletim_id: 3,
-      },
-      {
-        id: 21,
-        conlicitacao_id: 17942421,
-        orgao_nome: "Prefeitura de Curitiba",
-        orgao_codigo: "UASG1019",
-        orgao_cidade: "Curitiba",
-        orgao_uf: "PR",
-        orgao_endereco: "Rua Barão do Rio Branco, 300",
-        orgao_telefone: "(41) 2121-2121",
-        orgao_site: "www.curitiba.pr.gov.br",
-        objeto: "Aquisição de equipamentos de TI",
-        situacao: "ABERTA",
-        datahora_abertura: null,
-        datahora_documento: "2025-09-03 09:30:00",
-        datahora_retirada: "2025-09-05 16:00:00",
-        datahora_visita: null,
-        datahora_prazo: "2025-09-18 17:30:00",
-        edital: "PCUR/819/2025",
-        link_edital: "https://consultaonline.conlicitacao.com.br/boletim_web/public/api/download?auth=mock21",
-        documento_url: "https://consultaonline.conlicitacao.com.br/boletim_web/public/api/download?auth=mock21",
-        processo: "190000.000019/2025-09",
-        observacao: "Mock TI",
-        item: "Item tecnologia",
-        preco_edital: 8000.00,
-        valor_estimado: 160000.00,
-        boletim_id: 1,
-      },
-      {
-        id: 22,
-        conlicitacao_id: 17942422,
-        orgao_nome: "Secretaria de Cultura do Rio Grande do Sul",
-        orgao_codigo: "UASG1020",
-        orgao_cidade: "Porto Alegre",
-        orgao_uf: "RS",
-        orgao_endereco: "Rua dos Andradas, 250",
-        orgao_telefone: "(51) 2222-2222",
-        orgao_site: "www.cultura.rs.gov.br",
-        objeto: "Produção de eventos culturais",
-        situacao: "ABERTA",
-        datahora_abertura: "2025-09-08 11:00:00",
-        datahora_documento: "2025-09-03 10:00:00",
-        datahora_retirada: null,
-        datahora_visita: null,
-        datahora_prazo: "2025-09-20 16:00:00",
-        edital: "SCRS/820/2025",
-        link_edital: "https://consultaonline.conlicitacao.com.br/boletim_web/public/api/download?auth=mock22",
-        documento_url: "https://consultaonline.conlicitacao.com.br/boletim_web/public/api/download?auth=mock22",
-        processo: "200000.000020/2025-09",
-        observacao: "Mock cultura",
-        item: "Item cultural",
-        preco_edital: 6000.00,
-        valor_estimado: 130000.00,
-        boletim_id: 2,
-      },
-      {
-        id: 23,
-        conlicitacao_id: 17942423,
-        orgao_nome: "Governo do Amazonas",
-        orgao_codigo: "UASG1021",
-        orgao_cidade: "Manaus",
-        orgao_uf: "AM",
-        orgao_endereco: "Av. Djalma Batista, 400",
-        orgao_telefone: "(92) 2323-2323",
-        orgao_site: "www.am.gov.br",
-        objeto: "Aquisição de embarcações fluviais",
-        situacao: "ABERTA",
-        datahora_abertura: null,
-        datahora_documento: "2025-09-04 13:00:00",
-        datahora_retirada: "2025-09-06 16:00:00",
-        datahora_visita: null,
-        datahora_prazo: "2025-09-22 11:00:00",
-        edital: "GAM/821/2025",
-        link_edital: "https://consultaonline.conlicitacao.com.br/boletim_web/public/api/download?auth=mock23",
-        documento_url: "https://consultaonline.conlicitacao.com.br/boletim_web/public/api/download?auth=mock23",
-        processo: "210000.000021/2025-09",
-        observacao: "Mock embarcação",
-        item: "Item transporte",
-        preco_edital: 20000.00,
-        valor_estimado: 500000.00,
-        boletim_id: 3,
-      },
-      {
-        id: 24,
-        conlicitacao_id: 17942424,
-        orgao_nome: "Secretaria de Turismo de Alagoas",
-        orgao_codigo: "UASG1022",
-        orgao_cidade: "Maceió",
-        orgao_uf: "AL",
-        orgao_endereco: "Pajuçara, 100",
-        orgao_telefone: "(82) 2424-2424",
-        orgao_site: "www.turismo.al.gov.br",
-        objeto: "Serviços de promoção turística",
-        situacao: "ABERTA",
-        datahora_abertura: null,
-        datahora_documento: "2025-09-04 15:00:00",
-        datahora_retirada: null,
-        datahora_visita: null,
-        datahora_prazo: "2025-09-25 17:00:00",
-        edital: "STAL/822/2025",
-        link_edital: "https://consultaonline.conlicitacao.com.br/boletim_web/public/api/download?auth=mock24",
-        documento_url: "https://consultaonline.conlicitacao.com.br/boletim_web/public/api/download?auth=mock24",
-        processo: "220000.000022/2025-09",
-        observacao: "Mock turismo",
-        item: "Item turismo",
-        preco_edital: 4000.00,
-        valor_estimado: 90000.00,
-        boletim_id: 1,
-      },
-      {
-        id: 25,
-        conlicitacao_id: 17942425,
-        orgao_nome: "Prefeitura de Natal",
-        orgao_codigo: "UASG1023",
-        orgao_cidade: "Natal",
-        orgao_uf: "RN",
-        orgao_endereco: "Av. Prudente de Morais, 250",
-        orgao_telefone: "(84) 2525-2525",
-        orgao_site: "www.natal.rn.gov.br",
-        objeto: "Reforma de escolas municipais",
-        situacao: "ABERTA",
-        datahora_abertura: "2025-09-09 08:30:00",
-        datahora_documento: "2025-09-05 10:15:00",
-        datahora_retirada: "2025-09-07 16:00:00",
-        datahora_visita: null,
-        datahora_prazo: "2025-09-28 17:00:00",
-        edital: "PNAT/823/2025",
-        link_edital: "https://consultaonline.conlicitacao.com.br/boletim_web/public/api/download?auth=mock25",
-        documento_url: "https://consultaonline.conlicitacao.com.br/boletim_web/public/api/download?auth=mock25",
-        processo: "230000.000023/2025-09",
-        observacao: "Mock reforma",
-        item: "Item obras",
-        preco_edital: 10000.00,
-        valor_estimado: 300000.00,
-        boletim_id: 2,
-      },
-      {
-        id: 26,
-        conlicitacao_id: 17942426,
-        orgao_nome: "Secretaria de Transportes do Pará",
-        orgao_codigo: "UASG1024",
-        orgao_cidade: "Belém",
-        orgao_uf: "PA",
-        orgao_endereco: "Av. João Paulo II, 600",
-        orgao_telefone: "(91) 2626-2626",
-        orgao_site: "www.transportes.pa.gov.br",
-        objeto: "Aquisição de ônibus urbanos",
-        situacao: "ABERTA",
-        datahora_abertura: null,
-        datahora_documento: "2025-09-05 11:30:00",
-        datahora_retirada: null,
-        datahora_visita: null,
-        datahora_prazo: "2025-09-30 12:00:00",
-        edital: "SETRPA/824/2025",
-        link_edital: "https://consultaonline.conlicitacao.com.br/boletim_web/public/api/download?auth=mock26",
-        documento_url: "https://consultaonline.conlicitacao.com.br/boletim_web/public/api/download?auth=mock26",
-        processo: "240000.000024/2025-09",
-        observacao: "Mock ônibus",
-        item: "Item transporte",
-        preco_edital: 22000.00,
-        valor_estimado: 650000.00,
-        boletim_id: 3,
-      },
-      {
-        id: 27,
-        conlicitacao_id: 17942427,
-        orgao_nome: "Governo da Bahia",
-        orgao_codigo: "UASG1025",
-        orgao_cidade: "Salvador",
-        orgao_uf: "BA",
-        orgao_endereco: "Centro Administrativo da Bahia",
-        orgao_telefone: "(71) 2727-2727",
-        orgao_site: "www.ba.gov.br",
-        objeto: "Serviços de saneamento básico",
-        situacao: "ABERTA",
-        datahora_abertura: "2025-09-10 09:00:00",
-        datahora_documento: "2025-09-06 09:00:00",
-        datahora_retirada: "2025-09-09 16:00:00",
-        datahora_visita: null,
-        datahora_prazo: "2025-10-03 18:00:00",
-        edital: "GBA/825/2025",
-        link_edital: "https://consultaonline.conlicitacao.com.br/boletim_web/public/api/download?auth=mock27",
-        documento_url: "https://consultaonline.conlicitacao.com.br/boletim_web/public/api/download?auth=mock27",
-        processo: "250000.000025/2025-09",
-        observacao: "Mock saneamento",
-        item: "Item infraestrutura",
-        preco_edital: 18000.00,
-        valor_estimado: 700000.00,
-        boletim_id: 1,
-      }
-    ];
-    
-    licitacoesTeste.forEach(licitacao => {
-      newCache.set(licitacao.id, licitacao as any);
-    });
-    
-    try {
-      // Tentar buscar dados reais da API (se IP autorizado)
-      const filtros = await this.getFiltros();
-      
-      for (const filtro of filtros) {
-        try {
-          // Buscar TODOS os boletins do filtro para garantir cobertura completa
-          let page = 1;
-          let totalLoaded = 0;
-          let hasMoreBoletins = true;
-          
-          while (hasMoreBoletins) {
-            const boletinsResponse = await this.getBoletins(filtro.id, page, 50);
-            
-            if (boletinsResponse.boletins.length === 0) {
-              hasMoreBoletins = false;
-              break;
-            }
-            
-            for (const boletim of boletinsResponse.boletins) {
-              try {
-                // Buscar licitações de cada boletim e adicionar ao cache
-                const boletimData = await conLicitacaoAPI.getBoletimData(boletim.id);
-                
-                if (boletimData.licitacoes) {
-                  boletimData.licitacoes.forEach((licitacao: any) => {
-                    const transformedLicitacao = this.transformLicitacaoFromAPI(licitacao, boletim.id, 'api');
-                    newCache.set(transformedLicitacao.id, transformedLicitacao);
-                  });
-                }
-              } catch (error) {
-                // Erro ao carregar boletim
-              }
-            }
-            
-            totalLoaded += boletinsResponse.boletins.length;
-            page++;
-            
-            // Evitar loop infinito - se encontramos menos boletins que o esperado, provavelmente chegamos ao fim
-            if (boletinsResponse.boletins.length < 50) {
-              hasMoreBoletins = false;
-            }
-            
-            // Limite de segurança para evitar carregar dados excessivos
-            if (totalLoaded >= 500) {
-              hasMoreBoletins = false;
-            }
-          }
-          
-        } catch (error) {
-          // Erro ao processar filtro
-        }
-      }
 
-      
-      this.lastCacheUpdate = Date.now();
-      this.cachedBiddings = newCache;
-      
-    } catch (error: any) {
-      // Usando dados de teste - IP não autorizado para API real
-      this.cachedBiddings = newCache;
-    }
-    
-    // Garantir que sempre tenha dados no cache
-    this.lastCacheUpdate = Date.now();
-  }
-
-  // Carregamento mínimo apenas para demonstração
-  private async loadMinimalSampleData(): Promise<void> {
-    // Desativado: não carregar mocks; usar apenas dados reais
-    return;
-  }
-
-  // Carregamento inicial rápido - apenas boletins mais recentes
-  private async loadInitialBiddings(): Promise<void> {
-    this.cachedBiddings = new Map<number, any>();
-    // Dados de teste primeiro
-    const licitacoesTeste: Bidding[] = [
-      {
-        id: 1,
-        conlicitacao_id: 17942339,
-        orgao_nome: "Fundação de Apoio ao Ensino, Pesquisa, Extensão e Interiorização do IFAM- FAEPI",
-        orgao_codigo: "UASG123",
-        orgao_cidade: "Manaus",
-        orgao_uf: "AM",
-        orgao_endereco: "Endereço teste",
-        orgao_telefone: "(92) 1234-5678",
-        orgao_site: "www.teste.gov.br",
-        objeto: "Produto/Serviço Quant. Unidade Produto/Serviço: Serviço de apoio logístico para evento",
-        situacao: "URGENTE",
-        datahora_abertura: "2025-07-15 09:00:00",
-        datahora_documento: "2025-07-10 14:30:00",
-        datahora_retirada: "2025-07-12 16:00:00",
-        datahora_visita: null,
-        datahora_prazo: "2025-07-20 17:00:00",
-        edital: "SM/715/2025",
-        link_edital: "https://consultaonline.conlicitacao.com.br/boletim_web/public/api/download?auth=teste1",
-        documento_url: "https://consultaonline.conlicitacao.com.br/boletim_web/public/api/download?auth=teste1",
-        processo: "23456.789012/2025-01",
-        observacao: "Observação teste",
-        item: "Item teste",
-        preco_edital: 50000.00,
-        valor_estimado: 50000.00,
-        boletim_id: 1,
-      },
-      {
-        id: 2,
-        conlicitacao_id: 17942355,
-        orgao_nome: "Fundação de Apoio ao Ensino, Pesquisa, Extensão e Interiorização do IFAM- FAEPI",
-        orgao_codigo: "UASG456",
-        orgao_cidade: "Manaus",
-        orgao_uf: "AM",
-        orgao_endereco: "Endereço teste 2",
-        orgao_telefone: "(92) 9876-5432",
-        orgao_site: "www.teste2.gov.br",
-        objeto: "Produto/Serviço Quant. Unidade Produto/Serviço: Iogurte zero açúcar",
-        situacao: "URGENTE",
-        datahora_abertura: "2025-07-17 07:59:00",
-        datahora_documento: null,
-        datahora_retirada: null,
-        datahora_visita: "2025-07-16 10:30:00",
-        datahora_prazo: "",
-        edital: "SM/711/2025",
-        link_edital: "https://consultaonline.conlicitacao.com.br/boletim_web/public/api/download?auth=teste2",
-        documento_url: "https://consultaonline.conlicitacao.com.br/boletim_web/public/api/download?auth=teste2",
-        processo: "98765.432109/2025-02",
-        observacao: "Observação teste 2",
-        item: "Item teste 2",
-        preco_edital: 25000.00,
-        valor_estimado: 25000.00,
-        boletim_id: 1,
-      },
-      {
-        id: 3,
-        conlicitacao_id: 17942403,
-        orgao_nome: "Secretaria de Saúde de São Paulo",
-        orgao_codigo: "UASG1001",
-        orgao_cidade: "São Paulo",
-        orgao_uf: "SP",
-        orgao_endereco: "Av. Paulista, 1000",
-        orgao_telefone: "(11) 1111-1111",
-        orgao_site: "www.saude.sp.gov.br",
-        objeto: "Aquisição de material hospitalar",
-        situacao: "ABERTA",
-        datahora_abertura: "2025-08-01 10:00:00",
-        datahora_documento: "2025-07-28 09:00:00",
-        datahora_retirada: "2025-07-30 16:00:00",
-        datahora_visita: null,
-        datahora_prazo: "2025-08-05 17:00:00",
-        edital: "SS/801/2025",
-        link_edital: "https://consultaonline.conlicitacao.com.br/boletim_web/public/api/download?auth=mock3",
-        documento_url: "https://consultaonline.conlicitacao.com.br/boletim_web/public/api/download?auth=mock3",
-        processo: "10000.000001/2025-08",
-        observacao: "Mock teste",
-        item: "Item saúde",
-        preco_edital: 10000.00,
-        valor_estimado: 120000.00,
-        boletim_id: 1,
-      },
-      {
-        id: 4,
-        conlicitacao_id: 17942404,
-        orgao_nome: "Prefeitura do Rio de Janeiro",
-        orgao_codigo: "UASG1002",
-        orgao_cidade: "Rio de Janeiro",
-        orgao_uf: "RJ",
-        orgao_endereco: "Rua das Laranjeiras, 50",
-        orgao_telefone: "(21) 2222-2222",
-        orgao_site: "www.rio.rj.gov.br",
-        objeto: "Serviços de manutenção de vias",
-        situacao: "ABERTA",
-        datahora_abertura: "2025-08-01 10:00:00",
-        datahora_documento: "2025-07-29 10:00:00",
-        datahora_retirada: null,
-        datahora_visita: null,
-        datahora_prazo: "2025-08-05 17:00:00",
-        edital: "PRJ/802/2025",
-        link_edital: "https://consultaonline.conlicitacao.com.br/boletim_web/public/api/download?auth=mock4",
-        documento_url: "https://consultaonline.conlicitacao.com.br/boletim_web/public/api/download?auth=mock4",
-        processo: "20000.000002/2025-08",
-        observacao: "Mock manutenção",
-        item: "Item manutenção",
-        preco_edital: 15000.00,
-        valor_estimado: 300000.00,
-        boletim_id: 1,
-      },
-      {
-        id: 5,
-        conlicitacao_id: 17942405,
-        orgao_nome: "Secretaria de Educação de Minas Gerais",
-        orgao_codigo: "UASG1003",
-        orgao_cidade: "Belo Horizonte",
-        orgao_uf: "MG",
-        orgao_endereco: "Praça da Liberdade, 10",
-        orgao_telefone: "(31) 3333-3333",
-        orgao_site: "www.educacao.mg.gov.br",
-        objeto: "Compra de mobiliário escolar",
-        situacao: "ABERTA",
-        datahora_abertura: "2025-08-01 10:00:00",
-        datahora_documento: null,
-        datahora_retirada: "2025-07-31 15:00:00",
-        datahora_visita: null,
-        datahora_prazo: "2025-08-05 17:00:00",
-        edital: "SEMG/803/2025",
-        link_edital: "https://consultaonline.conlicitacao.com.br/boletim_web/public/api/download?auth=mock5",
-        documento_url: "https://consultaonline.conlicitacao.com.br/boletim_web/public/api/download?auth=mock5",
-        processo: "30000.000003/2025-08",
-        observacao: "Mock mobiliário",
-        item: "Item escolar",
-        preco_edital: 8000.00,
-        valor_estimado: 180000.00,
-        boletim_id: 1,
-      },
-      {
-        id: 6,
-        conlicitacao_id: 17942406,
-        orgao_nome: "Secretaria de Administração da Bahia",
-        orgao_codigo: "UASG1004",
-        orgao_cidade: "Salvador",
-        orgao_uf: "BA",
-        orgao_endereco: "Av. Sete de Setembro, 700",
-        orgao_telefone: "(71) 4444-4444",
-        orgao_site: "www.adm.ba.gov.br",
-        objeto: "Contratação de serviços de limpeza",
-        situacao: "ABERTA",
-        datahora_abertura: "2025-08-01 10:00:00",
-        datahora_documento: "2025-07-28 08:00:00",
-        datahora_retirada: null,
-        datahora_visita: null,
-        datahora_prazo: "2025-08-05 17:00:00",
-        edital: "SAB/804/2025",
-        link_edital: "https://consultaonline.conlicitacao.com.br/boletim_web/public/api/download?auth=mock6",
-        documento_url: "https://consultaonline.conlicitacao.com.br/boletim_web/public/api/download?auth=mock6",
-        processo: "40000.000004/2025-08",
-        observacao: "Mock limpeza",
-        item: "Item limpeza",
-        preco_edital: 5000.00,
-        valor_estimado: 100000.00,
-        boletim_id: 1,
-      },
-      {
-        id: 7,
-        conlicitacao_id: 17942407,
-        orgao_nome: "Secretaria de Obras do Rio Grande do Sul",
-        orgao_codigo: "UASG1005",
-        orgao_cidade: "Porto Alegre",
-        orgao_uf: "RS",
-        orgao_endereco: "Rua dos Andradas, 123",
-        orgao_telefone: "(51) 5555-5555",
-        orgao_site: "www.obras.rs.gov.br",
-        objeto: "Serviços de pavimentação",
-        situacao: "ABERTA",
-        datahora_abertura: "2025-08-01 10:00:00",
-        datahora_documento: null,
-        datahora_retirada: null,
-        datahora_visita: null,
-        datahora_prazo: "2025-08-05 17:00:00",
-        edital: "SORS/805/2025",
-        link_edital: "https://consultaonline.conlicitacao.com.br/boletim_web/public/api/download?auth=mock7",
-        documento_url: "https://consultaonline.conlicitacao.com.br/boletim_web/public/api/download?auth=mock7",
-        processo: "50000.000005/2025-08",
-        observacao: "Mock pavimentação",
-        item: "Item obras",
-        preco_edital: 20000.00,
-        valor_estimado: 500000.00,
-        boletim_id: 1,
-      },
-      {
-        id: 8,
-        conlicitacao_id: 17942408,
-        orgao_nome: "Secretaria de Turismo do Paraná",
-        orgao_codigo: "UASG1006",
-        orgao_cidade: "Curitiba",
-        orgao_uf: "PR",
-        orgao_endereco: "Rua XV de Novembro, 200",
-        orgao_telefone: "(41) 6666-6666",
-        orgao_site: "www.turismo.pr.gov.br",
-        objeto: "Serviços de organização de eventos",
-        situacao: "ABERTA",
-        datahora_abertura: null,
-        datahora_documento: "2025-08-10 14:00:00",
-        datahora_retirada: null,
-        datahora_visita: null,
-        datahora_prazo: "2025-08-18 17:00:00",
-        edital: "STPR/806/2025",
-        link_edital: "https://consultaonline.conlicitacao.com.br/boletim_web/public/api/download?auth=mock8",
-        documento_url: "https://consultaonline.conlicitacao.com.br/boletim_web/public/api/download?auth=mock8",
-        processo: "60000.000006/2025-08",
-        observacao: "Mock eventos",
-        item: "Item turismo",
-        preco_edital: 7000.00,
-        valor_estimado: 160000.00,
-        boletim_id: 1,
-      },
-      {
-        id: 9,
-        conlicitacao_id: 17942409,
-        orgao_nome: "Secretaria de Esportes de Santa Catarina",
-        orgao_codigo: "UASG1007",
-        orgao_cidade: "Florianópolis",
-        orgao_uf: "SC",
-        orgao_endereco: "Av. Beira-Mar, 400",
-        orgao_telefone: "(48) 7777-7777",
-        orgao_site: "www.esportes.sc.gov.br",
-        objeto: "Compra de equipamentos esportivos",
-        situacao: "ABERTA",
-        datahora_abertura: null,
-        datahora_documento: "2025-08-10 14:00:00",
-        datahora_retirada: "2025-08-12 16:00:00",
-        datahora_visita: null,
-        datahora_prazo: "2025-08-19 12:00:00",
-        edital: "SESC/807/2025",
-        link_edital: "https://consultaonline.conlicitacao.com.br/boletim_web/public/api/download?auth=mock9",
-        documento_url: "https://consultaonline.conlicitacao.com.br/boletim_web/public/api/download?auth=mock9",
-        processo: "70000.000007/2025-08",
-        observacao: "Mock esportes",
-        item: "Item esportivo",
-        preco_edital: 6000.00,
-        valor_estimado: 90000.00,
-        boletim_id: 1,
-      },
-      {
-        id: 10,
-        conlicitacao_id: 17942410,
-        orgao_nome: "Governo de Pernambuco",
-        orgao_codigo: "UASG1008",
-        orgao_cidade: "Recife",
-        orgao_uf: "PE",
-        orgao_endereco: "Rua da Aurora, 123",
-        orgao_telefone: "(81) 8888-8888",
-        orgao_site: "www.pe.gov.br",
-        objeto: "Serviços de publicidade institucional",
-        situacao: "ABERTA",
-        datahora_abertura: "",
-        datahora_documento: "2025-08-10 14:00:00",
-        datahora_retirada: null,
-        datahora_visita: null,
-        datahora_prazo: "2025-08-25 17:00:00",
-        edital: "GPE/808/2025",
-        link_edital: "https://consultaonline.conlicitacao.com.br/boletim_web/public/api/download?auth=mock10",
-        documento_url: "https://consultaonline.conlicitacao.com.br/boletim_web/public/api/download?auth=mock10",
-        processo: "80000.000008/2025-08",
-        observacao: "Mock publicidade",
-        item: "Item publicidade",
-        preco_edital: 12000.00,
-        valor_estimado: 250000.00,
-        boletim_id: 1,
-      },
-      {
-        id: 11,
-        conlicitacao_id: 17942411,
-        orgao_nome: "Prefeitura de Fortaleza",
-        orgao_codigo: "UASG1009",
-        orgao_cidade: "Fortaleza",
-        orgao_uf: "CE",
-        orgao_endereco: "Av. Dom Luís, 90",
-        orgao_telefone: "(85) 9999-9999",
-        orgao_site: "www.fortaleza.ce.gov.br",
-        objeto: "Fornecimento de alimentação escolar",
-        situacao: "ABERTA",
-        datahora_abertura: null,
-        datahora_documento: "2025-08-10 14:00:00",
-        datahora_retirada: null,
-        datahora_visita: "",
-        datahora_prazo: "2025-08-22 11:00:00",
-        edital: "PFF/809/2025",
-        link_edital: "https://consultaonline.conlicitacao.com.br/boletim_web/public/api/download?auth=mock11",
-        documento_url: "https://consultaonline.conlicitacao.com.br/boletim_web/public/api/download?auth=mock11",
-        processo: "90000.000009/2025-08",
-        observacao: "Mock alimentação",
-        item: "Item merenda",
-        preco_edital: 9000.00,
-        valor_estimado: 140000.00,
-        boletim_id: 1,
-      },
-      {
-        id: 12,
-        conlicitacao_id: 17942412,
-        orgao_nome: "Governo do Distrito Federal",
-        orgao_codigo: "UASG1010",
-        orgao_cidade: "Brasília",
-        orgao_uf: "DF",
-        orgao_endereco: "Esplanada dos Ministérios",
-        orgao_telefone: "(61) 1010-1010",
-        orgao_site: "www.df.gov.br",
-        objeto: "Locação de veículos",
-        situacao: "ABERTA",
-        datahora_abertura: "",
-        datahora_documento: "2025-08-10 14:00:00",
-        datahora_retirada: "",
-        datahora_visita: null,
-        datahora_prazo: "2025-08-28 18:00:00",
-        edital: "GDF/810/2025",
-        link_edital: "https://consultaonline.conlicitacao.com.br/boletim_web/public/api/download?auth=mock12",
-        documento_url: "https://consultaonline.conlicitacao.com.br/boletim_web/public/api/download?auth=mock12",
-        processo: "100000.000010/2025-08",
-        observacao: "Mock locação",
-        item: "Item frota",
-        preco_edital: 11000.00,
-        valor_estimado: 320000.00,
-        boletim_id: 1,
-      },
-      {
-        id: 13,
-        conlicitacao_id: 17942413,
-        orgao_nome: "Secretaria de Infraestrutura do Pará",
-        orgao_codigo: "UASG1011",
-        orgao_cidade: "Belém",
-        orgao_uf: "PA",
-        orgao_endereco: "Av. Nazaré, 50",
-        orgao_telefone: "(91) 1313-1313",
-        orgao_site: "www.infra.pa.gov.br",
-        objeto: "Construção de ponte",
-        situacao: "ABERTA",
-        datahora_abertura: null,
-        datahora_documento: null,
-        datahora_retirada: "2025-08-12 16:00:00",
-        datahora_visita: "2025-08-15 09:00:00",
-        datahora_prazo: "2025-08-30 17:00:00",
-        edital: "SIPA/811/2025",
-        link_edital: "https://consultaonline.conlicitacao.com.br/boletim_web/public/api/download?auth=mock13",
-        documento_url: "https://consultaonline.conlicitacao.com.br/boletim_web/public/api/download?auth=mock13",
-        processo: "110000.000011/2025-08",
-        observacao: "Mock ponte",
-        item: "Item obra",
-        preco_edital: 25000.00,
-        valor_estimado: 1000000.00,
-        boletim_id: 1,
-      },
-      {
-        id: 14,
-        conlicitacao_id: 17942414,
-        orgao_nome: "Prefeitura de Goiânia",
-        orgao_codigo: "UASG1012",
-        orgao_cidade: "Goiânia",
-        orgao_uf: "GO",
-        orgao_endereco: "Av. T-63, 120",
-        orgao_telefone: "(62) 1414-1414",
-        orgao_site: "www.goiania.go.gov.br",
-        objeto: "Manutenção de praças",
-        situacao: "ABERTA",
-        datahora_abertura: null,
-        datahora_documento: null,
-        datahora_retirada: "2025-08-12 16:00:00",
-        datahora_visita: "2025-08-15 09:00:00",
-        datahora_prazo: "2025-08-27 09:00:00",
-        edital: "PGO/812/2025",
-        link_edital: "https://consultaonline.conlicitacao.com.br/boletim_web/public/api/download?auth=mock14",
-        documento_url: "https://consultaonline.conlicitacao.com.br/boletim_web/public/api/download?auth=mock14",
-        processo: "120000.000012/2025-08",
-        observacao: "Mock praças",
-        item: "Item urbano",
-        preco_edital: 4000.00,
-        valor_estimado: 85000.00,
-        boletim_id: 1,
-      },
-      {
-        id: 15,
-        conlicitacao_id: 17942415,
-        orgao_nome: "Secretaria de Segurança do Espírito Santo",
-        orgao_codigo: "UASG1013",
-        orgao_cidade: "Vitória",
-        orgao_uf: "ES",
-        orgao_endereco: "Av. Vitória, 500",
-        orgao_telefone: "(27) 1515-1515",
-        orgao_site: "www.seguranca.es.gov.br",
-        objeto: "Compra de viaturas",
-        situacao: "ABERTA",
-        datahora_abertura: null,
-        datahora_documento: null,
-        datahora_retirada: "2025-08-12 16:00:00",
-        datahora_visita: "2025-08-15 09:00:00",
-        datahora_prazo: "2025-08-29 17:00:00",
-        edital: "SEES/813/2025",
-        link_edital: "https://consultaonline.conlicitacao.com.br/boletim_web/public/api/download?auth=mock15",
-        documento_url: "https://consultaonline.conlicitacao.com.br/boletim_web/public/api/download?auth=mock15",
-        processo: "130000.000013/2025-08",
-        observacao: "Mock viaturas",
-        item: "Item segurança",
-        preco_edital: 18000.00,
-        valor_estimado: 600000.00,
-        boletim_id: 1,
-      },
-      {
-        id: 16,
-        conlicitacao_id: 17942416,
-        orgao_nome: "Secretaria de Agricultura do Mato Grosso",
-        orgao_codigo: "UASG1014",
-        orgao_cidade: "Cuiabá",
-        orgao_uf: "MT",
-        orgao_endereco: "Av. Getúlio Vargas, 320",
-        orgao_telefone: "(65) 1616-1616",
-        orgao_site: "www.agricultura.mt.gov.br",
-        objeto: "Aquisição de sementes",
-        situacao: "ABERTA",
-        datahora_abertura: null,
-        datahora_documento: null,
-        datahora_retirada: "2025-08-12 16:00:00",
-        datahora_visita: "2025-08-15 09:00:00",
-        datahora_prazo: "2025-09-02 10:00:00",
-        edital: "SAMT/814/2025",
-        link_edital: "https://consultaonline.conlicitacao.com.br/boletim_web/public/api/download?auth=mock16",
-        documento_url: "https://consultaonline.conlicitacao.com.br/boletim_web/public/api/download?auth=mock16",
-        processo: "140000.000014/2025-08",
-        observacao: "Mock sementes",
-        item: "Item agricultura",
-        preco_edital: 3000.00,
-        valor_estimado: 50000.00,
-        boletim_id: 1,
-      },
-      {
-        id: 17,
-        conlicitacao_id: 17942417,
-        orgao_nome: "Secretaria de Meio Ambiente do Mato Grosso do Sul",
-        orgao_codigo: "UASG1015",
-        orgao_cidade: "Campo Grande",
-        orgao_uf: "MS",
-        orgao_endereco: "Rua 14 de Julho, 210",
-        orgao_telefone: "(67) 1717-1717",
-        orgao_site: "www.meioambiente.ms.gov.br",
-        objeto: "Serviços de reflorestamento",
-        situacao: "ABERTA",
-        datahora_abertura: null,
-        datahora_documento: null,
-        datahora_retirada: "2025-08-12 16:00:00",
-        datahora_visita: "2025-08-15 09:00:00",
-        datahora_prazo: "2025-09-03 15:30:00",
-        edital: "SMAMS/815/2025",
-        link_edital: "https://consultaonline.conlicitacao.com.br/boletim_web/public/api/download?auth=mock17",
-        documento_url: "https://consultaonline.conlicitacao.com.br/boletim_web/public/api/download?auth=mock17",
-        processo: "150000.000015/2025-08",
-        observacao: "Mock reflorestamento",
-        item: "Item ambiental",
-        preco_edital: 7000.00,
-        valor_estimado: 150000.00,
-        boletim_id: 1,
-      }
-      ,
-      {
-        id: 18,
-        conlicitacao_id: 17942418,
-        orgao_nome: "Secretaria de Educação do Rio de Janeiro",
-        orgao_codigo: "UASG1016",
-        orgao_cidade: "Rio de Janeiro",
-        orgao_uf: "RJ",
-        orgao_endereco: "Rua das Laranjeiras, 200",
-        orgao_telefone: "(21) 1818-1818",
-        orgao_site: "www.educacao.rj.gov.br",
-        objeto: "Aquisição de material didático",
-        situacao: "ABERTA",
-        datahora_abertura: "2025-09-05 10:00:00",
-        datahora_documento: "2025-09-01 09:00:00",
-        datahora_retirada: "2025-09-03 16:00:00",
-        datahora_visita: null,
-        datahora_prazo: "2025-09-10 17:00:00",
-        edital: "SERJ/816/2025",
-        link_edital: "https://consultaonline.conlicitacao.com.br/boletim_web/public/api/download?auth=mock18",
-        documento_url: "https://consultaonline.conlicitacao.com.br/boletim_web/public/api/download?auth=mock18",
-        processo: "160000.000016/2025-09",
-        observacao: "Mock educação",
-        item: "Item didático",
-        preco_edital: 5000.00,
-        valor_estimado: 80000.00,
-        boletim_id: 1,
-      },
-      {
-        id: 19,
-        conlicitacao_id: 17942419,
-        orgao_nome: "Prefeitura de Salvador",
-        orgao_codigo: "UASG1017",
-        orgao_cidade: "Salvador",
-        orgao_uf: "BA",
-        orgao_endereco: "Av. Sete de Setembro, 150",
-        orgao_telefone: "(71) 1919-1919",
-        orgao_site: "www.salvador.ba.gov.br",
-        objeto: "Serviços de limpeza urbana",
-        situacao: "ABERTA",
-        datahora_abertura: null,
-        datahora_documento: "2025-09-01 11:00:00",
-        datahora_retirada: null,
-        datahora_visita: "2025-09-06 09:00:00",
-        datahora_prazo: "2025-09-12 12:00:00",
-        edital: "PSAL/817/2025",
-        link_edital: "https://consultaonline.conlicitacao.com.br/boletim_web/public/api/download?auth=mock19",
-        documento_url: "https://consultaonline.conlicitacao.com.br/boletim_web/public/api/download?auth=mock19",
-        processo: "170000.000017/2025-09",
-        observacao: "Mock limpeza",
-        item: "Item limpeza",
-        preco_edital: 7000.00,
-        valor_estimado: 120000.00,
-        boletim_id: 2,
-      },
-      {
-        id: 20,
-        conlicitacao_id: 17942420,
-        orgao_nome: "Secretaria de Ciência e Tecnologia de Minas Gerais",
-        orgao_codigo: "UASG1018",
-        orgao_cidade: "Belo Horizonte",
-        orgao_uf: "MG",
-        orgao_endereco: "Av. Afonso Pena, 1200",
-        orgao_telefone: "(31) 2020-2020",
-        orgao_site: "www.ciencia.mg.gov.br",
-        objeto: "Implementação de rede de fibra óptica",
-        situacao: "ABERTA",
-        datahora_abertura: "2025-09-07 09:00:00",
-        datahora_documento: "2025-09-02 14:00:00",
-        datahora_retirada: "2025-09-04 16:00:00",
-        datahora_visita: null,
-        datahora_prazo: "2025-09-15 18:00:00",
-        edital: "SECTMG/818/2025",
-        link_edital: "https://consultaonline.conlicitacao.com.br/boletim_web/public/api/download?auth=mock20",
-        documento_url: "https://consultaonline.conlicitacao.com.br/boletim_web/public/api/download?auth=mock20",
-        processo: "180000.000018/2025-09",
-        observacao: "Mock fibra",
-        item: "Item tecnologia",
-        preco_edital: 15000.00,
-        valor_estimado: 450000.00,
-        boletim_id: 3,
-      },
-      {
-        id: 21,
-        conlicitacao_id: 17942421,
-        orgao_nome: "Prefeitura de Curitiba",
-        orgao_codigo: "UASG1019",
-        orgao_cidade: "Curitiba",
-        orgao_uf: "PR",
-        orgao_endereco: "Rua Barão do Rio Branco, 300",
-        orgao_telefone: "(41) 2121-2121",
-        orgao_site: "www.curitiba.pr.gov.br",
-        objeto: "Aquisição de equipamentos de TI",
-        situacao: "ABERTA",
-        datahora_abertura: null,
-        datahora_documento: "2025-09-03 09:30:00",
-        datahora_retirada: "2025-09-05 16:00:00",
-        datahora_visita: null,
-        datahora_prazo: "2025-09-18 17:30:00",
-        edital: "PCUR/819/2025",
-        link_edital: "https://consultaonline.conlicitacao.com.br/boletim_web/public/api/download?auth=mock21",
-        documento_url: "https://consultaonline.conlicitacao.com.br/boletim_web/public/api/download?auth=mock21",
-        processo: "190000.000019/2025-09",
-        observacao: "Mock TI",
-        item: "Item tecnologia",
-        preco_edital: 8000.00,
-        valor_estimado: 160000.00,
-        boletim_id: 1,
-      },
-      {
-        id: 22,
-        conlicitacao_id: 17942422,
-        orgao_nome: "Secretaria de Cultura do Rio Grande do Sul",
-        orgao_codigo: "UASG1020",
-        orgao_cidade: "Porto Alegre",
-        orgao_uf: "RS",
-        orgao_endereco: "Rua dos Andradas, 250",
-        orgao_telefone: "(51) 2222-2222",
-        orgao_site: "www.cultura.rs.gov.br",
-        objeto: "Produção de eventos culturais",
-        situacao: "ABERTA",
-        datahora_abertura: "2025-09-08 11:00:00",
-        datahora_documento: "2025-09-03 10:00:00",
-        datahora_retirada: null,
-        datahora_visita: null,
-        datahora_prazo: "2025-09-20 16:00:00",
-        edital: "SCRS/820/2025",
-        link_edital: "https://consultaonline.conlicitacao.com.br/boletim_web/public/api/download?auth=mock22",
-        documento_url: "https://consultaonline.conlicitacao.com.br/boletim_web/public/api/download?auth=mock22",
-        processo: "200000.000020/2025-09",
-        observacao: "Mock cultura",
-        item: "Item cultural",
-        preco_edital: 6000.00,
-        valor_estimado: 130000.00,
-        boletim_id: 2,
-      },
-      {
-        id: 23,
-        conlicitacao_id: 17942423,
-        orgao_nome: "Governo do Amazonas",
-        orgao_codigo: "UASG1021",
-        orgao_cidade: "Manaus",
-        orgao_uf: "AM",
-        orgao_endereco: "Av. Djalma Batista, 400",
-        orgao_telefone: "(92) 2323-2323",
-        orgao_site: "www.am.gov.br",
-        objeto: "Aquisição de embarcações fluviais",
-        situacao: "ABERTA",
-        datahora_abertura: null,
-        datahora_documento: "2025-09-04 13:00:00",
-        datahora_retirada: "2025-09-06 16:00:00",
-        datahora_visita: null,
-        datahora_prazo: "2025-09-22 11:00:00",
-        edital: "GAM/821/2025",
-        link_edital: "https://consultaonline.conlicitacao.com.br/boletim_web/public/api/download?auth=mock23",
-        documento_url: "https://consultaonline.conlicitacao.com.br/boletim_web/public/api/download?auth=mock23",
-        processo: "210000.000021/2025-09",
-        observacao: "Mock embarcação",
-        item: "Item transporte",
-        preco_edital: 20000.00,
-        valor_estimado: 500000.00,
-        boletim_id: 3,
-      },
-      {
-        id: 24,
-        conlicitacao_id: 17942424,
-        orgao_nome: "Secretaria de Turismo de Alagoas",
-        orgao_codigo: "UASG1022",
-        orgao_cidade: "Maceió",
-        orgao_uf: "AL",
-        orgao_endereco: "Pajuçara, 100",
-        orgao_telefone: "(82) 2424-2424",
-        orgao_site: "www.turismo.al.gov.br",
-        objeto: "Serviços de promoção turística",
-        situacao: "ABERTA",
-        datahora_abertura: null,
-        datahora_documento: "2025-09-04 15:00:00",
-        datahora_retirada: null,
-        datahora_visita: null,
-        datahora_prazo: "2025-09-25 17:00:00",
-        edital: "STAL/822/2025",
-        link_edital: "https://consultaonline.conlicitacao.com.br/boletim_web/public/api/download?auth=mock24",
-        documento_url: "https://consultaonline.conlicitacao.com.br/boletim_web/public/api/download?auth=mock24",
-        processo: "220000.000022/2025-09",
-        observacao: "Mock turismo",
-        item: "Item turismo",
-        preco_edital: 4000.00,
-        valor_estimado: 90000.00,
-        boletim_id: 1,
-      },
-      {
-        id: 25,
-        conlicitacao_id: 17942425,
-        orgao_nome: "Prefeitura de Natal",
-        orgao_codigo: "UASG1023",
-        orgao_cidade: "Natal",
-        orgao_uf: "RN",
-        orgao_endereco: "Av. Prudente de Morais, 250",
-        orgao_telefone: "(84) 2525-2525",
-        orgao_site: "www.natal.rn.gov.br",
-        objeto: "Reforma de escolas municipais",
-        situacao: "ABERTA",
-        datahora_abertura: "2025-09-09 08:30:00",
-        datahora_documento: "2025-09-05 10:15:00",
-        datahora_retirada: "2025-09-07 16:00:00",
-        datahora_visita: null,
-        datahora_prazo: "2025-09-28 17:00:00",
-        edital: "PNAT/823/2025",
-        link_edital: "https://consultaonline.conlicitacao.com.br/boletim_web/public/api/download?auth=mock25",
-        documento_url: "https://consultaonline.conlicitacao.com.br/boletim_web/public/api/download?auth=mock25",
-        processo: "230000.000023/2025-09",
-        observacao: "Mock reforma",
-        item: "Item obras",
-        preco_edital: 10000.00,
-        valor_estimado: 300000.00,
-        boletim_id: 2,
-      },
-      {
-        id: 26,
-        conlicitacao_id: 17942426,
-        orgao_nome: "Secretaria de Transportes do Pará",
-        orgao_codigo: "UASG1024",
-        orgao_cidade: "Belém",
-        orgao_uf: "PA",
-        orgao_endereco: "Av. João Paulo II, 600",
-        orgao_telefone: "(91) 2626-2626",
-        orgao_site: "www.transportes.pa.gov.br",
-        objeto: "Aquisição de ônibus urbanos",
-        situacao: "ABERTA",
-        datahora_abertura: null,
-        datahora_documento: "2025-09-05 11:30:00",
-        datahora_retirada: null,
-        datahora_visita: null,
-        datahora_prazo: "2025-09-30 12:00:00",
-        edital: "SETRPA/824/2025",
-        link_edital: "https://consultaonline.conlicitacao.com.br/boletim_web/public/api/download?auth=mock26",
-        documento_url: "https://consultaonline.conlicitacao.com.br/boletim_web/public/api/download?auth=mock26",
-        processo: "240000.000024/2025-09",
-        observacao: "Mock ônibus",
-        item: "Item transporte",
-        preco_edital: 22000.00,
-        valor_estimado: 650000.00,
-        boletim_id: 3,
-      },
-      {
-        id: 27,
-        conlicitacao_id: 17942427,
-        orgao_nome: "Governo da Bahia",
-        orgao_codigo: "UASG1025",
-        orgao_cidade: "Salvador",
-        orgao_uf: "BA",
-        orgao_endereco: "Centro Administrativo da Bahia",
-        orgao_telefone: "(71) 2727-2727",
-        orgao_site: "www.ba.gov.br",
-        objeto: "Serviços de saneamento básico",
-        situacao: "ABERTA",
-        datahora_abertura: "2025-09-10 09:00:00",
-        datahora_documento: "2025-09-06 09:00:00",
-        datahora_retirada: "2025-09-09 16:00:00",
-        datahora_visita: null,
-        datahora_prazo: "2025-10-03 18:00:00",
-        edital: "GBA/825/2025",
-        link_edital: "https://consultaonline.conlicitacao.com.br/boletim_web/public/api/download?auth=mock27",
-        documento_url: "https://consultaonline.conlicitacao.com.br/boletim_web/public/api/download?auth=mock27",
-        processo: "250000.000025/2025-09",
-        observacao: "Mock saneamento",
-        item: "Item infraestrutura",
-        preco_edital: 18000.00,
-        valor_estimado: 700000.00,
-        boletim_id: 1,
-      }
-    ];
-    
-    // Adicionar dados de teste ao cache
-    licitacoesTeste.forEach(licitacao => {
-      this.cachedBiddings.set(licitacao.id, licitacao);
-    });
-
-    try {
-      // Carregamento rápido: apenas os 3 boletins mais recentes
-      const filtros = await this.getFiltros();
-      
-      for (const filtro of filtros) {
-        try {
-          const boletinsResponse = await this.getBoletins(filtro.id, 1, 3);
-          
-          for (const boletim of boletinsResponse.boletins) {
-            try {
-              const boletimData = await conLicitacaoAPI.getBoletimData(boletim.id);
-              
-              if (boletimData.licitacoes) {
-                boletimData.licitacoes.forEach((licitacao: any) => {
-                  const transformedLicitacao = this.transformLicitacaoFromAPI(licitacao, boletim.id, 'api');
-                  this.cachedBiddings.set(transformedLicitacao.id, transformedLicitacao);
-                });
-              }
-            } catch (error) {
-              // Erro ao carregar boletim
-            }
-          }
-        } catch (error) {
-          // Erro no carregamento rápido
-        }
-      }
-      
-    } catch (error) {
-      // Usando dados de teste
-    }
-    
-    this.lastCacheUpdate = Date.now();
-  }
-
-  // Carregamento completo em background
-  private async loadAllBiddingsInBackground(): Promise<void> {
-    if (this.backgroundLoadingInProgress || this.fullLoadCompleted) {
-      return;
-    }
-    
-    this.backgroundLoadingInProgress = true;
-    
-    try {
-      await this.refreshBiddingsCache();
-      this.fullLoadCompleted = true;
-    } catch (error) {
-      // Erro no carregamento em background
-    } finally {
-      this.backgroundLoadingInProgress = false;
-    }
-  }
-
-  // Nova função específica para busca por número de controle
-  private async searchByControlNumber(numeroControle: string): Promise<Bidding[]> {
-    
-    // Primeiro verificar no cache
-    let biddings = Array.from(this.cachedBiddings.values()).filter(b => 
-      b.conlicitacao_id?.toString().includes(numeroControle) ||
-      b.orgao_codigo?.toLowerCase().includes(numeroControle.toLowerCase()) ||
-      b.processo?.toLowerCase().includes(numeroControle.toLowerCase()) ||
-      b.edital?.toLowerCase().includes(numeroControle.toLowerCase())
-    );
-    
-    if (biddings.length > 0) {
-      return biddings;
-    }
-    
-    // Se não encontrou no cache, fazer busca específica
-    await this.searchSpecificBidding(numeroControle);
-    
-    // Tentar novamente após busca específica
-    biddings = Array.from(this.cachedBiddings.values()).filter(b => 
-      b.conlicitacao_id?.toString().includes(numeroControle) ||
-      b.orgao_codigo?.toLowerCase().includes(numeroControle.toLowerCase()) ||
-      b.processo?.toLowerCase().includes(numeroControle.toLowerCase()) ||
-      b.edital?.toLowerCase().includes(numeroControle.toLowerCase())
-    );
-    
-    return biddings;
-  }
-
-  // Busca específica COMPLETA para número de controle não encontrado
-  private async searchSpecificBidding(numeroControle: string): Promise<void> {
-    try {
-      const filtros = await this.getFiltros();
-      let totalBuscados = 0;
-      let encontrou = false;
-      
-      // Buscar em TODOS os boletins até encontrar ou esgotar possibilidades
-      for (const filtro of filtros) {
-        try {
-          // Pegar informação total de boletins
-          const boletinsResponse = await this.getBoletins(filtro.id, 1, 100);
-          
-          // Buscar em lotes de 20 boletins
-          const batchSize = 20;
-          const totalPages = Math.ceil(boletinsResponse.total / batchSize);
-          
-          for (let page = 1; page <= Math.min(totalPages, 10); page++) { // Limite: máximo 10 páginas (200 boletins) por filtro
-            const pageBoletins = await this.getBoletins(filtro.id, page, batchSize);
-            
-            const chunkSize = 5;
-            for (let i = 0; i < pageBoletins.boletins.length; i += chunkSize) {
-              const chunk = pageBoletins.boletins.slice(i, i + chunkSize);
-              const results = await Promise.all(chunk.map(async (boletim) => {
-                try {
-                  const boletimData = await this.getCachedBoletimData(boletim.id);
-                  totalBuscados++;
-                  if (boletimData.licitacoes) {
-                    const matching = boletimData.licitacoes.filter((licitacao: any) => 
-                      licitacao.id?.toString().includes(numeroControle) ||
-                      licitacao.orgao?.codigo?.toLowerCase().includes(numeroControle.toLowerCase()) ||
-                      licitacao.processo?.toLowerCase().includes(numeroControle.toLowerCase()) ||
-                      licitacao.edital?.toLowerCase().includes(numeroControle.toLowerCase())
-                    );
-                    matching.forEach((licitacao: any) => {
-                      const transformedLicitacao = this.transformLicitacaoFromAPI(licitacao, boletim.id, 'api');
-                      this.cachedBiddings.set(transformedLicitacao.id, transformedLicitacao);
-                    });
-                    if (matching.length > 0) {
-                      return true;
-                    }
-                  }
-                } catch (error) {
-                  // Erro em boletim
-                }
-                return false;
-              }));
-              if (results.some(r => r)) {
-                return;
-              }
-            }
-          }
-        } catch (error) {
-          // Erro no filtro
-        }
-      }
-      
-      if (!encontrou) {
-        // Número de controle não encontrado após busca
-      }
-      
-    } catch (error) {
-      // Erro crítico na busca específica
-    }
-  }
-
-  // Garante que as licitações fornecidas estejam atualizadas (freshness check)
-  private async ensureBiddingsFreshness(biddings: Bidding[]): Promise<void> {
-    const now = Date.now();
-    // Considerar obsoleto se mais velho que 5 minutos
-    const STALE_THRESHOLD = 5 * 60 * 1000; 
-    
-    const boletinsToRefresh = new Set<number>();
-    
-    for (const bidding of biddings) {
-      if (!bidding.boletim_id) continue;
-      
-      const cachedBoletim = this.boletimCache.get(bidding.boletim_id);
-      // Se não tem cache do boletim ou está vencido, precisa atualizar
-      if (!cachedBoletim || (now - cachedBoletim.timestamp > STALE_THRESHOLD)) {
-        boletinsToRefresh.add(bidding.boletim_id);
-      }
-    }
-    
-    if (boletinsToRefresh.size > 0) {
-       const ids = Array.from(boletinsToRefresh);
-       // Limitar concorrência para não sobrecarregar
-       const chunkSize = 3;
-       
-       for (let i = 0; i < ids.length; i += chunkSize) {
-         const chunk = ids.slice(i, i + chunkSize);
-         await Promise.all(chunk.map(async (id) => {
-           try {
-             // getCachedBoletimData fará o fetch da API e o sync com DB
-             const data = await this.getCachedBoletimData(id);
-             
-             // Atualizar os objetos de licitação na lista fornecida e no cache principal
-             if (data.licitacoes) {
-                data.licitacoes.forEach((freshLic: any) => {
-                   const fresh = this.transformLicitacaoFromAPI(freshLic, id, 'api');
-                   
-                   // Atualizar no cache principal
-                   this.cachedBiddings.set(fresh.id, fresh);
-                   
-                   // Atualizar na lista atual (in-place update)
-                   const targets = biddings.filter(b => b.conlicitacao_id === fresh.conlicitacao_id);
-                   targets.forEach(target => {
-                     Object.assign(target, fresh);
-                   });
-                });
-             }
-           } catch (e) {
-             console.error(`[Freshness] Falha ao atualizar boletim ${id}:`, e);
-           }
-         }));
-       }
-    }
-  }
-
-  // Atualiza dados de uma licitação via boletim associado
-  public async refreshBoletimForBidding(biddingId: number): Promise<void> {
-    const existing = this.cachedBiddings.get(biddingId);
-    const boletimId = existing?.boletim_id;
-    if (!boletimId) {
-      return;
-    }
-    try {
-      const boletimData = await conLicitacaoAPI.getBoletimData(boletimId);
-      if (boletimData?.licitacoes) {
-        boletimData.licitacoes.forEach((licitacao: any) => {
-          const transformed = this.transformLicitacaoFromAPI(licitacao, boletimId, 'api');
-          this.cachedBiddings.set(transformed.id, transformed);
-        });
-        this.lastCacheUpdate = Date.now();
-      }
-    } catch {
-      // silencioso
-    }
-  }
-  
-  
 
   // Nova versão paginada e otimizada
+  // Nova versão paginada e otimizada (CONSULTA AO BANCO DE DADOS)
   async getBiddingsPaginated(filters?: { 
     conlicitacao_id?: string; 
     orgao?: string[]; 
@@ -3190,272 +546,126 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
     data_fim?: string;
     tipo_data?: 'abertura' | 'documento';
   }, page: number = 1, limit: number = 50): Promise<{ biddings: Bidding[], total: number }> {
-    if (this.cachedBiddings.size === 0 || Date.now() - this.lastCacheUpdate > this.CACHE_DURATION) {
-      await this.refreshRecentBoletins();
-    }
     
-    // Combinar cache recente com favoritos pinados para busca completa
-          const allBiddings = new Map<number, Bidding>();
-          // Primeiro carregar pinados
-          this.pinnedBiddings.forEach((b, id) => allBiddings.set(id, b));
-          // Depois sobrepor com cache recente (prioridade para dados frescos)
-          this.cachedBiddings.forEach((b, id) => {
-            allBiddings.set(id, b);
-            // Se este item também estiver pinado, atualizar o pinado com dados frescos
-            if (this.pinnedBiddings.has(id)) {
-              this.pinnedBiddings.set(id, b as Bidding);
-            }
-          });
-    
-    let biddings = Array.from(allBiddings.values());
-    
-    // Aplicar filtros
+    const conditions = [];
+
     if (filters?.conlicitacao_id) {
-      biddings = biddings.filter(b => 
-        b.conlicitacao_id.toString().includes(filters.conlicitacao_id!)
-      );
+      conditions.push(eq(biddings.conlicitacao_id, parseInt(filters.conlicitacao_id)));
     }
-    
+
     if (filters?.numero_controle) {
-      biddings = biddings.filter(b => 
-        b.conlicitacao_id?.toString().includes(filters.numero_controle!) ||
-        b.orgao_codigo?.toLowerCase().includes(filters.numero_controle!.toLowerCase()) ||
-        b.processo?.toLowerCase().includes(filters.numero_controle!.toLowerCase()) ||
-        b.edital?.toLowerCase().includes(filters.numero_controle!.toLowerCase())
-      );
-      
-      // Se não encontrou resultado, tentar busca específica
-      if (biddings.length === 0) {
-        await this.searchSpecificBidding(filters.numero_controle);
-        biddings = Array.from(this.cachedBiddings.values()).filter(b => 
-          b.conlicitacao_id?.toString().includes(filters.numero_controle!) ||
-          b.orgao_codigo?.toLowerCase().includes(filters.numero_controle!.toLowerCase()) ||
-          b.processo?.toLowerCase().includes(filters.numero_controle!.toLowerCase()) ||
-          b.edital?.toLowerCase().includes(filters.numero_controle!.toLowerCase())
-        );
-      }
+      conditions.push(eq(biddings.conlicitacao_id, parseInt(filters.numero_controle)));
     }
-    
+
     if (filters?.orgao && filters.orgao.length > 0) {
-      biddings = biddings.filter(b => 
-        filters.orgao!.some(orgao => 
-          b.orgao_nome?.toLowerCase().includes(orgao.toLowerCase())
-        )
-      );
+      conditions.push(inArray(biddings.orgao_nome, filters.orgao));
     }
-    
+
     if (filters?.uf && filters.uf.length > 0) {
-      biddings = biddings.filter(b => 
-        filters.uf!.includes(b.orgao_uf || '')
-      );
+      conditions.push(inArray(biddings.orgao_uf, filters.uf));
     }
 
     if (filters?.cidade) {
-      biddings = biddings.filter(b => 
-        b.orgao_cidade?.toLowerCase().includes(filters.cidade!.toLowerCase())
-      );
+      conditions.push(like(biddings.orgao_cidade, `%${filters.cidade}%`));
     }
 
     if (filters?.objeto) {
-      biddings = biddings.filter(b => 
-        b.objeto?.toLowerCase().includes(filters.objeto!.toLowerCase())
-      );
+      conditions.push(like(biddings.objeto, `%${filters.objeto}%`));
     }
 
-    if (filters?.valor_min !== undefined || filters?.valor_max !== undefined || filters?.mostrar_sem_valor) {
-      biddings = biddings.filter(b => {
-        // Converter valor para número
-        let valor = 0;
-        if (typeof b.valor_estimado === 'string') {
-          // Remove caracteres não numéricos exceto vírgulas e pontos
-          const cleanValue = (b.valor_estimado as string).replace(/[^\d,.-]/g, "").replace(",", ".");
-          valor = parseFloat(cleanValue) || 0;
-        } else if (typeof b.valor_estimado === 'number') {
-          valor = b.valor_estimado;
-        }
-
-        // Filtro para mostrar apenas sem valor
-        if (filters.mostrar_sem_valor) {
-          if (valor > 0) return false;
-        }
-
-        if (filters.valor_min !== undefined && valor < filters.valor_min) {
-          return false;
-        }
-
-        if (filters.valor_max !== undefined && valor > filters.valor_max) {
-          return false;
-        }
-
-        return true;
-      });
+    if (filters?.valor_min !== undefined) {
+      conditions.push(gte(biddings.valor_estimado, String(filters.valor_min)));
     }
 
-    if (filters?.data_inicio || filters?.data_fim) {
-      biddings = biddings.filter(b => {
-        const campoData = filters.tipo_data === 'documento' 
-          ? b.datahora_documento 
-          : b.datahora_abertura;
-          
-        if (!campoData) return false; // Se não tem data, não passa no filtro de data
-
-        const dataBidding = new Date(campoData);
-        
-        if (filters.data_inicio) {
-          const inicio = new Date(filters.data_inicio);
-          // Resetar horas para comparação justa de datas
-          inicio.setHours(0, 0, 0, 0);
-          const dataBiddingCompare = new Date(dataBidding);
-          dataBiddingCompare.setHours(0, 0, 0, 0);
-          
-          if (dataBiddingCompare < inicio) return false;
-        }
-
-        if (filters.data_fim) {
-          const fim = new Date(filters.data_fim);
-          // Ajustar fim para o final do dia
-          fim.setHours(23, 59, 59, 999);
-          
-          if (dataBidding > fim) return false;
-        }
-
-        return true;
-      });
+    if (filters?.valor_max !== undefined) {
+      conditions.push(lte(biddings.valor_estimado, String(filters.valor_max)));
     }
+
+    const campoData = filters?.tipo_data === 'documento' ? biddings.datahora_documento : biddings.datahora_abertura;
     
-    const total = biddings.length;
-    const startIndex = (page - 1) * limit;
-    const paginatedBiddings = biddings.slice(startIndex, startIndex + limit);
-    
-    // Garantir que os itens exibidos estejam atualizados (Freshness on Read)
-    await this.ensureBiddingsFreshness(paginatedBiddings);
-
-    if (Date.now() - this.lastCacheUpdate > this.CACHE_DURATION) {
-      this.refreshRecentBoletins().catch(() => {});
+    if (filters?.data_inicio) {
+      conditions.push(gte(campoData, filters.data_inicio));
     }
-    
-    return { biddings: paginatedBiddings, total };
+
+    if (filters?.data_fim) {
+      const fim = filters.data_fim.includes(' ') ? filters.data_fim : `${filters.data_fim} 23:59:59`;
+      conditions.push(lte(campoData, fim));
+    }
+
+    const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+
+    const totalResult = await db.select({ count: sql<number>`count(*)` }).from(biddings).where(whereClause);
+    const total = totalResult[0]?.count || 0;
+
+    const biddingsResult = await db.select()
+      .from(biddings)
+      .where(whereClause)
+      .orderBy(desc(biddings.datahora_abertura))
+      .limit(limit)
+      .offset((page - 1) * limit);
+
+    return { biddings: biddingsResult, total };
   }
 
   // Contagem estimada fixa para evitar carregar dados
   async getBiddingsCount(): Promise<number> {
-    return this.cachedBiddings.size;
+    const result = await db.select({ count: sql<number>`count(*)` }).from(biddings);
+    return result[0]?.count || 0;
   }
 
   async getBidding(id: number): Promise<Bidding | undefined> {
-    const bidding = this.cachedBiddings.get(id) || this.pinnedBiddings.get(id);
-    if (bidding) {
-      await this.ensureBiddingsFreshness([bidding]);
-    }
-    return bidding;
+    const result = await db.select().from(biddings).where(eq(biddings.id, id));
+    return result[0];
   }
 
   // Buscar múltiplas licitações por IDs (usado para favoritos - batch fetching)
   async getBiddingsByIds(ids: number[]): Promise<Bidding[]> {
-    const biddings: Bidding[] = [];
-    
-    // Identificar IDs que precisam de refresh (não estão no cache ou estão expirados)
-    const idsToRefresh: number[] = [];
-    
-    for (const id of ids) {
-      const cached = this.cachedBiddings.get(id);
-      if (!cached) {
-        // Não está no cache, precisa buscar (mesmo que esteja pinado, pode estar velho)
-        idsToRefresh.push(id);
-      } else {
-        // Está no cache, verificar validade
-        const isStale = (Date.now() - cached.cacheTimestamp) > this.CACHE_DURATION;
-        if (isStale) {
-          idsToRefresh.push(id);
-        }
-      }
-    }
-    
-    // Tentar atualizar dados obsoletos em paralelo
-    if (idsToRefresh.length > 0) {
-      // Processar em lotes pequenos para evitar sobrecarga na busca específica
-      // A busca específica é cara, então limitamos a concorrência
-      const chunkSize = 3;
-      for (let i = 0; i < idsToRefresh.length; i += chunkSize) {
-        const chunk = idsToRefresh.slice(i, i + chunkSize);
-        await Promise.all(chunk.map(async (id) => {
-          try {
-            // Tentar buscar especificamente por número de controle
-            // Isso aciona searchSpecificBidding se necessário e atualiza o cache
-            // Usamos numero_controle pois é o ID principal de busca na API
-            await this.getBiddingsPaginated({ numero_controle: String(id) }, 1, 1);
-          } catch (e) {
-            console.warn(`Falha ao atualizar licitação ${id} para favoritos:`, e);
-          }
-        }));
-      }
-    }
-
-    // Montar resposta final preferindo dados frescos do cache
-    for (const id of ids) {
-      // Tentar pegar do cache atualizado primeiro
-      // Precisamos fazer cast pois cachedBiddings tem tipos extras
-      let bidding = this.cachedBiddings.get(id) as unknown as Bidding;
-      
-      // Se não tiver no cache (falha na busca), pegar do pinned (dados antigos/salvos)
-      if (!bidding) {
-        bidding = this.pinnedBiddings.get(id) as Bidding;
-      }
-      
-      if (bidding) {
-        // Remover metadados de cache se existirem para retornar Bidding puro
-        const { cacheTimestamp, dataSource, ...biddingData } = bidding as any;
-        biddings.push(biddingData);
-      }
-    }
-    
-    return biddings;
+    if (!ids.length) return [];
+    return await db.select().from(biddings).where(inArray(biddings.id, ids));
   }
 
-  // Método para manter uma licitação em memória (usado para favoritos)
+  // Deprecated: No longer needed with database storage
   async pinBidding(bidding: Bidding): Promise<void> {
-    if (bidding && bidding.id) {
-      this.pinnedBiddings.set(bidding.id, bidding);
-    }
+    // No-op
   }
 
-  // Métodos de favoritos com timestamps precisos em memória
+  // Métodos de favoritos usando banco de dados
   async getFavorites(userId: number, date?: string, dateFrom?: string, dateTo?: string): Promise<Bidding[]> {
-    let userFavorites = Array.from(this.favorites.values())
-      .filter(fav => fav.userId === userId);
-
+    // 1. Buscar favoritos do usuário
+    const userFavorites = await db.select().from(favorites).where(eq(favorites.userId, userId));
+    
+    // 2. Filtrar por data (em memória para simplificar manipulação de data/hora)
+    let filteredFavorites = userFavorites;
     if (date) {
-      userFavorites = userFavorites.filter(fav => {
+      filteredFavorites = filteredFavorites.filter(fav => {
         const favDate = fav.createdAt?.toISOString().split('T')[0];
         return favDate === date;
       });
     }
-    
     if (dateFrom || dateTo) {
-      userFavorites = userFavorites.filter(fav => {
+      filteredFavorites = filteredFavorites.filter(fav => {
         const favDate = fav.createdAt?.toISOString().split('T')[0];
         if (!favDate) return false;
-        
         let isInRange = true;
-        
-        if (dateFrom) {
-          isInRange = isInRange && favDate >= dateFrom;
-        }
-        
-        if (dateTo) {
-          isInRange = isInRange && favDate <= dateTo;
-        }
-        
+        if (dateFrom) isInRange = isInRange && favDate >= dateFrom;
+        if (dateTo) isInRange = isInRange && favDate <= dateTo;
         return isInRange;
       });
     }
-    
-    const favoriteBiddings: Bidding[] = [];
-    for (const fav of userFavorites) {
-      const bidding = await this.getBidding(fav.biddingId);
+
+    if (filteredFavorites.length === 0) return [];
+
+    // 3. Buscar licitações associadas
+    const biddingIds = filteredFavorites.map(f => f.biddingId);
+    const biddingsList = await this.getBiddingsByIds(biddingIds);
+    const biddingsMap = new Map(biddingsList.map(b => [b.id, b]));
+
+    // 4. Montar resultado combinando dados
+    const result: Bidding[] = [];
+    for (const fav of filteredFavorites) {
+      const bidding = biddingsMap.get(fav.biddingId);
       if (bidding) {
-        // Incluir dados de categorização salvos no favorito
-        const biddingWithCategorization = {
+        result.push({
           ...bidding,
           category: fav.category,
           customCategory: fav.customCategory,
@@ -3465,53 +675,50 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
           valorEstimado: fav.valorEstimado,
           fornecedor: fav.fornecedor,
           site: fav.site
-        };
-        favoriteBiddings.push(biddingWithCategorization as any);
+        } as any);
       }
     }
-    
-    return favoriteBiddings;
+    return result;
   }
 
   async addFavorite(insertFavorite: InsertFavorite): Promise<Favorite> {
-    const id = this.currentFavoriteId++;
-    const favorite: Favorite = { 
-      ...insertFavorite, 
-      id, 
-      createdAt: new Date(), // Timestamp atual preciso
-      category: null,
-      customCategory: null,
-      notes: null,
-      uf: null,
-      codigoUasg: null,
-      valorEstimado: null,
-      fornecedor: null,
-      site: null,
-    };
-    this.favorites.set(id, favorite);
-    return favorite;
+    // Check if already exists
+    const [existing] = await db.select().from(favorites)
+      .where(and(
+        eq(favorites.userId, insertFavorite.userId),
+        eq(favorites.biddingId, insertFavorite.biddingId)
+      ));
+      
+    if (existing) return existing;
+
+    await db.insert(favorites).values({
+      ...insertFavorite,
+      createdAt: new Date(),
+    });
+    
+    // Return the inserted item
+    const [inserted] = await db.select().from(favorites)
+      .where(and(
+        eq(favorites.userId, insertFavorite.userId),
+        eq(favorites.biddingId, insertFavorite.biddingId)
+      ));
+      
+    return inserted;
   }
 
   async removeFavorite(userId: number, biddingId: number): Promise<void> {
-    let keyToDelete: number | undefined;
-    this.favorites.forEach((favorite, id) => {
-      if (favorite.userId === userId && favorite.biddingId === biddingId) {
-        keyToDelete = id;
-      }
-    });
-    if (keyToDelete !== undefined) {
-      this.favorites.delete(keyToDelete);
-    }
+    await db.delete(favorites).where(and(
+      eq(favorites.userId, userId),
+      eq(favorites.biddingId, biddingId)
+    ));
   }
 
   async isFavorite(userId: number, biddingId: number): Promise<boolean> {
-    let found = false;
-    this.favorites.forEach(favorite => {
-      if (favorite.userId === userId && favorite.biddingId === biddingId) {
-        found = true;
-      }
-    });
-    return found;
+    const [fav] = await db.select().from(favorites).where(and(
+      eq(favorites.userId, userId),
+      eq(favorites.biddingId, biddingId)
+    ));
+    return !!fav;
   }
 
   async updateFavoriteCategorization(userId: number, biddingId: number, data: {
@@ -3526,124 +733,28 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
     orgaoLicitante?: string;
     status?: string;
   }): Promise<void> {
-    // Buscar o favorito existente
-    let foundFavoriteId: number | undefined;
-    let foundFavorite: Favorite | undefined;
+    const [existing] = await db.select().from(favorites).where(and(
+      eq(favorites.userId, userId),
+      eq(favorites.biddingId, biddingId)
+    ));
     
-    this.favorites.forEach((favorite, id) => {
-      if (favorite.userId === userId && favorite.biddingId === biddingId) {
-        foundFavorite = favorite;
-        foundFavoriteId = id;
-      }
-    });
-    
-    if (foundFavorite && foundFavoriteId !== undefined) {
-      // Atualizar favorito existente mantendo o timestamp original
-      this.favorites.set(foundFavoriteId, {
-        ...foundFavorite,
-        category: data.category ?? null,
-        customCategory: data.customCategory ?? null,
-        notes: data.notes ?? null,
-        uf: data.uf ?? null,
-        codigoUasg: data.codigoUasg ?? null,
-        valorEstimado: data.valorEstimado ?? null,
-        fornecedor: data.fornecedor ?? null,
-        site: data.site ?? null,
-        orgaoLicitante: (data as any).orgaoLicitante ?? (foundFavorite as any).orgaoLicitante ?? null,
-        status: (data as any).status ?? (foundFavorite as any).status ?? null,
-      });
+    if (existing) {
+      await db.update(favorites).set(data).where(eq(favorites.id, existing.id));
     } else {
-      // Criar novo favorito com categorização e timestamp atual
-      const id = this.currentFavoriteId++;
-      const favorite: Favorite = { 
+      await this.addFavorite({
         userId,
         biddingId,
-        id, 
-        createdAt: new Date(), // Timestamp preciso do momento atual
-        category: data.category ?? null,
-        customCategory: data.customCategory ?? null,
-        notes: data.notes ?? null,
-        uf: data.uf ?? null,
-        codigoUasg: data.codigoUasg ?? null,
-        valorEstimado: data.valorEstimado ?? null,
-        fornecedor: data.fornecedor ?? null,
-        site: data.site ?? null,
-        orgaoLicitante: (data as any).orgaoLicitante ?? null,
-        status: (data as any).status ?? null,
-      };
-      this.favorites.set(id, favorite);
+        ...data
+      } as any);
     }
   }
 
   // Método de debug para validar fonte dos dados
   async getDataSourcesDebugInfo() {
+    const biddingsCount = await this.getBiddingsCount();
+    const boletinsResult = await db.select({ count: sql<number>`count(*)` }).from(boletins);
+    const boletinsCount = boletinsResult[0]?.count || 0;
     
-    const now = Date.now();
-    const cacheStats = {
-      biddings: {
-        total: this.cachedBiddings.size,
-        byDataSource: {} as Record<string, number>,
-        oldestEntry: null as string | null,
-        newestEntry: null as string | null,
-        cacheAge: null as number | null
-      },
-      boletins: {
-        total: this.boletimCache.size,
-        byDataSource: {} as Record<string, number>,
-        oldestEntry: null as string | null,
-        newestEntry: null as string | null,
-        cacheAge: null as number | null
-      }
-    };
-
-    // Analisar cache de biddings
-    let oldestBiddingTime = Infinity;
-    let newestBiddingTime = 0;
-    
-    for (const bidding of this.cachedBiddings.values()) {
-      const dataSource = bidding.dataSource || 'unknown';
-      cacheStats.biddings.byDataSource[dataSource] = (cacheStats.biddings.byDataSource[dataSource] || 0) + 1;
-      
-      if (bidding.cacheTimestamp) {
-        if (bidding.cacheTimestamp < oldestBiddingTime) {
-          oldestBiddingTime = bidding.cacheTimestamp;
-          cacheStats.biddings.oldestEntry = new Date(bidding.cacheTimestamp).toISOString();
-        }
-        if (bidding.cacheTimestamp > newestBiddingTime) {
-          newestBiddingTime = bidding.cacheTimestamp;
-          cacheStats.biddings.newestEntry = new Date(bidding.cacheTimestamp).toISOString();
-        }
-      }
-    }
-    
-    if (newestBiddingTime > 0) {
-      cacheStats.biddings.cacheAge = Math.round((now - newestBiddingTime) / 1000 / 60); // em minutos
-    }
-
-    // Analisar cache de boletins
-    let oldestBoletimTime = Infinity;
-    let newestBoletimTime = 0;
-    
-    for (const boletim of this.boletimCache.values()) {
-      const dataSource = boletim.dataSource || 'unknown';
-      cacheStats.boletins.byDataSource[dataSource] = (cacheStats.boletins.byDataSource[dataSource] || 0) + 1;
-      
-      if (boletim.cacheTimestamp) {
-        if (boletim.cacheTimestamp < oldestBoletimTime) {
-          oldestBoletimTime = boletim.cacheTimestamp;
-          cacheStats.boletins.oldestEntry = new Date(boletim.cacheTimestamp).toISOString();
-        }
-        if (boletim.cacheTimestamp > newestBoletimTime) {
-          newestBoletimTime = boletim.cacheTimestamp;
-          cacheStats.boletins.newestEntry = new Date(boletim.cacheTimestamp).toISOString();
-        }
-      }
-    }
-    
-    if (newestBoletimTime > 0) {
-      cacheStats.boletins.cacheAge = Math.round((now - newestBoletimTime) / 1000 / 60); // em minutos
-    }
-
     // Testar conectividade com API
     let apiStatus = 'unknown';
     let apiError = null;
@@ -3656,38 +767,17 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
       apiError = error instanceof Error ? error.message : 'Unknown error';
     }
 
-    const debugInfo: any = {
+    return {
       timestamp: new Date().toISOString(),
       environment: process.env.NODE_ENV || 'development',
       apiStatus,
       apiError,
-      cache: cacheStats,
-      dataQuality: {
-        potentialFallbackData: cacheStats.biddings.byDataSource['fallback'] || 0,
-        realApiData: cacheStats.biddings.byDataSource['api'] || 0,
-        unknownSource: cacheStats.biddings.byDataSource['unknown'] || 0
-      },
-      recommendations: [] as string[]
+      storage: 'database',
+      stats: {
+        biddings: biddingsCount,
+        boletins: boletinsCount
+      }
     };
-
-    // Adicionar recomendações baseadas na análise
-    if (apiStatus === 'error') {
-      debugInfo.recommendations.push('API ConLicitação não está acessível - dados podem estar desatualizados');
-    }
-    
-    if (cacheStats.biddings.cacheAge && cacheStats.biddings.cacheAge > 60) {
-      debugInfo.recommendations.push(`Cache de biddings está antigo (${cacheStats.biddings.cacheAge} minutos) - considere atualizar`);
-    }
-    
-    if (debugInfo.dataQuality.potentialFallbackData > 0) {
-      debugInfo.recommendations.push(`${debugInfo.dataQuality.potentialFallbackData} registros podem ser dados de fallback`);
-    }
-    
-    if (debugInfo.dataQuality.unknownSource > 0) {
-      debugInfo.recommendations.push(`${debugInfo.dataQuality.unknownSource} registros têm fonte desconhecida - verificar integridade`);
-    }
-
-    return debugInfo;
   }
 }
 
