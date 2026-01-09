@@ -400,7 +400,6 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
       "EM_ANAL": "EM ANÁLISE",
       "PRORROG": "PRORROGADA",
       "ALTERA": "ALTERADA",
-      "ALTER": "ALTERADA", // Adicionado mapeamento para ALTER
       "FINALI": "FINALIZADA",
       "SUSP": "SUSPENSA",
       "CANCEL": "CANCELADA",
