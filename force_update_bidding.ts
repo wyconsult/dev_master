@@ -5,6 +5,34 @@ import { eq } from 'drizzle-orm';
 import { conLicitacaoAPI } from './server/conlicitacao-api';
 import { syncService } from './server/sync-service';
 
+function expandTruncatedStatus(status: string): string {
+    const truncatedMappings: Record<string, string> = {
+      "EM_ANAL": "EM ANÁLISE",
+      "PRORROG": "PRORROGADA",
+      "ALTERA": "ALTERADA",
+      "ALTER": "ALTERADA",
+      "FINALI": "FINALIZADA",
+      "SUSP": "SUSPENSA",
+      "CANCEL": "CANCELADA",
+      "DESERTA": "DESERTA",
+      "FRACAS": "FRACASSADA"
+    };
+
+    const upperStatus = status.toString().toUpperCase().trim();
+    
+    if (truncatedMappings[upperStatus]) {
+      return truncatedMappings[upperStatus];
+    }
+    
+    for (const [truncated, full] of Object.entries(truncatedMappings)) {
+      if (truncated.startsWith(upperStatus) || upperStatus.startsWith(truncated)) {
+        return full;
+      }
+    }
+    
+    return upperStatus;
+}
+
 async function forceUpdateBidding(conlicitacaoId: number, targetBoletimId: number) {
   console.log(`\n🛠️ Forçando atualização da Licitação ID: ${conlicitacaoId}`);
   console.log(`   Usando Boletim Alvo: ${targetBoletimId}\n`);
@@ -50,14 +78,21 @@ async function forceUpdateBidding(conlicitacaoId: number, targetBoletimId: numbe
     // Vamos usar uma abordagem direta de update via Drizzle para ser cirúrgico
     
     // Preparar objeto de update
-    const updateData: any = {
-        boletim_id: targetBoletimId,
-        situacao: biddingData.situacao || 'N/A',
-        objeto: (biddingData.objeto || 'Não informado').substring(0, 1000),
-        datahora_abertura: biddingData.datahora_abertura || null,
-        updated_at: new Date(),
-        synced_at: new Date()
-    };
+    // Expandir status truncado (ex: "ALTER" -> "ALTERADA")
+  const situacaoOriginal = biddingData.situacao || 'NOVA';
+  const situacaoExpandida = expandTruncatedStatus(situacaoOriginal);
+
+  // Fallback de data inteligente
+  const dataFinal = biddingData.datahora_abertura || biddingData.datahora_documento || biddingData.datahora_prazo || null;
+
+  const updateData: any = {
+    boletim_id: targetBoletimId,
+    situacao: situacaoExpandida,
+    objeto: (biddingData.objeto || 'Não informado').substring(0, 1000),
+    datahora_abertura: dataFinal,
+    updated_at: new Date(),
+    synced_at: new Date()
+  };
 
     // Campos opcionais
     if (biddingData.orgao) {

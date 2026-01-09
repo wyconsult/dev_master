@@ -218,7 +218,8 @@ export class SyncService {
             orgao_site: lic.orgao?.site || null,
             objeto: (lic.objeto || 'Não informado').substring(0, 1000),
             situacao: lic.situacao || 'N/A',
-            datahora_abertura: lic.datahora_abertura || null,
+            // Correção de Data: Fallback para datahora_documento se datahora_abertura estiver vazia
+            datahora_abertura: lic.datahora_abertura || lic.datahora_documento || lic.datahora_prazo || null,
             datahora_documento: lic.datahora_documento || null,
             datahora_retirada: lic.datahora_retirada || null,
             datahora_visita: lic.datahora_visita || null,
@@ -249,7 +250,8 @@ export class SyncService {
             orgao_site: lic.orgao?.site || null,
             objeto: (lic.objeto || 'Não informado').substring(0, 1000),
             situacao: lic.situacao || 'N/A',
-            datahora_abertura: lic.datahora_abertura || null,
+            // Correção de Data: Fallback para datahora_documento se datahora_abertura estiver vazia
+            datahora_abertura: lic.datahora_abertura || lic.datahora_documento || lic.datahora_prazo || null,
             datahora_documento: lic.datahora_documento || null,
             datahora_retirada: lic.datahora_retirada || null,
             datahora_visita: lic.datahora_visita || null,
