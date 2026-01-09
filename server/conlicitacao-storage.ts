@@ -1,5 +1,5 @@
 import { conLicitacaoAPI } from './conlicitacao-api';
-import { Bidding, Boletim, Filtro, Acompanhamento, User, InsertUser, Favorite, InsertFavorite, favorites, biddings, boletins, acompanhamentos } from '../shared/schema';
+import { Bidding, Boletim, Filtro, Acompanhamento, User, InsertUser, Favorite, InsertFavorite, favorites, biddings, boletins, acompanhamentos, users } from '../shared/schema';
 import { db } from "./db";
 import { eq, and, like, desc, or, gte, lte, inArray, sql } from "drizzle-orm";
 import { syncService } from "./sync-service";
@@ -102,20 +102,37 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
     }
   }
 
-  // Métodos de usuário (mantemos localmente)
+  // Métodos de usuário (migrados para banco de dados)
   async getUser(id: number): Promise<User | undefined> {
-    return this.users.get(id);
+    try {
+      const [user] = await db.select().from(users).where(eq(users.id, id));
+      return user;
+    } catch (error) {
+      console.error('Erro ao buscar usuário:', error);
+      return undefined;
+    }
   }
 
   async getUserByEmail(email: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(user => user.email === email);
+    try {
+      const [user] = await db.select().from(users).where(eq(users.email, email));
+      return user;
+    } catch (error) {
+      console.error('Erro ao buscar usuário por email:', error);
+      return undefined;
+    }
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
-    const id = this.currentUserId++;
-    const user: User = { ...insertUser, id };
-    this.users.set(id, user);
-    return user;
+    try {
+      await db.insert(users).values(insertUser);
+      const [user] = await db.select().from(users).where(eq(users.email, insertUser.email));
+      if (!user) throw new Error("Erro ao recuperar usuário criado");
+      return user;
+    } catch (error) {
+      console.error('Erro ao criar usuário:', error);
+      throw error;
+    }
   }
 
   // Métodos da API ConLicitação
@@ -674,11 +691,16 @@ export class ConLicitacaoStorage implements IConLicitacaoStorage {
           category: fav.category,
           customCategory: fav.customCategory,
           notes: fav.notes,
-          uf: fav.uf,
-          codigoUasg: fav.codigoUasg,
-          valorEstimado: fav.valorEstimado,
+          
+          // Preferir dados atualizados da licitação (bidding) sobre o snapshot do favorito (fav)
+          uf: bidding.orgao_uf || fav.uf,
+          codigoUasg: bidding.orgao_codigo || fav.codigoUasg,
+          valorEstimado: bidding.valor_estimado ? bidding.valor_estimado.toString() : fav.valorEstimado,
+          site: bidding.orgao_site || fav.site,
+          
           fornecedor: fav.fornecedor,
-          site: fav.site
+          orgaoLicitante: bidding.orgao_nome || (fav as any).orgaoLicitante,
+          status: bidding.situacao || (fav as any).status
         } as any);
       }
     }

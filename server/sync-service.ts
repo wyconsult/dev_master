@@ -3,6 +3,34 @@ import { biddings, boletins, filtros, acompanhamentos } from '@shared/schema';
 import { conLicitacaoAPI } from './conlicitacao-api.js';
 import { eq, sql, desc } from 'drizzle-orm';
 
+function expandTruncatedStatus(status: string): string {
+  const truncatedMappings: Record<string, string> = {
+    "EM_ANAL": "EM ANÁLISE",
+    "PRORROG": "PRORROGADA",
+    "ALTERA": "ALTERADA",
+    "ALTER": "ALTERADA",
+    "FINALI": "FINALIZADA",
+    "SUSP": "SUSPENSA",
+    "CANCEL": "CANCELADA",
+    "DESERTA": "DESERTA",
+    "FRACAS": "FRACASSADA"
+  };
+
+  const upperStatus = status.toString().toUpperCase().trim();
+  
+  if (truncatedMappings[upperStatus]) {
+    return truncatedMappings[upperStatus];
+  }
+  
+  for (const [truncated, full] of Object.entries(truncatedMappings)) {
+    if (truncated.startsWith(upperStatus) || upperStatus.startsWith(truncated)) {
+      return full;
+    }
+  }
+  
+  return upperStatus;
+}
+
 export interface SyncResult {
   success: boolean;
   syncType: 'full' | 'incremental' | 'manual';
@@ -217,7 +245,7 @@ export class SyncService {
             orgao_telefone: telefones,
             orgao_site: lic.orgao?.site || null,
             objeto: (lic.objeto || 'Não informado').substring(0, 1000),
-            situacao: lic.situacao || 'N/A',
+            situacao: expandTruncatedStatus(lic.situacao || 'N/A'),
             // Correção de Data: Fallback para datahora_documento se datahora_abertura estiver vazia
             datahora_abertura: lic.datahora_abertura || lic.datahora_documento || lic.datahora_prazo || null,
             datahora_documento: lic.datahora_documento || null,
@@ -249,7 +277,7 @@ export class SyncService {
             orgao_telefone: telefones,
             orgao_site: lic.orgao?.site || null,
             objeto: (lic.objeto || 'Não informado').substring(0, 1000),
-            situacao: lic.situacao || 'N/A',
+            situacao: expandTruncatedStatus(lic.situacao || 'N/A'),
             // Correção de Data: Fallback para datahora_documento se datahora_abertura estiver vazia
             datahora_abertura: lic.datahora_abertura || lic.datahora_documento || lic.datahora_prazo || null,
             datahora_documento: lic.datahora_documento || null,

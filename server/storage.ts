@@ -249,11 +249,6 @@ export class DatabaseStorage implements IStorage {
       }
       
       if (bidding) {
-        // Garantir que a licitação seja pinada na memória
-        try {
-          await conLicitacaoStorage.pinBidding(bidding);
-        } catch {}
-
         // Aplicar Filtro de Data (Data de Realização / Abertura)
         if (startDate || endDate) {
           const biddingDate = parseDate(bidding.datahora_abertura);
@@ -272,13 +267,20 @@ export class DatabaseStorage implements IStorage {
           category: fav.category,
           customCategory: fav.customCategory,
           notes: fav.notes,
-          uf: fav.uf,
-          codigoUasg: fav.codigoUasg,
-          valorEstimado: fav.valorEstimado,
-          fornecedor: fav.fornecedor,
-          site: fav.site,
-          orgaoLicitante: (fav as any).orgaoLicitante,
-          status: (fav as any).status,
+          
+          // Preferir dados atualizados da licitação (bidding) sobre o snapshot do favorito (fav)
+          // Mas manter o snapshot se o dado da licitação estiver vazio
+          uf: bidding.orgao_uf || fav.uf,
+          codigoUasg: bidding.orgao_codigo || fav.codigoUasg,
+          valorEstimado: bidding.valor_estimado ? bidding.valor_estimado.toString() : fav.valorEstimado,
+          site: bidding.orgao_site || fav.site,
+          
+          // Campos que só existem no favorito ou que queremos permitir override manual explícito?
+          // Assumindo que o usuário quer ver o dado mais recente da fonte:
+          fornecedor: fav.fornecedor, // Bidding não tem fornecedor
+          orgaoLicitante: bidding.orgao_nome || (fav as any).orgaoLicitante,
+          status: bidding.situacao || (fav as any).status,
+          
           createdAt: fav.createdAt
         } as any;
         
