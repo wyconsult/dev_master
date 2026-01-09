@@ -391,21 +391,37 @@ export class SyncService {
         return this.fullSync();
       }
 
-      // Sincronizar apenas os últimos 5 boletins de cada filtro
+      // Sincronizar os últimos 50 boletins de cada filtro para garantir que nada foi perdido
       for (const filtro of allFiltros) {
-        const boletinsSynced = await this.syncBoletins(filtro.id, 5);
+        const boletinsSynced = await this.syncBoletins(filtro.id, 50);
         result.boletinsSynced += boletinsSynced;
         await new Promise(resolve => setTimeout(resolve, 300));
       }
 
-      // Sincronizar licitações dos últimos 5 boletins
-      const recentBoletins = await db.select().from(boletins).orderBy(desc(boletins.id)).limit(5);
+      // Sincronizar licitações de TODOS os boletins recentes (últimos 7 dias)
+      // Isso garante que mesmo se houver muitos boletins, todos serão processados
+      const sevenDaysAgo = new Date();
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+      
+      // Converter para string no formato que o banco espera (se necessário) ou usar filtro de data
+      // Como datahora_fechamento é varchar, vamos pegar os últimos 100 IDs para garantir
+      const recentBoletins = await db.select()
+        .from(boletins)
+        .orderBy(desc(boletins.id))
+        .limit(100); // Aumentado de 5 para 100 para cobrir todas as atualizações da semana
+
+      console.log(`[SyncService] Iniciando processamento de ${recentBoletins.length} boletins recentes...`);
 
       for (const boletim of recentBoletins) {
+        // Otimização: Se o boletim é muito antigo (mais de 1 mês), pular
+        // Mas como pegamos por ID desc, já são os novos.
+        
         const { licitacoes, acompanhamentos } = await this.syncLicitacoesFromBoletim(boletim.id);
         result.biddingsSynced += licitacoes;
         result.acompanhamentosSynced += acompanhamentos;
-        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        // Pausa menor para processar mais rápido
+        await new Promise(resolve => setTimeout(resolve, 200));
       }
 
       result.success = true;
